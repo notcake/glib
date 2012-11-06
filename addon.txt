@@ -1,0 +1,9 @@
+"AddonInfo"
+{
+	"name"        "GLib"
+	"version"     "1.00"
+	"author_name" "!cake"
+	"author_url"  ""
+	"info"        "A library of useful functions"
+	"override"    "0"
+}
