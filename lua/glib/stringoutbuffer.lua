@@ -5,6 +5,10 @@ function self:ctor ()
 	self.Data = ""
 end
 
+function self:Clear ()
+	self.Data = ""
+end
+
 function self:GetString ()
 	return self.Data
 end
