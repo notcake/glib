@@ -28,7 +28,8 @@ function self:UInt16 (n)
 end
 
 function self:UInt32 (n)
-	net.WriteUInt (n, 32)
+	if n >= 2147483648 then n = n - 4294967296 end
+	net.WriteInt (n, 32)
 end
 
 function self:UInt64 (n)
