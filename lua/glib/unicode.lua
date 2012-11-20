@@ -1,6 +1,6 @@
 GLib.Unicode = {}
 GLib.Unicode.Characters = {}
-GLib.Unicode.CharacterNames = {}
+local characterNames = {}
 
 function GLib.Unicode.GetCharacterCategory (...)
 	local codePoint = GLib.UTF8.Byte (...)
@@ -9,8 +9,8 @@ end
 
 function GLib.Unicode.GetCharacterName (...)
 	local codePoint = GLib.UTF8.Byte (...)
-	if GLib.Unicode.CharacterNames [codePoint] then
-		return GLib.Unicode.CharacterNames [codePoint]
+	if characterNames [codePoint] then
+		return characterNames [codePoint]
 	end
 	if codePoint < 0x010000 then
 		return string.format ("CHARACTER 0x%04x", codePoint)
@@ -19,13 +19,17 @@ function GLib.Unicode.GetCharacterName (...)
 	end
 end
 
+function GLib.Unicode.GetCharacterNameTable ()
+	return characterNames
+end
+
 function GLib.Unicode.GetCodePointCategory (codePoint)
-	return GLib.Unicode.GetCodePointCategory (codePoint)
+	GLib.Error ("GLib.Unicode.GetCodePointCategory : Did unicodecategorytable.lua fail to load?")
 end
 
 function GLib.Unicode.GetCodePointName (codePoint)
-	if GLib.Unicode.CharacterNames [codePoint] then
-		return GLib.Unicode.CharacterNames [codePoint]
+	if characterNames [codePoint] then
+		return characterNames [codePoint]
 	end
 	if codePoint < 0x010000 then
 		return string.format ("CHARACTER 0x%04x", codePoint)
@@ -36,11 +40,11 @@ end
 
 function GLib.Unicode.IsCharacterNamed (...)
 	local codePoint = GLib.UTF8.Byte (...)
-	return GLib.Unicode.CharacterNames [codePoint] and true or false
+	return characterNames [codePoint] and true or false
 end
 
 function GLib.Unicode.IsCodePointNamed (codePoint)
-	return GLib.Unicode.CharacterNames [codePoint] and true or false
+	return characterNames [codePoint] and true or false
 end
 
 function GLib.Unicode.IsControl (...)
@@ -217,7 +221,7 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 			
 			lastCodePoint = codePoint
 			
-			GLib.Unicode.CharacterNames [codePoint] = bits [2]
+			characterNames [codePoint] = bits [2]
 			
 			i = i + 1
 			if i > #GLib.Unicode.DataLines then

@@ -1,4 +1,4 @@
-GLib.Unicode.CategoryStage1 =
+local categoryStage1 =
 {
 	--[[ U+000000 ]]   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  11,  12,  13,  14,  15,  16,
 	--[[ U+001000 ]]  17,  18,  19,  20,  21,  18,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
@@ -274,7 +274,7 @@ GLib.Unicode.CategoryStage1 =
 	--[[ U+10F000 ]]  62,  62,  62,  62,  62,  62,  62,  62,  62,  62,  62,  62,  62,  62,  62, 110,
 }
 
-GLib.Unicode.CategoryStage2 =
+local categoryStage2 =
 {
 	--Block 0
 	14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 
@@ -2165,12 +2165,20 @@ GLib.Unicode.CategoryStage2 =
 	17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 29, 29, 
 }
 
+function GLib.Unicode.GetCategoryTableStage1 ()
+	return categoryStage1
+end
+
+function GLib.Unicode.GetCategoryTableStage2 ()
+	return categoryStage2
+end
+
 local blockSize = 256
 function GLib.Unicode.GetCodePointCategory (codePoint)
 	if codePoint < 0 then return GLib.UnicodeCategory.OtherNotAssigned end
 	if codePoint >= 0x110000 then return GLib.UnicodeCategory.OtherNotAssigned end
 	
-	local blockOffset = GLib.Unicode.CategoryStage1 [math.floor (codePoint / blockSize) + 1] * blockSize;
-	return GLib.Unicode.CategoryStage2 [blockOffset + codePoint % blockSize + 1] or GLib.UnicodeCategory.OtherNotAssigned
+	local blockOffset = categoryStage1 [math.floor (codePoint / blockSize) + 1] * blockSize;
+	return categoryStage2 [blockOffset + codePoint % blockSize + 1] or GLib.UnicodeCategory.OtherNotAssigned
 end
 
