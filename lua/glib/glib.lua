@@ -134,16 +134,33 @@ function GLib.GetStackDepth ()
 	return i
 end
 
-function GLib.Import (tbl)
+function GLib.Initialize (systemName, systemTable)
+	if not systemTable then
+		GLib.Error ("GLib.Initialize : Called incorrectly.")
+	end
+	
 	for k, v in pairs (GLib) do
 		if type (v) == "function" then
-			tbl [k] = v
+			systemTable [k] = v
 		elseif type (v) == "table" then
-			tbl [k] = {}
-			tbl [k].__index = v
-			setmetatable (tbl [k], tbl [k])
+			systemTable [k] = {}
+			systemTable [k].__index = v
+			setmetatable (systemTable [k], systemTable [k])
 		end
 	end
+	
+	GLib.EventProvider (systemTable)
+	systemTable:AddEventListener ("Unloaded", "GLib.Unloader",
+		function ()
+			hook.Remove ("ShutDown", tostring (systemName))
+		end
+	)
+	
+	hook.Add ("ShutDown", tostring (systemName),
+		function ()
+			systemTable:DispatchEvent ("Unloaded")
+		end
+	)
 end
 
 function GLib.IncludeDirectory (folder, recursive)
@@ -240,6 +257,9 @@ function GLib.MakeConstructor (metatable, base, base2)
 		object:__ctor (...)
 		return object
 	end
+end
+
+function GLib.NullCallback ()
 end
 
 function GLib.PrettifyString (str)
