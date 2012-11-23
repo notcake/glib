@@ -69,6 +69,14 @@ function self:Int64 ()
 	return high * 4294967296 + low
 end
 
+function self:Float ()
+	return tonumber (self:String ()) or 0
+end
+
+function self:Double ()
+	return tonumber (self:String ()) or 0
+end
+
 function self:Char ()
 	local char = self.Data:sub (self.Position, self.Position)
 	self.Position = self.Position + 1

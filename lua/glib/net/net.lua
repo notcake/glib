@@ -4,6 +4,8 @@ GLib.Net.ChannelHandlers = {}
 GLib.Net.ChannelQueues = {} -- used on client only to queue up packets to be sent to the server
 GLib.Net.OpenChannels = {}
 
+GLib.Net.LastBadPacket = nil
+
 local function PlayerFromId (userId)
 	if userId == "Everyone" then return player.GetAll () end
 	local ply = GLib.Net.PlayerMonitor:GetUserEntity (userId)
@@ -145,7 +147,13 @@ elseif CLIENT then
 		
 		if GLib.Net.ChannelQueues [channelName] then
 			for _, packet in ipairs (GLib.Net.ChannelQueues [channelName]) do
-				GLib.Net.DispatchPacket (packet.DestinationId, channelName, packet)
+				xpcall (GLib.Net.DispatchPacket,
+					function (message)
+						GLib.Error (message .. " whilst dispatching packet via " .. channelName .. ".")
+						GLib.Net.LastBadPacket = packet
+					end,
+					packet.DestinationId, channelName, packet
+				)
 			end
 			GLib.Net.ChannelQueues [channelName] = {}
 		end

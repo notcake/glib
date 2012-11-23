@@ -43,6 +43,14 @@ function self:Int64 ()
 	return self.Usermessage:ReadLong () * 4294967296 + n
 end
 
+function self:Float ()
+	return self.Usermessage:ReadFloat ()
+end
+
+function self:Double ()
+	return self.Usermessage:ReadFloat ()
+end
+
 function self:Char ()
 	return string.char (self:UInt8 ())
 end

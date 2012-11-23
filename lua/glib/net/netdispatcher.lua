@@ -54,6 +54,14 @@ function self:Int64 (n)
 	net.WriteInt (math.floor (n / 4294967296), 32)
 end
 
+function self:Float (f)
+	net.WriteFloat (f)
+end
+
+function self:Double (f)
+	net.WriteDouble (f)
+end
+
 function self:Char (char)
 	self:UInt8 (string.byte (char))
 end

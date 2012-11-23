@@ -49,6 +49,14 @@ function self:Int64 (n)
 	umsg.Long (math.floor (n / 4294967296))
 end
 
+function self:Float (f)
+	umsg.Float (f)
+end
+
+function self:Double (f)
+	umsg.Float (f)
+end
+
 function self:Char (char)
 	self:UInt8 (string.byte (char))
 end

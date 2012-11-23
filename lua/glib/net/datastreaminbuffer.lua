@@ -25,6 +25,11 @@ function self:UInt32 ()
 	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
 end
 
+function self:UInt64 ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
+end
+
 function self:Int8 ()
 	self.NextReadIndex = self.NextReadIndex + 1
 	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
@@ -36,6 +41,21 @@ function self:Int16 ()
 end
 
 function self:Int32 ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
+end
+
+function self:Int64 ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
+end
+
+function self:Float ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
+end
+
+function self:Double ()
 	self.NextReadIndex = self.NextReadIndex + 1
 	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
 end

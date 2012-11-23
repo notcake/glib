@@ -44,6 +44,14 @@ function self:Int64 ()
 	return self:Int32 () * 4294967296 + n
 end
 
+function self:Float ()
+	return net.ReadFloat ()
+end
+
+function self:Double ()
+	return net.ReadDouble ()
+end
+
 function self:Char ()
 	return string.char (self:UInt8 ())
 end

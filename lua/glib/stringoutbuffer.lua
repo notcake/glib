@@ -60,6 +60,14 @@ function self:Int64 (n)
 	self:Int32 (math.floor (n / 4294967296))
 end
 
+function self:Float (f)
+	self:String (tostring (f))
+end
+
+function self:Double (f)
+	self:String (tostring (f))
+end
+
 function self:Char (char)
 	self.Data = self.Data .. char:sub (1, 1)
 end
