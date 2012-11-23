@@ -72,13 +72,13 @@ function GLib.Net.RegisterChannel (channelName, handler)
 	elseif CLIENT then
 		net.Receive (channelName,
 			function (_)
-				handler (GAuth.GetServerId (), GLib.Net.NetInBuffer ())
+				handler (GLib.GetServerId (), GLib.Net.NetInBuffer ())
 			end
 		)
 		
 		usermessage.Hook (channelName,
 			function (umsg)
-				handler (GAuth.GetServerId (), GLib.Net.UsermessageInBuffer (umsg))
+				handler (GLib.GetServerId (), GLib.Net.UsermessageInBuffer (umsg))
 			end
 		)
 	end
