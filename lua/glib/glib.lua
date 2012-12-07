@@ -189,7 +189,9 @@ function GLib.Initialize (systemName, systemTable)
 	
 	hook.Add ("ShutDown", tostring (systemName),
 		function ()
+			print ("Unloading " .. systemName .. "...")
 			systemTable:DispatchEvent ("Unloaded")
+			print ("Unloaded " .. systemName .. "!")
 		end
 	)
 end
