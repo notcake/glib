@@ -77,6 +77,11 @@ function self:String (data)
 	self.Data = self.Data .. data
 end
 
+function self:LongString (data)
+	self:UInt32 (data:len ())
+	self.Data = self.Data .. data
+end
+
 function self:Boolean (b)
 	self:UInt8 (b and 1 or 0)
 end

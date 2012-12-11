@@ -90,6 +90,13 @@ function self:String ()
 	return str
 end
 
+function self:LongString ()
+	local length = self:UInt32 ()
+	local str = self.Data:sub (self.Position, self.Position + length - 1)
+	self.Position = self.Position + length
+	return str
+end
+
 function self:Boolean ()
 	return self:UInt8 () == 1
 end
