@@ -254,6 +254,7 @@ function GLib.MakeConstructor (metatable, base, base2)
 			for k, v in pairs (base2table) do
 				if k:sub (1, 2) ~= "__" then metatable [k] = v end
 			end
+			metatable.__base2 = base2table
 			metatable.ctor2 = base2table.ctor
 		end
 	end
