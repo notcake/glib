@@ -22,6 +22,29 @@ if SERVER then
 		GLib.AddCSLuaFolder (folder, true)
 	end
 	
+	function GLib.AddCSLuaPackFolder (folder, recursive)
+		local files, folders = file.Find (folder .. "/*", "LUA")
+		for _, fileName in pairs (files) do
+			if fileName:sub (-4) == ".lua" then
+				GLib.Loader.ServerPackFileSystem:Write (
+					folder .. "/" .. fileName,
+					file.Read (folder .. "/" .. fileName, "LUA")
+				)
+			end
+		end
+		if recursive then
+			for _, childFolder in pairs (folders) do
+				if childFolder ~= "." and childFolder ~= ".." then
+					GLib.AddCSLuaPackFolder (folder .. "/" .. childFolder, recursive)
+				end
+			end
+		end
+	end
+
+	function GLib.AddCSLuaPackFolderRecursive (folder)
+		GLib.AddCSLuaPackFolder (folder, true)
+	end
+	
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
 		includePath = includePath or (systemName .. "/" .. systemName .. ".lua")
 		
@@ -375,20 +398,25 @@ function GLib.WeakValueTable ()
 	return tbl
 end
 
-include ("unicodecategory.lua")
-include ("wordtype.lua")
-
 include ("colors.lua")
 include ("string.lua")
-include ("utf8.lua")
-include ("unicode.lua")
-include ("unicodecategorytable.lua")
 
 include ("eventprovider.lua")
 include ("playermonitor.lua")
 include ("stringbuilder.lua")
 include ("stringinbuffer.lua")
 include ("stringoutbuffer.lua")
+
+include ("coroutine.lua")
+
+include ("loader/loader.lua")
+include ("loader/packfilesystem.lua")
+
+include ("unicode/unicodecategory.lua")
+include ("unicode/wordtype.lua")
+include ("unicode/utf8.lua")
+include ("unicode/unicode.lua")
+include ("unicode/unicodecategorytable.lua")
 
 include ("net/net.lua")
 include ("net/datatype.lua")
