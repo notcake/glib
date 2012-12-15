@@ -119,8 +119,11 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem)
 		if GLib.Loader.ShouldPackOverrideLocalFiles () then
 			-- Unload systems in reverse load order
 			for i = packFileSystem:GetSystemTableCount (), 1, -1 do
-				print ("GLib : Unloading " .. packFileSystem:GetSystemTableName (i) .. " to prepare for replacement...")
-				GLib.UnloadSystem (packFileSystem:GetSystemTableName (i))
+				local systemTableName = packFileSystem:GetSystemTableName (i)
+				if _G [systemTableName] then
+					print ("GLib : Unloading " .. systemTableName .. " to prepare for replacement...")
+					GLib.UnloadSystem (systemTableName)
+				end
 			end
 		end
 		
