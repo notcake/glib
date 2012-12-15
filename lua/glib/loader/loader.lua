@@ -164,7 +164,7 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 			if not shouldRun then
 				print ("GLib : Forwarding pack file \"" .. packFileName .. "\" on to clients.")
 			end
-			GLib.Loader.Networker:StreamPack (GLib.GetEveryoneId (), executionTarget, packFileSystem:GetPackFile (), packFileSystem:GetName ())
+			GLib.Loader.Networker:StreamPack (GLib.GetEveryoneId (), executionTarget, packFile, packFileName)
 		end
 	end
 end
