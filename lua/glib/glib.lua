@@ -55,7 +55,10 @@ if SERVER then
 		
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			GLib.Loader.Include (includePath)
+			
+			if GLib then GLib.Loader.Include (includePath)
+			else include (includePath) end
+			
 			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
 		end)
 		concommand.Add (systemName .. "_reload_sh", function (ply, _, arg)
@@ -63,7 +66,10 @@ if SERVER then
 			
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			GLib.Loader.Include (includePath)
+			
+			if GLib then GLib.Loader.Include (includePath)
+			else include (includePath) end
+			
 			for _, ply in ipairs (player.GetAll ()) do
 				ply:ConCommand (systemName .. "_reload")
 			end
@@ -77,7 +83,10 @@ elseif CLIENT then
 		concommand.Add (systemName .. "_reload", function (ply, _, arg)
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			GLib.Loader.Include (includePath)
+			
+			if GLib then GLib.Loader.Include (includePath)
+			else include (includePath) end
+			
 			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
 		end)
 	end
