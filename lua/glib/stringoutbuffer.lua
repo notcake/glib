@@ -2,42 +2,45 @@ local self = {}
 GLib.StringOutBuffer = GLib.MakeConstructor (self)
 
 function self:ctor ()
-	self.Data = ""
+	self.Data = {}
 end
 
 function self:Clear ()
-	self.Data = ""
+	self.Data = {}
 end
 
 function self:GetString ()
-	return self.Data
+	if #self.Data > 1 then
+		self.Data = { table.concat (self.Data) }
+	end
+	return self.Data [1] or ""
 end
 
 function self:UInt8 (n)
-	self.Data = self.Data .. string.char (n)
+	self.Data [#self.Data + 1] = string.char (n)
 end
 
 function self:UInt16 (n)
-	self.Data = self.Data .. string.char (n % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 256))
+	self.Data [#self.Data + 1] = string.char (n % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 256))
 end
 
 function self:UInt32 (n)
-	self.Data = self.Data .. string.char (n % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 256) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 65536) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 16777216) % 256)
+	self.Data [#self.Data + 1] = string.char (n % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 256) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 65536) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 16777216) % 256)
 end
 
 function self:UInt64 (n)
-	self.Data = self.Data .. string.char (n % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 256) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 65536) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 16777216) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 4294967296) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 1099511627776) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 281474976710656) % 256)
-	self.Data = self.Data .. string.char (math.floor (n / 72057594037927936) % 256)
+	self.Data [#self.Data + 1] = string.char (n % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 256) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 65536) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 16777216) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 4294967296) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 1099511627776) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 281474976710656) % 256)
+	self.Data [#self.Data + 1] = string.char (math.floor (n / 72057594037927936) % 256)
 end
 
 function self:Int8 (n)
@@ -69,17 +72,17 @@ function self:Double (f)
 end
 
 function self:Char (char)
-	self.Data = self.Data .. char:sub (1, 1)
+	self.Data [#self.Data + 1] = char:sub (1, 1)
 end
 
 function self:String (data)
 	self:UInt16 (data:len ())
-	self.Data = self.Data .. data
+	self.Data [#self.Data + 1] = data
 end
 
 function self:LongString (data)
 	self:UInt32 (data:len ())
-	self.Data = self.Data .. data
+	self.Data [#self.Data + 1] = data
 end
 
 function self:Boolean (b)

@@ -1,48 +1,50 @@
 if GLib then return end
 GLib = {}
 
+function GLib.AddCSLuaFile (path) end
+function GLib.AddCSLuaFolder (folder) end
+function GLib.AddCSLuaFolderRecursive (folder) end
+function GLib.AddCSLuaPackFile (path) end
+function GLib.AddCSLuaPackFolder (folder) end
+function GLib.AddCSLuaPackFolderRecursive (folder) end
+function GLib.AddCSLuaPackSystem (systemTableName) end
+
 if SERVER then
+	GLib.AddCSLuaFile = AddCSLuaFile
+	
 	function GLib.AddCSLuaFolder (folder, recursive)
-		local files, folders = file.Find (folder .. "/*", "LUA")
-		for _, fileName in pairs (files) do
-			if fileName:sub (-4) == ".lua" then
-				AddCSLuaFile (folder .. "/" .. fileName)
-			end
-		end
-		if recursive then
-			for _, childFolder in pairs (folders) do
-				if childFolder ~= "." and childFolder ~= ".." then
-					GLib.AddCSLuaFolder (folder .. "/" .. childFolder, recursive)
-				end
-			end
-		end
+		print ("GLib : Adding " .. folder .. "/* to lua pack...")
+		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaFile, recursive)
 	end
 
 	function GLib.AddCSLuaFolderRecursive (folder)
-		GLib.AddCSLuaFolder (folder, true)
+		print ("GLib : Adding " .. folder .. "/* to lua pack...")
+		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaFile, true)
+	end
+	
+	function GLib.AddCSLuaPackFile (path, pathId)
+		GLib.Loader.ServerPackFileSystem:Write (
+			path,
+			file.Read (path, pathId or "LUA")
+		)
 	end
 	
 	function GLib.AddCSLuaPackFolder (folder, recursive)
-		local files, folders = file.Find (folder .. "/*", "LUA")
-		for _, fileName in pairs (files) do
-			if fileName:sub (-4) == ".lua" then
-				GLib.Loader.ServerPackFileSystem:Write (
-					folder .. "/" .. fileName,
-					file.Read (folder .. "/" .. fileName, "LUA")
-				)
-			end
-		end
-		if recursive then
-			for _, childFolder in pairs (folders) do
-				if childFolder ~= "." and childFolder ~= ".." then
-					GLib.AddCSLuaPackFolder (folder .. "/" .. childFolder, recursive)
-				end
-			end
-		end
+		local startTime = SysTime ()
+		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
+		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, recursive)
+		MsgN (" done (" .. GLib.Loader.ServerPackFileSystem:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 
 	function GLib.AddCSLuaPackFolderRecursive (folder)
-		GLib.AddCSLuaPackFolder (folder, true)
+		local startTime = SysTime ()
+		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
+		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, true)
+		MsgN (" done (" .. GLib.Loader.ServerPackFileSystem:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+	end
+	
+	function GLib.AddCSLuaPackSystem (systemTableName)
+		GLib.Loader.ServerPackFileSystem:AddSystemTable (systemTableName)
 	end
 	
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
@@ -53,7 +55,7 @@ if SERVER then
 		
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			include (includePath)
+			GLib.Loader.Include (includePath)
 			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
 		end)
 		concommand.Add (systemName .. "_reload_sh", function (ply, _, arg)
@@ -61,32 +63,25 @@ if SERVER then
 			
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			include (includePath)
+			GLib.Loader.Include (includePath)
 			for _, ply in ipairs (player.GetAll ()) do
 				ply:ConCommand (systemName .. "_reload")
 			end
 			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
 		end)
 	end
-	
-	GLib.AddCSLuaFolderRecursive ("glib")
 elseif CLIENT then
-	function GLib.AddCSLuaFolder (folder) end
-	function GLib.AddCSLuaFolderRecursive (folder) end
-	
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
 		includePath = includePath or (systemName .. "/" .. systemName .. ".lua")
 		
 		concommand.Add (systemName .. "_reload", function (ply, _, arg)
 			local startTime = SysTime ()
 			GLib.UnloadSystem (systemTableName)
-			include (includePath)
+			GLib.Loader.Include (includePath)
 			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
 		end)
 	end
 else
-	function GLib.AddCSLuaFolder (folder) end
-	function GLib.AddCSLuaFolderRecursive (folder) end
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName) end
 end
 GLib.AddReloadCommand ("glib/glib.lua", "glib", "GLib")
@@ -115,6 +110,40 @@ function GLib.EnumerateDelayed (tbl, callback, finishCallback)
 	timer.Simple (0, timerCallback)
 end
 
+function GLib.EnumerateFolder (folder, pathId, callback, recursive)
+	if not callback then return end
+	
+	local files, folders = file.Find (folder .. "/*", pathId)
+	for _, fileName in pairs (files) do
+		callback (folder .. "/" .. fileName, pathId)
+	end
+	if recursive then
+		for _, childFolder in pairs (folders) do
+			if childFolder ~= "." and childFolder ~= ".." then
+				GLib.EnumerateFolder (folder .. "/" .. childFolder, pathId, callback, recursive)
+			end
+		end
+	end
+end
+
+function GLib.EnumerateFolderRecursive (folder, pathId, callback)
+	GLib.EnumerateFolder (folder, pathId, callback, true)
+end
+
+function GLib.EnumerateLuaFolder (folder, pathId, callback, recursive)
+	GLib.EnumerateFolder (folder, pathId or "LUA",
+		function (path, pathId)
+			if path:sub (-4):lower () ~= ".lua" then return end
+			callback (path, pathId)
+		end,
+		recursive
+	)
+end
+
+function GLib.EnumerateLuaFolderRecursive (folder, pathId, callback)
+	GLib.EnumerateLuaFolder (folder, pathId, callback, true)
+end
+
 function GLib.Error (message)
 	ErrorNoHalt (" \n\t" .. message .. "\n\t\t" .. GLib.StackTrace (nil, 2):gsub ("\n", "\n\t\t") .. "\n")
 end
@@ -134,14 +163,26 @@ function GLib.FormatDate (date)
 	return string.format ("%02d/%02d/%04d %02d:%02d:%02d", dateTable.day, dateTable.month, dateTable.year, dateTable.hour, dateTable.min, dateTable.sec)
 end
 
-local units = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" }
+local timeUnits = { "ns", "µs", "ms", "s", "ks", "Ms", "Gs", "Ts", "Ps", "Es", "Zs", "Ys" }
+function GLib.FormatDuration (duration)
+	duration = duration * 1000000000
+	
+	local unitIndex = 1
+	while duration >= 1000 and timeUnits [unitIndex + 1] do
+		duration = duration / 1000
+		unitIndex = unitIndex + 1
+	end
+	return tostring (math.floor (duration * 100 + 0.5) / 100) .. " " .. timeUnits [unitIndex]
+end
+
+local sizeUnits = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" }
 function GLib.FormatFileSize (size)
 	local unitIndex = 1
-	while size >= 1024 do
+	while size >= 1024 and sizeUnits [unitIndex + 1] do
 		size = size / 1024
 		unitIndex = unitIndex + 1
 	end
-	return tostring (math.floor (size * 100 + 0.5) / 100) .. " " .. units [unitIndex]
+	return tostring (math.floor (size * 100 + 0.5) / 100) .. " " .. sizeUnits [unitIndex]
 end
 
 if SERVER then
@@ -214,7 +255,6 @@ function GLib.Initialize (systemName, systemTable)
 		function ()
 			print ("Unloading " .. systemName .. "...")
 			systemTable:DispatchEvent ("Unloaded")
-			print ("Unloaded " .. systemName .. "!")
 		end
 	)
 end
@@ -398,6 +438,8 @@ function GLib.WeakValueTable ()
 	return tbl
 end
 
+GLib.AddCSLuaFolderRecursive ("glib")
+
 include ("colors.lua")
 include ("string.lua")
 
@@ -410,6 +452,7 @@ include ("stringoutbuffer.lua")
 include ("coroutine.lua")
 
 include ("loader/loader.lua")
+include ("loader/networker.lua")
 include ("loader/packfilesystem.lua")
 
 include ("unicode/unicodecategory.lua")
