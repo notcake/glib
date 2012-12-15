@@ -447,8 +447,6 @@ function GLib.WeakValueTable ()
 	return tbl
 end
 
-GLib.AddCSLuaFolderRecursive ("glib")
-
 include ("colors.lua")
 include ("string.lua")
 
@@ -463,6 +461,9 @@ include ("coroutine.lua")
 include ("loader/loader.lua")
 include ("loader/networker.lua")
 include ("loader/packfilesystem.lua")
+
+-- This has to be done after the Loader library is loaded.
+GLib.AddCSLuaFolderRecursive ("glib")
 
 include ("unicode/unicodecategory.lua")
 include ("unicode/wordtype.lua")
