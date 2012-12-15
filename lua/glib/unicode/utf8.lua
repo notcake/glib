@@ -312,8 +312,19 @@ function GLib.UTF8.ToLatin1 (str)
 		if codePoint == -1 or codePoint > 255 then
 			latin1 = latin1 .. "?"
 		else
-			latin1 = latin1 .. string.char (codePoint)
+			latin1 = latin1 .. string_char (codePoint)
 		end
 	end
 	return latin1:ToString ()
+end
+
+function GLib.UTF8.WordIterator (str, offset)
+	offset = offset or 1
+	return function ()
+		local wordBoundaryOffset, leftWordType, rightWordType = GLib.UTF8.NextWordBoundary (str, offset)
+		local word = string_sub (str, offset, wordBoundaryOffset - 1)
+		if word == "" then word = nil end
+		offset = wordBoundaryOffset
+		return word, leftWordType
+	end
 end
