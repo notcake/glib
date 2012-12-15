@@ -27,13 +27,18 @@ function self:AddSystemTable (systemTableName)
 	self.SystemTableNameSet [systemTableName] = true
 end
 
+function self:Exists (path)
+	local path = self:NormalizePath (path)
+	return self:GetNode (path) and true or false
+end
+
 function self:Find (path)
 	local path = self:NormalizePath (path)
 	
 	local parts = path:Split ("/")
 	parts [#parts] = nil
 	path = table.concat (parts, "/")
-	local folder = self:GetFolder (path)
+	local folder = self:GetNode (path)
 	local files   = {}
 	local folders = {}
 	for name, data in pairs (folder or {}) do
@@ -199,7 +204,7 @@ function self:EnumerateFolder (folderPath, folder, callback)
 	end
 end
 
-function self:GetFolder (path)
+function self:GetNode (path)
 	local parts = self:NormalizePath (path):Split ("/")
 	local folder = self.Root
 	for i = 1, #parts do

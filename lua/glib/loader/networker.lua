@@ -54,15 +54,7 @@ function self:ctor ()
 				-- Finished
 				streamEntry.Data = table.concat (streamEntry.Data)
 				
-				local packFileSystem = GLib.Loader.PackFileSystem ()
-				packFileSystem:SetName (streamEntry.DisplayName)
-				local startTime = SysTime ()
-				packFileSystem:Deserialize (streamEntry.Data,
-					function ()
-						MsgN ("GLib : Deserializing pack file \"" .. packFileSystem:GetName () .. "\" took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#streamEntry.Data) .. ").")
-						GLib.Loader.RunPackFile (streamEntry.ExecutionTarget, packFileSystem)
-					end
-				)
+				GLib.Loader.RunPackFile (streamEntry.ExecutionTarget, streamEntry.Data, streamEntry.DisplayName)
 				
 				self.InboundStreams [streamId] = nil
 			end

@@ -27,8 +27,16 @@ function GLib.Loader.CompileString (code, path, errorMode)
 	return compiled
 end
 
+function GLib.Loader.File.Exists (path, pathId)
+	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Exists (path, pathId) end
+	
+	if file.Exists (path, pathId) then return true end
+	if GLib.Loader.ServerPackFileSystem:Exists (path) then return true end
+	return false
+end
+
 function GLib.Loader.File.Find (path, pathId)
-	if pathId ~= "LUA" then return file.Find (path, pathId) end
+	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Find (path, pathId) end
 	
 	local files, folders = file.Find (path, pathId)
 	local fileSet = {}
@@ -48,7 +56,7 @@ function GLib.Loader.File.Find (path, pathId)
 end
 
 function GLib.Loader.File.Read (path, pathId)
-	if pathId ~= "LUA" then return file.Read (path, pathId) end
+	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Read (path, pathId) end
 	
 	if GLib.Loader.ShouldPackOverrideLocalFiles () then
 		local contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
@@ -67,8 +75,9 @@ function GLib.Loader.File.Read (path, pathId)
 	end
 end
 
-GLib.Loader.Find = GLib.Loader.File.Find
-GLib.Loader.Read = GLib.Loader.File.Read
+GLib.Loader.Exists = GLib.Loader.File.Find
+GLib.Loader.Find   = GLib.Loader.File.Find
+GLib.Loader.Read   = GLib.Loader.File.Read
 
 local pathStack = { "" }
 function GLib.Loader.Include (path)
@@ -108,43 +117,53 @@ function GLib.Loader.Include (path)
 	end
 end
 
-function GLib.Loader.RunPackFile (executionTarget, packFileSystem)
+function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 	local shouldRun = executionTarget == "sh"
 	if SERVER and executionTarget == "sv" then shouldRun = true end
 	if CLIENT and executionTarget == "cl" then shouldRun = true end
 	
 	if shouldRun then
-		print ("GLib : Running pack file \"" .. packFileSystem:GetName () .. "\"...")
-		for i = 1, packFileSystem:GetSystemTableCount () do
-			GLib.Loader.ServerPackFileSystem:AddSystemTable (packFileSystem:GetSystemTableName (i))
-		end
-		
-		if GLib.Loader.ShouldPackOverrideLocalFiles () then
-			-- Unload systems in reverse load order
-			for i = packFileSystem:GetSystemTableCount (), 1, -1 do
-				local systemTableName = packFileSystem:GetSystemTableName (i)
-				if _G [systemTableName] then
-					print ("GLib : Unloading " .. systemTableName .. " to prepare for replacement...")
-					GLib.UnloadSystem (systemTableName)
+		local packFileSystem = GLib.Loader.PackFileSystem ()
+		packFileSystem:SetName (packFileName)
+		local startTime = SysTime ()
+		packFileSystem:Deserialize (packFile,
+			function ()
+				MsgN ("GLib : Running pack file \"" .. packFileSystem:GetName () .. "\", deserialization took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#packFile) .. ").")
+				for i = 1, packFileSystem:GetSystemTableCount () do
+					GLib.Loader.ServerPackFileSystem:AddSystemTable (packFileSystem:GetSystemTableName (i))
+				end
+				
+				if GLib.Loader.ShouldPackOverrideLocalFiles () then
+					-- Unload systems in reverse load order
+					for i = packFileSystem:GetSystemTableCount (), 1, -1 do
+						local systemTableName = packFileSystem:GetSystemTableName (i)
+						if _G [systemTableName] then
+							print ("GLib : Unloading " .. systemTableName .. " to prepare for replacement...")
+							GLib.UnloadSystem (systemTableName)
+						end
+					end
+				end
+				
+				packFileSystem:MergeInto (GLib.Loader.ServerPackFileSystem)
+				
+				local files, _ = packFileSystem:Find ("autorun/*.lua")
+				for _, fileName in ipairs (files) do
+					GLib.Loader.Include ("autorun/" .. fileName)
+				end
+				
+				local files, _ = packFileSystem:Find ("autorun/" .. (SERVER and "server" or "client") .. "/*.lua")
+				for _, fileName in ipairs (files) do
+					GLib.Loader.Include ("autorun/" .. (SERVER and "server" or "client") .. "/" .. fileName)
 				end
 			end
-		end
-		
-		packFileSystem:MergeInto (GLib.Loader.ServerPackFileSystem)
-		
-		local files, _ = packFileSystem:Find ("autorun/*.lua")
-		for _, fileName in ipairs (files) do
-			GLib.Loader.Include ("autorun/" .. fileName)
-		end
-		
-		local files, _ = packFileSystem:Find ("autorun/" .. (SERVER and "server" or "client") .. "/*.lua")
-		for _, fileName in ipairs (files) do
-			GLib.Loader.Include ("autorun/" .. (SERVER and "server" or "client") .. "/" .. fileName)
-		end
+		)
 	end
 	
 	if SERVER then
 		if executionTarget == "sh" or executionTarget == "cl" then
+			if not shouldRun then
+				print ("GLib : Forwarding pack file \"" .. packFileName .. "\" on to clients.")
+			end
 			GLib.Loader.Networker:StreamPack (GLib.GetEveryoneId (), executionTarget, packFileSystem:GetPackFile (), packFileSystem:GetName ())
 		end
 	end
