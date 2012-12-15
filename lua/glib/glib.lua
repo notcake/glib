@@ -25,7 +25,7 @@ if SERVER then
 	function GLib.AddCSLuaPackFile (path, pathId)
 		GLib.Loader.ServerPackFileSystem:Write (
 			path,
-			file.Read (path, pathId or "LUA")
+			GLib.Loader.Read (path, pathId or "LUA")
 		)
 	end
 	
@@ -113,7 +113,7 @@ end
 function GLib.EnumerateFolder (folder, pathId, callback, recursive)
 	if not callback then return end
 	
-	local files, folders = file.Find (folder .. "/*", pathId)
+	local files, folders = GLib.Loader.Find (folder .. "/*", pathId)
 	for _, fileName in pairs (files) do
 		callback (folder .. "/" .. fileName, pathId)
 	end
@@ -264,11 +264,11 @@ function GLib.IncludeDirectory (folder, recursive)
 	local paths = { "LUA", SERVER and "LSV" or "LCL" }
 	
 	for _, path in ipairs (paths) do
-		local files, folders = file.Find (folder .. "/*", path)
+		local files, folders = GLib.Loader.Find (folder .. "/*", path)
 		for _, file in ipairs (files) do
 			if file:sub (-4):lower () == ".lua" and
 			   not included [file:lower ()] then
-				include (folder .. "/" .. file)
+				GLib.Loader.Include (folder .. "/" .. file)
 				included [file:lower ()] = true
 			end
 		end

@@ -67,6 +67,9 @@ function GLib.Loader.File.Read (path, pathId)
 	end
 end
 
+GLib.Loader.Find = GLib.Loader.File.Find
+GLib.Loader.Read = GLib.Loader.File.Read
+
 local pathStack = { "" }
 function GLib.Loader.Include (path)
 	local callerPath = debug.getinfo (2).short_src

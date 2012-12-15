@@ -149,6 +149,8 @@ end
 function self:Deserialize (data, callback)
 	local inBuffer = GLib.StringInBuffer (data)
 	
+	local originalRevision = self.Revision
+	
 	local systemTableName = inBuffer:String ()
 	while systemTableName ~= "" do
 		self:AddSystemTable (systemTableName)
@@ -161,6 +163,16 @@ function self:Deserialize (data, callback)
 		while SysTime () - startTime < 0.005 do
 			local path = inBuffer:String ()
 			if path == "" then
+				-- Finished
+				
+				if originalRevision == 0 then
+					-- We started off blank, it's
+					-- okay to use the data as the
+					-- serialized pack file.
+					self.PackFile = data
+					self.PackFileRevision = self.Revision
+				end
+				
 				callback ()
 				return
 			end
