@@ -145,6 +145,11 @@ elseif CLIENT then
 		local channelName = umsg:ReadString ()
 		GLib.Net.OpenChannels [channelName] = true
 		
+		if not GLib.Net.ChannelHandlers [channelName] then
+			-- Suppress unhandled usermessage warnings
+			usermessage.Hook (channelName, GLib.NullCallback)
+		end
+		
 		if GLib.Net.ChannelQueues [channelName] then
 			for _, packet in ipairs (GLib.Net.ChannelQueues [channelName]) do
 				xpcall (GLib.Net.DispatchPacket,
