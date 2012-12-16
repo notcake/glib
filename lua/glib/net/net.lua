@@ -145,7 +145,7 @@ elseif CLIENT then
 		local channelName = umsg:ReadString ()
 		GLib.Net.OpenChannels [channelName] = true
 		
-		if not GLib.Net.ChannelHandlers [channelName] then
+		if not usermessage.GetTable () [channelName] then
 			-- Suppress unhandled usermessage warnings
 			usermessage.Hook (channelName, GLib.NullCallback)
 		end
