@@ -58,21 +58,28 @@ end
 function GLib.Loader.File.Read (path, pathId)
 	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Read (path, pathId) end
 	
+	local contents = nil
+	local compiled = nil
 	if GLib.Loader.ShouldPackOverrideLocalFiles () then
-		local contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
-		if not contents then
-			return file.Read (path, pathId)
-		end
-		return contents, compiled
-	else
-		local contents = file.Read (path, pathId)
-		if contents then
-			return contents, function ()
+		contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
+		if not contents and file.Exists (path, pathId) then
+			contents = file.Read (path, pathId)
+			compiled = function ()
 				include (path)
 			end
 		end
-		return GLib.Loader.ServerPackFileSystem:Read (path)
+	else
+		if file.Exists (path, pathId) then
+			contents = file.Read (path, pathId)
+			compiled = function ()
+				include (path)
+			end
+		end
+		if not contents and not compiled then
+			contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
+		end
 	end
+	return contents, compiled
 end
 
 GLib.Loader.Exists = GLib.Loader.File.Find
@@ -93,19 +100,17 @@ function GLib.Loader.Include (path)
 	
 	local fullPath = pathStack [#pathStack] .. path
 	local code, compiled = GLib.Loader.File.Read (pathStack [#pathStack] .. path, "LUA")
-	if not code then
+	if not code and not compiled then
 		fullPath = callerDirectory .. path
 		code, compiled = GLib.Loader.File.Read (callerDirectory .. path, "LUA")
 	end
-	if not code then
+	if not code and not compiled then
 		fullPath = path
 		code, compiled = GLib.Loader.File.Read (path, "LUA")
 	end
-	if not code then
+	if not code and not compiled then
 		ErrorNoHalt ("GLib.Loader.Include : " .. path .. ": File not found (Path was " .. pathStack [#pathStack] .. ", caller path was " .. callerDirectory .. ").\n")
-	end
-	
-	if code then
+	else
 		compiled = compiled or GLib.Loader.CompileString (code, fullPath, false)
 		if type (compiled) == "function" then
 			pathStack [#pathStack + 1] = fullPath:sub (1, fullPath:find ("/[^/]*$"))
