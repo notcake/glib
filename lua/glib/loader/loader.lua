@@ -191,7 +191,11 @@ elseif CLIENT then
 			timer.Simple (0.001, RequestPack)
 		end
 		
-		RunConsoleCommand ("glib_request_pack")
+		timer.Simple (10,
+			function ()
+				RunConsoleCommand ("glib_request_pack")
+			end
+		)
 	end
 	RequestPack ()
 	
