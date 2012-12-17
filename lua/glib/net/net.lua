@@ -23,7 +23,7 @@ if SERVER then
 			GLib.Error ("GLib.Net.DispatchPacket: Destination " .. destinationId .. " not found.")
 			return
 		end
-		if packet:GetSize () + channelName:len () > 255 then
+		if packet:GetSize () + channelName:len () + 2 > 256 then
 			GLib.Net.NetDispatcher:Dispatch (ply, channelName, packet)
 		else
 			GLib.Net.UsermessageDispatcher:Dispatch (ply, channelName, packet)
