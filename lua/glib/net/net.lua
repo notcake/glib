@@ -166,9 +166,10 @@ elseif CLIENT then
 	
 	local function RequestChannelList ()
 		if not LocalPlayer or
-			not LocalPlayer () or
-			not LocalPlayer ():IsValid () then
-			timer.Simple (0.001, RequestChannelList)
+		   not LocalPlayer () or
+		   not LocalPlayer ():IsValid () then
+		   timer.Simple (0.001, RequestChannelList)
+			return
 		end
 		
 		RunConsoleCommand ("glib_request_channels")

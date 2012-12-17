@@ -186,9 +186,10 @@ if SERVER then
 elseif CLIENT then
 	local function RequestPack ()
 		if not LocalPlayer or
-			not LocalPlayer () or
-			not LocalPlayer ():IsValid () then
-			timer.Simple (0.001, RequestPack)
+		   not LocalPlayer () or
+		   not LocalPlayer ():IsValid () then
+		   timer.Simple (0.001, RequestPack)
+			return
 		end
 		
 		timer.Simple (10,
