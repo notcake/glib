@@ -203,25 +203,19 @@ if SERVER then
 		function (ply)
 			if not ply or not ply:IsValid () then return end
 			
-			GLib.Loader.Networker:StreamPack (ply:SteamID (), "cl", GLib.Loader.ServerPackFileSystem:GetPackFile (), "Server")
+			GLib.Loader.Networker:StreamPack (GLib.GetPlayerId (ply), "cl", GLib.Loader.ServerPackFileSystem:GetPackFile (), "Server")
 		end
 	)
 elseif CLIENT then
-	local function RequestPack ()
-		if not LocalPlayer or
-		   not LocalPlayer () or
-		   not LocalPlayer ():IsValid () then
-		   timer.Simple (0.001, RequestPack)
-			return
+	GLib.WaitForLocalPlayer (
+		function ()
+			timer.Simple (10,
+				function ()
+					RunConsoleCommand ("glib_request_pack")
+				end
+			)
 		end
-		
-		timer.Simple (10,
-			function ()
-				RunConsoleCommand ("glib_request_pack")
-			end
-		)
-	end
-	RequestPack ()
+	)
 	
 	concommand.Add ("glib_pack",
 		function (ply, _, args)

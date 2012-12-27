@@ -66,7 +66,7 @@ function GLib.Net.RegisterChannel (channelName, handler)
 		
 		net.Receive (channelName,
 			function (_, ply)
-				handler (ply:SteamID (), GLib.Net.NetInBuffer ())
+				handler (GLib.GetPlayerId (ply), GLib.Net.NetInBuffer ())
 			end
 		)
 	elseif CLIENT then
@@ -99,7 +99,7 @@ if SERVER then
 
 	GLib.Net.PlayerMonitor:AddEventListener ("PlayerDisconnected",
 		function (_, ply)
-			GLib.Net.ConCommandBuffers [ply:SteamID ()] = nil
+			GLib.Net.ConCommandBuffers [GLib.GetPlayerId (ply)] = nil
 		end
 	)
 	
@@ -116,7 +116,7 @@ if SERVER then
 	
 	concommand.Add ("glib_data",
 		function (ply, _, args)
-			local steamId = ply:SteamID ()
+			local steamId = GLib.GetPlayerId (ply)
 			if not args [1] then return end
 			
 			GLib.Net.ConCommandBuffers [steamId] = GLib.Net.ConCommandBuffers [steamId] or ""
@@ -164,15 +164,9 @@ elseif CLIENT then
 		end
 	end)
 	
-	local function RequestChannelList ()
-		if not LocalPlayer or
-		   not LocalPlayer () or
-		   not LocalPlayer ():IsValid () then
-		   timer.Simple (0.001, RequestChannelList)
-			return
+	GLib.WaitForLocalPlayer (
+		function ()
+			RunConsoleCommand ("glib_request_channels")
 		end
-		
-		RunConsoleCommand ("glib_request_channels")
-	end
-	RequestChannelList ()
+	)
 end

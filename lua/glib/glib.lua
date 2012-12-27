@@ -194,36 +194,9 @@ function GLib.FormatFileSize (size)
 	return tostring (math.floor (size * 100 + 0.5) / 100) .. " " .. sizeUnits [unitIndex]
 end
 
-if SERVER then
-	function GLib.GetLocalId ()
-		return "Server"
-	end
-elseif CLIENT then
-	if game.SinglePlayer () then
-		function GLib.GetLocalId ()
-			return "STEAM_0:0:0"
-		end
-	else
-		function GLib.GetLocalId ()
-			if not LocalPlayer or not LocalPlayer ().SteamID then
-				return "STEAM_0:0:0"
-			end
-			return LocalPlayer ():SteamID ()
-		end
-	end
-end
-
-function GLib.GetEveryoneId ()
-	return "Everyone"
-end
-
 function GLib.GetMetaTable (constructor)
 	local name, basetable = debug.getupvalue (constructor, 1)
 	return basetable
-end
-
-function GLib.GetServerId ()
-	return "Server"
 end
 
 function GLib.GetStackDepth ()
@@ -232,10 +205,6 @@ function GLib.GetStackDepth ()
 		i = i + 1
 	end
 	return i
-end
-
-function GLib.GetSystemId ()
-	return "System"
 end
 
 function GLib.Initialize (systemName, systemTable)
@@ -429,6 +398,22 @@ function GLib.UnloadSystem (systemTableName)
 	_G [systemTableName] = nil
 end
 
+if CLIENT then
+	function GLib.WaitForLocalPlayer (callback)
+		if not LocalPlayer or
+		   not LocalPlayer () or
+		   not LocalPlayer ():IsValid () then
+			timer.Simple (0.001,
+				function ()
+					GLib.WaitForLocalPlayer (callback)
+				end
+			)
+			return
+		end
+		callback ()
+	end
+end
+
 function GLib.WeakTable ()
 	local tbl = {}
 	setmetatable (tbl, { __mode = "kv" })
@@ -450,6 +435,7 @@ end
 include ("colors.lua")
 include ("string.lua")
 
+include ("userid.lua")
 include ("eventprovider.lua")
 include ("playermonitor.lua")
 include ("stringbuilder.lua")

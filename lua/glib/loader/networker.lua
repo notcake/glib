@@ -24,7 +24,7 @@ function self:ctor ()
 			local streamId = tostring (inBuffer:UInt32 ())
 			
 			if SERVER and ply then
-				streamId = ply:SteamID () .. streamId
+				streamId = GLib.GetPlayerId (ply) .. streamId
 			end
 			
 			local streamEntry = self.InboundStreams [streamId]

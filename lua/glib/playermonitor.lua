@@ -95,17 +95,7 @@ end
 function self:GetPlayerSteamId (ply)
 	if self.EntitiesToUserIds [ply] then return self.EntitiesToUserIds [ply] end
 
-	if not ply then return nil end
-	if not ply:IsValid () then return nil end
-	if type (ply.SteamID) ~= "function" then return nil end
-	
-	local steamId = ply:SteamID ()
-	
-	local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
-	if game.SinglePlayer () and isLocalPlayer then steamId = "STEAM_0:0:0" end
-	if steamId == "NULL" then steamId = "BOT" end
-	
-	return steamId
+	return GLib.GetPlayerId (ply)
 end
 
 function self:GetUserEntity (userId)
