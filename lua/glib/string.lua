@@ -5,13 +5,14 @@ function GLib.String.ConsoleEscape (str)
 		ErrorNoHalt ("GLib.String.ConsoleEscape: Expected string, got " .. type (str) .. " instead.\n")
 		return ""
 	end
-	return str
+	str = str
 		:gsub ("\\", "\\\\")
 		:gsub ("\r", "\\r")
 		:gsub ("\n", "\\n")
 		:gsub ("\t", "\\t")
 		:gsub ("\"", "\\q")
 		:gsub ("\'", "\\s")
+	return str
 end
 
 function GLib.String.Escape (str)
@@ -19,13 +20,14 @@ function GLib.String.Escape (str)
 		ErrorNoHalt ("GLib.String.Escape: Expected string, got " .. type (str) .. " instead.\n")
 		return ""
 	end
-	return str
+	str = str
 		:gsub ("\\", "\\\\")
 		:gsub ("\r", "\\r")
 		:gsub ("\n", "\\n")
 		:gsub ("\t", "\\t")
 		:gsub ("\"", "\\\"")
 		:gsub ("\'", "\\\'")
+	return str
 end
 
 function GLib.String.EscapeWhitespace (str)
@@ -33,8 +35,9 @@ function GLib.String.EscapeWhitespace (str)
 		ErrorNoHalt ("GLib.String.EscapeNewlines: Expected string, got " .. type (str) .. " instead.\n")
 		return ""
 	end
-	return str
+	str = str
 		:gsub ("\r", "\\r")
 		:gsub ("\n", "\\n")
 		:gsub ("\t", "\\t")
+	return str
 end
