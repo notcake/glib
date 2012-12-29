@@ -35,11 +35,11 @@ function self:ctor (systemName)
 				self.QueuedPlayers [ply] = nil
 				
 				local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
-				self.Players [steamId] =
-				{
-					Player = ply,
-					Name = ply:Name ()
-				}
+				self.Players [steamId] = self.Players [steamId] or {}
+				self.Players [steamId].Players = self.Players [steamId].Players or GLib.WeakKeyTable ()
+				self.Players [steamId].Players [ply] = true
+				self.Players [steamId].Name    = ply:Name ()
+				
 				self.EntitiesToUserIds [ply] = steamId
 				self:DispatchEvent ("PlayerConnected", ply, steamId, isLocalPlayer)
 				if isLocalPlayer then
@@ -54,7 +54,12 @@ function self:ctor (systemName)
 		if not steamId then return end
 		
 		if SERVER then
-			self.Players [steamId] = nil
+			if self.Players [steamId] then
+				self.Players [steamId].Players [ply] = nil
+				if not self:GetUserEntity (steamId) then
+					self.Players [steamId] = nil
+				end
+			end
 			self.EntitiesToUserIds [ply] = nil
 		end
 		self:DispatchEvent ("PlayerDisconnected", ply, steamId)
@@ -88,7 +93,11 @@ function self:GetPlayerEnumerator ()
 	local next, tbl, key = pairs (self.Players)
 	return function ()
 		key = next (tbl, key)
-		return key, (key and tbl [key].Player:IsValid () and tbl [key].Player or nil)
+		
+		local ply = nil
+		ply = key and next (tbl [key].Players)
+		ply = ply and ply:IsValid () and ply or nil
+		return key, ply
 	end
 end
 
@@ -102,7 +111,25 @@ function self:GetUserEntity (userId)
 	local userEntry = self.Players [userId]
 	if not userEntry then return nil end
 	
-	return userEntry.Player:IsValid () and userEntry.Player or nil
+	for ply, _ in pairs (userEntry.Players) do
+		if ply:IsValid () then
+			return ply
+		end
+	end
+	return nil
+end
+
+function self:GetUserEntities (userId)
+	local userEntry = self.Players [userId]
+	if not userEntry then return nil end
+	
+	local userEntities = {}
+	for ply, _ in pairs (userEntry.Players) do
+		if ply:IsValid () then
+			userEntities [#userEntities + 1] = ply
+		end
+	end
+	return userEntities
 end
 
 --[[
@@ -122,8 +149,11 @@ end
 function self:GetUserName (userId)
 	local userEntry = self.Players [userId]
 	if not userEntry then return userId end
-	if userEntry.Player:IsValid () then
-		return userEntry.Player:Name ()
+	
+	for ply, _ in pairs (userEntry.Players) do
+		if ply:IsValid () then
+			return ply:Name ()
+		end
 	end
 	
 	return userEntry.Name
