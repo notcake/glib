@@ -142,6 +142,7 @@ end
 
 function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 	local shouldRun = executionTarget == "sh"
+	shouldRun = shouldRun or executionTarget == "m"
 	if SERVER and executionTarget == "sv" then shouldRun = true end
 	if CLIENT and executionTarget == "cl" then shouldRun = true end
 	
@@ -196,6 +197,31 @@ function GLib.Loader.ShouldPackOverrideLocalFiles ()
 	if SERVER then return true end
 	if not GetConVar ("sv_allowcslua"):GetBool () then return true end
 	return not GetConVar ("glib_use_local_files"):GetBool ()
+end
+
+-- HTTP Pack Loading
+local executionTargets = SERVER and { "sv", "sh", "cl" } or { "m" }
+for _, executionTarget in ipairs (executionTargets) do
+	concommand.Add ("glib_download_pack_" .. executionTarget,
+		function (ply, _, args)
+			if not ply or not ply:IsValid () then return end
+			if not ply:IsSuperAdmin () then return end
+			if #args == 0 then return end
+			args = table.concat (args)
+			if args == "" then return end
+			
+			print ("glib_download_pack_" .. executionTarget .. ": Fetching " .. args .. ".")
+			http.Fetch (args,
+				function (data, dataSize, headers, httpCode)
+					print ("glib_download_pack_" .. executionTarget .. ": Received " .. args .. " (" .. GLib.FormatFileSize (dataSize) .. ")")
+					GLib.Loader.RunPackFile (executionTarget, data, args)
+				end,
+				function (err)
+					print ("glib_download_pack_" .. executionTarget .. ": HTTP fetch failed (" .. tostring (err) .. ")")
+				end
+			)
+		end
+	)
 end
 
 if SERVER then
@@ -255,8 +281,11 @@ elseif CLIENT then
 				end
 			end
 			
+			-- Write pack file
 			file.CreateDir ("glibpack")
-			file.Write ("glibpack/" .. packFileName .. "_pack.txt", packFileSystem:GetPackFile ())
+			local f = file.Open ("glibpack/" .. packFileName .. "_pack.txt", "wb", "DATA")
+			f:Write (packFileSystem:GetPackFile ())
+			f:Close ()
 		end,
 		function (command, arg)
 			if arg:sub (1, 1) == " " then arg = arg:sub (2) end
@@ -283,11 +312,17 @@ elseif CLIENT then
 				end
 				
 				local packFileName = table.concat (args, " ")
-				local packFile = file.Read ("data/glibpack/" .. packFileName, "GAME")
-				if not packFile then
+				
+				-- Read pack file
+				local packFile = nil
+				local f = file.Open ("data/glibpack/" .. packFileName, "rb", "GAME")
+				if not f then
 					print ("glib_upload_pack_" .. executionTarget .. " : " .. "data/glibpack/" .. packFileName .. " not found!")
 					return
 				end
+				
+				packFile = f:Read (f:Size ())
+				f:Close ()
 				
 				GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, packFile, packFileName)
 			end,
