@@ -36,8 +36,8 @@ function self:ctor (systemName)
 				
 				local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
 				self.Players [steamId] = self.Players [steamId] or {}
-				self.Players [steamId].Players = self.Players [steamId].Players or GLib.WeakKeyTable ()
-				self.Players [steamId].Players [ply] = true
+				self.Players [steamId].Players = self.Players [steamId].Players or GLib.WeakTable ()
+				self.Players [steamId].Players [ply:EntIndex ()] = ply
 				self.Players [steamId].Name    = ply:Name ()
 				
 				self.EntitiesToUserIds [ply] = steamId
@@ -55,7 +55,7 @@ function self:ctor (systemName)
 		
 		if SERVER then
 			if self.Players [steamId] then
-				self.Players [steamId].Players [ply] = nil
+				self.Players [steamId].Players [ply:EntIndex ()] = nil
 				if not self:GetUserEntity (steamId) then
 					self.Players [steamId] = nil
 				end
@@ -93,11 +93,9 @@ function self:GetPlayerEnumerator ()
 	local next, tbl, key = pairs (self.Players)
 	return function ()
 		key = next (tbl, key)
+		if not key then return nil, nil end
 		
-		local ply = nil
-		ply = key and next (tbl [key].Players)
-		ply = ply and ply:IsValid () and ply or nil
-		return key, ply
+		return key, self:GetUserEntity (key)
 	end
 end
 
@@ -111,7 +109,7 @@ function self:GetUserEntity (userId)
 	local userEntry = self.Players [userId]
 	if not userEntry then return nil end
 	
-	for ply, _ in pairs (userEntry.Players) do
+	for _, ply in pairs (userEntry.Players) do
 		if ply:IsValid () then
 			return ply
 		end
@@ -124,7 +122,7 @@ function self:GetUserEntities (userId)
 	if not userEntry then return nil end
 	
 	local userEntities = {}
-	for ply, _ in pairs (userEntry.Players) do
+	for _, ply in pairs (userEntry.Players) do
 		if ply:IsValid () then
 			userEntities [#userEntities + 1] = ply
 		end
@@ -150,7 +148,7 @@ function self:GetUserName (userId)
 	local userEntry = self.Players [userId]
 	if not userEntry then return userId end
 	
-	for ply, _ in pairs (userEntry.Players) do
+	for _, ply in pairs (userEntry.Players) do
 		if ply:IsValid () then
 			return ply:Name ()
 		end
