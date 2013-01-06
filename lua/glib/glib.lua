@@ -212,13 +212,13 @@ function GLib.Initialize (systemName, systemTable)
 		GLib.Error ("GLib.Initialize : Called incorrectly.")
 	end
 	
+	setmetatable (systemTable, getmetatable (systemTable) or {})
+	getmetatable (systemTable).__index = GLib
+	
 	for k, v in pairs (GLib) do
-		if type (v) == "function" then
-			systemTable [k] = v
-		elseif type (v) == "table" then
+		if type (v) == "table" then
 			systemTable [k] = {}
-			systemTable [k].__index = v
-			setmetatable (systemTable [k], systemTable [k])
+			setmetatable (systemTable [k], { __index = v })
 		end
 	end
 	
