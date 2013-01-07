@@ -110,13 +110,17 @@ function GLib.EnumerateDelayed (tbl, callback, finishCallback)
 	local next, tbl, key = pairs (tbl)
 	local value = nil
 	local function timerCallback ()
-		key, value = next (tbl, key)
-		if not key and finishCallback then finishCallback () return end
-		callback (key, value)
-		if not key then return end
-		timer.Simple (0, timerCallback)
+		local startTime = SysTime ()
+		while SysTime () - startTime < 0.001 do
+			key, value = next (tbl, key)
+			if not key and finishCallback then finishCallback () return end
+			callback (key, value)
+			if not key then return end
+		end
+		
+		timer.Simple (0.001, timerCallback)
 	end
-	timer.Simple (0, timerCallback)
+	timerCallback ()
 end
 
 function GLib.EnumerateFolder (folder, pathId, callback, recursive)
