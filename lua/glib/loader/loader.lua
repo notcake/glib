@@ -57,28 +57,18 @@ end
 
 function GLib.Loader.File.Read (path, pathId)
 	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Read (path, pathId) end
+	local otherPathId = pathId == "LUA" and "LCL" or "LUA"
+	local canRunLocal = pathId == "LCL" or GetConVar ("sv_allowcslua"):GetBool ()
 	
 	-- pathId is LUA or LCL, assume that we're trying to include () the file.
 	
 	local contents = nil
 	local compiled = nil
 	if GLib.Loader.ShouldPackOverrideLocalFiles () then
+		-- Check pack file
 		contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
-		if not contents and file.Exists (path, pathId) then
-			contents = file.Read (path, pathId)
-			compiled = function ()
-				include (path)
-			end
-		end
 		
-		-- Check LCL path
-		if not contents and GetConVar ("sv_allowcslua"):GetBool () and file.Exists (path, "LCL") then
-			contents = file.Read (path, "LCL")
-			compiled = function ()
-				include (path)
-			end
-		end
-	else
+		-- Check given path
 		if file.Exists (path, pathId) then
 			contents = file.Read (path, pathId)
 			compiled = function ()
@@ -86,15 +76,34 @@ function GLib.Loader.File.Read (path, pathId)
 			end
 		end
 		
+		-- Check other path
+		local canRunOtherPath = otherPathId == "LUA" or canRunLocal
+		if canRunOtherPath and file.Exists (path, otherPathId) then
+			contents = file.Read (path, otherPathId)
+			compiled = function ()
+				include (path)
+			end
+		end
+	else
 		-- Check LCL path
-		if not contents and GetConVar ("sv_allowcslua"):GetBool () and file.Exists (path, "LCL") then
+		if canRunLocal and file.Exists (path, "LCL") then
 			contents = file.Read (path, "LCL")
 			compiled = function ()
 				include (path)
 			end
 		end
+		
+		-- Check pack file
 		if not contents and not compiled then
 			contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
+		end
+		
+		-- Check LUA path
+		if file.Exists (path, "LUA") then
+			contents = file.Read (path, "LUA")
+			compiled = function ()
+				include (path)
+			end
 		end
 	end
 	return contents, compiled
