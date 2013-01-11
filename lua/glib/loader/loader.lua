@@ -100,7 +100,7 @@ function GLib.Loader.File.Read (path, pathId)
 	return contents, compiled
 end
 
-GLib.Loader.Exists = GLib.Loader.File.Find
+GLib.Loader.Exists = GLib.Loader.File.Exists
 GLib.Loader.Find   = GLib.Loader.File.Find
 GLib.Loader.Read   = GLib.Loader.File.Read
 
