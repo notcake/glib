@@ -69,7 +69,8 @@ function GLib.Loader.File.Read (path, pathId)
 		contents, compiled = GLib.Loader.ServerPackFileSystem:Read (path)
 		
 		-- Check given path
-		if file.Exists (path, pathId) then
+		if not contents and not compiled and
+		   file.Exists (path, pathId) then
 			contents = file.Read (path, pathId)
 			compiled = function ()
 				include (path)
@@ -78,7 +79,8 @@ function GLib.Loader.File.Read (path, pathId)
 		
 		-- Check other path
 		local canRunOtherPath = otherPathId == "LUA" or canRunLocal
-		if canRunOtherPath and file.Exists (path, otherPathId) then
+		if not contents and not compiled and
+		   canRunOtherPath and file.Exists (path, otherPathId) then
 			contents = file.Read (path, otherPathId)
 			compiled = function ()
 				include (path)
@@ -99,7 +101,8 @@ function GLib.Loader.File.Read (path, pathId)
 		end
 		
 		-- Check LUA path
-		if file.Exists (path, "LUA") then
+		if not contents and not compiled and
+		   file.Exists (path, "LUA") then
 			contents = file.Read (path, "LUA")
 			compiled = function ()
 				include (path)
