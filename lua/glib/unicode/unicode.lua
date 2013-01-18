@@ -3,6 +3,7 @@ GLib.Unicode.Characters = {}
 local characterNames = {}
 local lowercaseMap   = {}
 local uppercaseMap   = {}
+local titlecaseMap   = {}
 
 function GLib.Unicode.GetCharacterCategory (...)
 	local codePoint = GLib.UTF8.Byte (...)
@@ -230,6 +231,16 @@ function GLib.Unicode.ToLowerCodePoint (codePoint)
 	return lowercaseMap [char] or char
 end
 
+function GLib.Unicode.ToTitle (...)
+	local char = GLib.UTF8.NextChar (...)
+	return titlecaseMap [char] or char
+end
+
+function GLib.Unicode.ToTitleCodePoint (codePoint)
+	local char = GLib.UTF8.Char (codePoint)
+	return titlecaseMap [char] or char
+end
+
 function GLib.Unicode.ToUpper (...)
 	local char = GLib.UTF8.NextChar (...)
 	return uppercaseMap [char] or char
@@ -276,12 +287,20 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 			
 			-- Uppercase
 			if bits [13] ~= "" then
+				if bits [13]:find (" ") then print (bits [13]) end
 				uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
 			end
 			
 			-- Lowercase
 			if bits [14] ~= "" then
+				if bits [14]:find (" ") then print (bits [14]) end
 				lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
+			end
+			
+			-- Titlecase
+			if bits [15] ~= "" then
+				if bits [15]:find (" ") then print (bits [15]) end
+				titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
 			end
 			
 			i = i + 1
