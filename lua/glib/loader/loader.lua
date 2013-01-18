@@ -314,7 +314,7 @@ elseif CLIENT then
 		end
 	)
 	
-	local executionTargets = { "cl", "sh", "sv" }
+	local executionTargets = { "cl", "sh", "sv", "m" }
 	for _, executionTarget in ipairs (executionTargets) do
 		concommand.Add ("glib_upload_pack_" .. executionTarget,
 			function (_, _, args)
@@ -336,7 +336,15 @@ elseif CLIENT then
 				packFile = f:Read (f:Size ())
 				f:Close ()
 				
-				GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, packFile, packFileName)
+				if executionTarget == "m" then
+					if GetConVar ("sv_allowcslua"):GetBool () then
+						GLib.Loader.RunPackFile ("m", packFile, packFileName)
+					else
+						print ("glib_upload_pack_m : sv_allowcslua is 0!")
+					end
+				else
+					GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, packFile, packFileName)
+				end
 			end,
 			function (command, arg)
 				if arg:sub (1, 1) == " " then arg = arg:sub (2) end
