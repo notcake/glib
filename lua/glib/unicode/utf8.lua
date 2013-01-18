@@ -79,6 +79,14 @@ function GLib.UTF8.ContainsSequences (str, offset)
 	return string_find (str, "[\192-\255]", offset) and true or false
 end
 
+function GLib.UTF8.Decompose (str)
+	local decomposed = GLib.StringBuilder ()
+	for c in GLib.UTF8.Iterator (str) do
+		decomposed = decomposed .. GLib.Unicode.DecomposeCharacter (c)
+	end
+	return decomposed:ToString ()
+end
+
 function GLib.UTF8.GetGraphemeStart (str, offset)
 	return GLib.UTF8.GetSequenceStart (str, offset)
 end
@@ -134,6 +142,97 @@ end
 function GLib.UTF8.Length (str)
 	local _, length = string_gsub (str, "[^\128-\191]", "")
 	return length
+end
+
+local function MatchesTransliterationCharacter (character, substring, offset)
+	local substringCharacter = GLib.UTF8.NextChar (substring, offset)
+	
+	if GLib.Unicode.ToLower (character) == GLib.Unicode.ToLower (substring, offset) then
+		-- Exact match found
+		return #GLib.UTF8.NextChar (substring, offset)
+	end
+	
+	-- Some types of characters should not match any ASCII characters
+	if GLib.Unicode.IsCombiningCharacter (character) then return 0 end
+	if GLib.Unicode.IsControl (character) then return 0 end
+	if GLib.Unicode.IsSeparator (character) then return 0 end
+	if GLib.Unicode.IsSymbol (character) then
+		if string.sub (substring, offset, offset) == " " then return 1 end
+		return 0
+	end
+	
+	local transliterations = GLib.Unicode.GetTransliterationTable () [character]
+	if transliterations then
+		-- Try each possible transliteration
+		for _, transliteration in ipairs (transliterations) do
+			local totalMatchLength = 0
+			local fail = false
+			
+			-- Attempt to match each character of the transliteration against the substring
+			for c in GLib.UTF8.Iterator (transliteration) do
+				-- Check if the end of the substring has been reached (success)
+				if offset + totalMatchLength > #substring then break end
+				
+				local matchLength = MatchesTransliterationCharacter (c, substring, offset + totalMatchLength)
+				
+				if matchLength then
+					-- Character match succeeded, advance
+					totalMatchLength = totalMatchLength + 1
+				else
+					-- Character match failed
+					fail = true
+					break
+				end
+			end
+			
+			if not fail then
+				return totalMatchLength
+			end
+		end
+	end
+	
+	-- Absorb unmatchable non-ASCII characters
+	if GLib.UTF8.Byte (character) > 128 then
+		if string.sub (substring, offset, offset) == " " then return 1 end
+		return 0
+	end
+	
+	return nil
+end
+
+function GLib.UTF8.MatchesTransliteration (str, substring)
+	str = GLib.UTF8.Decompose (str)
+	substring = GLib.UTF8.Decompose (substring)
+	
+	-- Try to start matching the substring against each character of the string
+	for _, startOffset in GLib.UTF8.Iterator (str) do
+		local stringIterator = GLib.UTF8.Iterator (str, startOffset)
+		local substringOffset = 1
+		local stringCharacter = stringIterator ()
+		
+		-- Advance through the string and substring whilst matches characters
+		while substringOffset <= #substring do
+			-- Check if the end of the string has been reached
+			if not stringCharacter then break end
+			
+			-- Attempt to match the character(s)
+			local matchLength = MatchesTransliterationCharacter (stringCharacter, substring, substringOffset)
+			
+			-- Check if the match failed
+			if not matchLength then break end
+			
+			-- Advance
+			substringOffset = substringOffset + matchLength
+			stringCharacter = stringIterator ()
+		end
+		
+		if substringOffset > #substring then
+			-- Match succeeded
+			return true, startOffset
+		end
+	end
+	
+	return false, nil
 end
 
 function GLib.UTF8.NextChar (str, offset)

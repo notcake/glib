@@ -1,9 +1,53 @@
-GLib.Unicode = {}
-GLib.Unicode.Characters = {}
-local characterNames = {}
-local lowercaseMap   = {}
-local uppercaseMap   = {}
-local titlecaseMap   = {}
+GLib.Unicode = GLib.Unicode or {}
+GLib.Unicode.Characters  = {}
+local characterNames     = {}
+local decompositionMap   = {}
+local lowercaseMap       = {}
+local uppercaseMap       = {}
+local titlecaseMap       = {}
+local transliterationMap = {}
+
+function GLib.Unicode.AddTransliteration (character, transliteration)
+	if not transliterationMap [character] then
+		transliterationMap [character] = {}
+	end
+	table.insert (transliterationMap [character], transliteration)
+end
+
+function GLib.Unicode.CharacterHasDecomposition (...)
+	return decompositionMap [GLib.UTF8.NextChar (...)] ~= nil
+end
+
+function GLib.Unicode.CharacterHasTransliteration (...)
+	return transliterationMap [GLib.UTF8.NextChar (...)] ~= nil
+end
+
+function GLib.Unicode.CodePointHasDecomposition (codePoint)
+	return decompositionMap [GLib.UTF8.Char (codePoint)] ~= nil
+end
+
+function GLib.Unicode.CodePointHasTransliteration (codePoint)
+	return transliterationMap [GLib.UTF8.Char (codePoint)] ~= nil
+end
+
+function GLib.Unicode.DecomposeCharacter (...)
+	local char = GLib.UTF8.NextChar (...)
+	local decomposed = decompositionMap [char]
+	if not decomposed then return char end
+	
+	local recursiveDecomposition = ""
+	for c in GLib.UTF8.Iterator (decomposed) do
+		if #recursiveDecomposition > 100 then
+			GLib.Error ("GLib.Unicode.DecomposeCharacter : Decomposition bug! (" .. decomposed .. ")")
+		end
+		recursiveDecomposition = recursiveDecomposition .. GLib.Unicode.DecomposeCharacter (c)
+	end
+	return recursiveDecomposition
+end
+
+function GLib.Unicode.DecomposeCodePoint (codePoint)
+	return GLib.Unicode.DecomposeCharacter (GLib.UTF8.Char (codePoint))
+end
 
 function GLib.Unicode.GetCharacterCategory (...)
 	local codePoint = GLib.UTF8.Byte (...)
@@ -51,6 +95,10 @@ function GLib.Unicode.GetCodePointName (codePoint)
 	else
 		return string.format ("CHARACTER 0x%06x", codePoint)
 	end
+end
+
+function GLib.Unicode.GetTransliterationTable ()
+	return transliterationMap
 end
 
 function GLib.Unicode.IsCharacterNamed (...)
@@ -149,6 +197,20 @@ end
 
 function GLib.Unicode.IsNumberCodePoint (codePoint)
 	return numberCategories [GLib.Unicode.GetCodePointCategory (codePoint)] or false
+end
+
+local punctuationCategories =
+{
+	[GLib.UnicodeCategory.ConnectorPunctuation    ] = true,
+	[GLib.UnicodeCategory.DashPunctuation         ] = true,
+	[GLib.UnicodeCategory.OpenPunctuation         ] = true,
+	[GLib.UnicodeCategory.ClosePunctuation        ] = true,
+	[GLib.UnicodeCategory.InititalQuotePunctuation] = true,
+	[GLib.UnicodeCategory.FinalQuotePunctuation   ] = true,
+	[GLib.UnicodeCategory.OtherPunctuation        ] = true
+}
+function GLib.Unicode.IsPunctuation (...)
+	return punctuationCategories [GLib.Unicode.GetCharacterCategory (...)] or false
 end
 
 local separatorCategories =
@@ -284,6 +346,19 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 			lastCodePoint = codePoint
 			
 			characterNames [codePoint] = bits [2]
+			
+			-- Decomposition
+			if bits [6] ~= "" then
+				local decompositionBits = string.Split (bits [6], " ")
+				local decomposition = ""
+				for i = 1, #decompositionBits do
+					local codePoint = tonumber ("0x" .. decompositionBits [i])
+					if codePoint then
+						decomposition = decomposition .. GLib.UTF8.Char (codePoint)
+					end
+				end
+				decompositionMap [GLib.UTF8.Char (codePoint)] = decomposition
+			end
 			
 			-- Uppercase
 			if bits [13] ~= "" then
