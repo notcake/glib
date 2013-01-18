@@ -201,13 +201,13 @@ end
 
 local punctuationCategories =
 {
-	[GLib.UnicodeCategory.ConnectorPunctuation    ] = true,
-	[GLib.UnicodeCategory.DashPunctuation         ] = true,
-	[GLib.UnicodeCategory.OpenPunctuation         ] = true,
-	[GLib.UnicodeCategory.ClosePunctuation        ] = true,
-	[GLib.UnicodeCategory.InititalQuotePunctuation] = true,
-	[GLib.UnicodeCategory.FinalQuotePunctuation   ] = true,
-	[GLib.UnicodeCategory.OtherPunctuation        ] = true
+	[GLib.UnicodeCategory.ConnectorPunctuation   ] = true,
+	[GLib.UnicodeCategory.DashPunctuation        ] = true,
+	[GLib.UnicodeCategory.OpenPunctuation        ] = true,
+	[GLib.UnicodeCategory.ClosePunctuation       ] = true,
+	[GLib.UnicodeCategory.InitialQuotePunctuation] = true,
+	[GLib.UnicodeCategory.FinalQuotePunctuation  ] = true,
+	[GLib.UnicodeCategory.OtherPunctuation       ] = true
 }
 function GLib.Unicode.IsPunctuation (...)
 	return punctuationCategories [GLib.Unicode.GetCharacterCategory (...)] or false
