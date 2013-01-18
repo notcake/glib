@@ -1,10 +1,24 @@
 GLib.Unicode = {}
 GLib.Unicode.Characters = {}
 local characterNames = {}
+local lowercaseMap   = {}
+local uppercaseMap   = {}
 
 function GLib.Unicode.GetCharacterCategory (...)
 	local codePoint = GLib.UTF8.Byte (...)
 	return GLib.Unicode.GetCodePointCategory (codePoint)
+end
+
+function GLib.Unicode.GetCharacterName (...)
+	local codePoint = GLib.UTF8.Byte (...)
+	if characterNames [codePoint] then
+		return characterNames [codePoint]
+	end
+	if codePoint < 0x010000 then
+		return string.format ("CHARACTER 0x%04x", codePoint)
+	else
+		return string.format ("CHARACTER 0x%06x", codePoint)
+	end
 end
 
 function GLib.Unicode.GetCharacterName (...)
@@ -206,6 +220,27 @@ function GLib.Unicode.IsWhitespaceCodePoint (codePoint)
 	return whitespaceCodePoints [codePoint] or whitespaceCategories [GLib.Unicode.GetCodePointCategory (codePoint)] or false
 end
 
+function GLib.Unicode.ToLower (...)
+	local char = GLib.UTF8.NextChar (...)
+	return lowercaseMap [char] or char
+end
+
+function GLib.Unicode.ToLowerCodePoint (codePoint)
+	local char = GLib.UTF8.Char (codePoint)
+	return lowercaseMap [char] or char
+end
+
+function GLib.Unicode.ToUpper (...)
+	local char = GLib.UTF8.NextChar (...)
+	return uppercaseMap [char] or char
+end
+
+function GLib.Unicode.ToUpperCodePoint (codePoint)
+	local char = GLib.UTF8.Char (codePoint)
+	return uppercaseMap [char] or char
+end
+
+-- unicodedata.txt parser
 GLib.Unicode.DataLines = nil
 GLib.Unicode.StartTime = SysTime ()
 
@@ -216,12 +251,38 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 	function ()
 		local startTime = SysTime ()
 		while SysTime () - startTime < 0.005 do
+			--  1. Code point
+			--  2. Character name
+			--  3. Generate category
+			--  4. Canonical combining classes
+			--  5. Bidirectional category
+			--  6. Character decomposition mapping
+			--  7. Decimal digit value
+			--  8. Digit value
+			--  9. Numeric value
+			-- 10. Mirrored
+			-- 11. Unicode 1.0 name
+			-- 12. ISO 10646 comment field
+			-- 13. Uppercase mapping
+			-- 14. Lowercase mapping
+			-- 15. Titlecase mapping
+			
 			local bits = string.Split (GLib.Unicode.DataLines [i], ";")
 			local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
 			
 			lastCodePoint = codePoint
 			
 			characterNames [codePoint] = bits [2]
+			
+			-- Uppercase
+			if bits [13] ~= "" then
+				uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
+			end
+			
+			-- Lowercase
+			if bits [14] ~= "" then
+				lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
+			end
 			
 			i = i + 1
 			if i > #GLib.Unicode.DataLines then

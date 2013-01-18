@@ -4,10 +4,12 @@ local math_floor    = math.floor
 local string_byte   = string.byte
 local string_char   = string.char
 local string_len    = string.len
+local string_lower  = string.lower
 local string_find   = string.find
 local string_format = string.format
 local string_gsub   = string.gsub
 local string_sub    = string.sub
+local string_upper  = string.upper
 
 function GLib.UTF8.Byte (char, offset)
 	if char == "" then return -1 end
@@ -305,6 +307,8 @@ function GLib.UTF8.SubOffset (str, offset, startCharacter, endCharacter)
 end
 
 function GLib.UTF8.ToLatin1 (str)
+	if not GLib.UTF8.ContainsSequences (str) then return str end
+	
 	local latin1 = GLib.StringBuilder ()
 	local codePoint
 	for c in GLib.UTF8.Iterator (str) do
@@ -316,6 +320,26 @@ function GLib.UTF8.ToLatin1 (str)
 		end
 	end
 	return latin1:ToString ()
+end
+
+function GLib.UTF8.ToLower (str)
+	if not GLib.UTF8.ContainsSequences (str) then return string_lower (str) end
+	
+	local lower = GLib.StringBuilder ()
+	for c in GLib.UTF8.Iterator (str) do
+		lower = lower .. GLib.Unicode.ToLower (c)
+	end
+	return lower:ToString ()
+end
+
+function GLib.UTF8.ToUpper (str)
+	if not GLib.UTF8.ContainsSequences (str) then return string_upper (str) end
+	
+	local upper = GLib.StringBuilder ()
+	for c in GLib.UTF8.Iterator (str) do
+		upper = upper .. GLib.Unicode.ToUpper (c)
+	end
+	return upper:ToString ()
 end
 
 function GLib.UTF8.WordIterator (str, offset)
