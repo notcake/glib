@@ -21,7 +21,7 @@ function GLib.UTF8.Byte (char, offset)
 		if byte >= 240 then
 			-- 4 byte sequence
 			length = 4
-			if string_len (char) < 4 then return -1, length end
+			if #char < 4 then return -1, length end
 			byte = (byte % 8) * 262144
 			byte = byte + (string_byte (char, offset + 1) % 64) * 4096
 			byte = byte + (string_byte (char, offset + 2) % 64) * 64
@@ -29,14 +29,14 @@ function GLib.UTF8.Byte (char, offset)
 		elseif byte >= 224 then
 			-- 3 byte sequence
 			length = 3
-			if string_len (char) < 3 then return -1, length end
+			if #char < 3 then return -1, length end
 			byte = (byte % 16) * 4096
 			byte = byte + (string_byte (char, offset + 1) % 64) * 64
 			byte = byte + (string_byte (char, offset + 2) % 64)
 		elseif byte >= 192 then
 			-- 2 byte sequence
 			length = 2
-			if string_len (char) < 2 then return -1, length end
+			if #char < 2 then return -1, length end
 			byte = (byte % 32) * 64
 			byte = byte + (string_byte (char, offset + 1) % 64)
 		else
@@ -70,7 +70,7 @@ function GLib.UTF8.CharacterToOffset (str, char)
 	for i = 1, char - 1 do
 		c = iterator ()
 		if not c then break end
-		offset = offset + string_len (c)
+		offset = offset + #c
 	end
 	return offset
 end
@@ -80,11 +80,11 @@ function GLib.UTF8.ContainsSequences (str, offset)
 end
 
 function GLib.UTF8.Decompose (str)
-	local decomposed = GLib.StringBuilder ()
+	local t = { "" }
 	for c in GLib.UTF8.Iterator (str) do
-		decomposed = decomposed .. GLib.Unicode.DecomposeCharacter (c)
+		t [#t + 1] = GLib.Unicode.DecomposeCharacter (c)
 	end
-	return decomposed:ToString ()
+	return table.concat (t)
 end
 
 function GLib.UTF8.GetGraphemeStart (str, offset)
@@ -93,7 +93,7 @@ end
 
 function GLib.UTF8.GetSequenceStart (str, offset)
 	if offset <= 0 then return 1 end
-	if offset > string_len (str) then offset = string_len (str) end
+	if offset > #str then offset = #str end
 	
 	local startOffset = offset
 	while startOffset >= 1 do
@@ -120,11 +120,10 @@ function GLib.UTF8.Iterator (str, offset)
 	if offset <= 0 then offset = 1 end
 	
 	return function ()
-		if offset > string_len (str) then return nil, string_len (str) + 1 end
-		
-		local length
+		if offset > #str then return nil, #str + 1 end
 		
 		-- Inline expansion of GLib.UTF8.SequenceLength (str, offset)
+		local length
 		local byte = string_byte (str, offset)
 		if not byte then length = 0
 		elseif byte >= 240 then length = 4
@@ -147,17 +146,18 @@ end
 local function MatchesTransliterationCharacter (character, substring, offset)
 	local substringCharacter = GLib.UTF8.NextChar (substring, offset)
 	
-	if GLib.Unicode.ToLower (character) == GLib.Unicode.ToLower (substring, offset) then
+	if GLib.Unicode.ToLower (character) == GLib.Unicode.ToLower (substringCharacter) then
 		-- Exact match found
-		return #GLib.UTF8.NextChar (substring, offset)
+		return #substringCharacter
 	end
 	
 	-- Some types of characters should not match any ASCII characters
-	if GLib.Unicode.IsCombiningCharacter (character) then return 0 end
-	if GLib.Unicode.IsControl (character) then return 0 end
-	if GLib.Unicode.IsSeparator (character) then return 0 end
-	if GLib.Unicode.IsSymbol (character) then
-		if string.sub (substring, offset, offset) == " " then return 1 end
+	local unicodeCategory = GLib.Unicode.GetCharacterCategory (character)
+	if GLib.Unicode.IsCombiningCategory (unicodeCategory) then return 0 end
+	if GLib.Unicode.IsControlCategory   (unicodeCategory) then return 0 end
+	if GLib.Unicode.IsSeparatorCategory (unicodeCategory) then return 0 end
+	if GLib.Unicode.IsSymbolCategory    (unicodeCategory) then
+		if substringCharacter == " " then return 1 end
 		return 0
 	end
 	
@@ -192,23 +192,23 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	end
 	
 	-- Absorb unmatchable non-ASCII characters
-	if GLib.UTF8.Byte (character) > 128 then
-		if string.sub (substring, offset, offset) == " " then return 1 end
+	if #character > 1 then
+		if substringCharacter == " " then return 1 end
 		return 0
 	end
 	
 	return nil
 end
 
-function GLib.UTF8.MatchesTransliteration (str, substring)
+function GLib.UTF8.MatchTransliteration (str, substring)
 	str = GLib.UTF8.Decompose (str)
 	substring = GLib.UTF8.Decompose (substring)
 	
 	-- Try to start matching the substring against each character of the string
 	for _, startOffset in GLib.UTF8.Iterator (str) do
-		local stringIterator = GLib.UTF8.Iterator (str, startOffset)
-		local substringOffset = 1
+		local stringIterator  = GLib.UTF8.Iterator (str, startOffset)
 		local stringCharacter = stringIterator ()
+		local substringOffset = 1
 		
 		-- Advance through the string and substring whilst matches characters
 		while substringOffset <= #substring do
@@ -239,7 +239,15 @@ function GLib.UTF8.NextChar (str, offset)
 	offset = offset or 1
 	if offset <= 0 then offset = 1 end
 	
-	local length = GLib.UTF8.SequenceLength (str, offset)
+	-- Inline expansion of GLib.UTF8.SequenceLength (str, offset)
+	local length
+	local byte = string_byte (str, offset)
+	if not byte then length = 0
+	elseif byte >= 240 then length = 4
+	elseif byte >= 224 then length = 3
+	elseif byte >= 192 then length = 2
+	else length = 1 end
+	
 	return string_sub (str, offset, offset + length - 1), offset + length
 end
 
@@ -284,7 +292,7 @@ function GLib.UTF8.NextWordBoundary (str, offset)
 end
 
 function GLib.UTF8.PreviousChar (str, offset)
-	offset = offset or (string_len (str) + 1)
+	offset = offset or (#str + 1)
 	if offset <= 1 then return "", 0 end
 	local startOffset = GLib.UTF8.GetSequenceStart (str, offset - 1)
 	local length = GLib.UTF8.SequenceLength (str, startOffset)
@@ -319,15 +327,15 @@ function GLib.UTF8.ReverseGraphemeIterator (str, offset)
 end
 
 function GLib.UTF8.ReverseIterator (str, offset)
-	offset = offset or (string_len (str) + 1)
+	offset = offset or (#str + 1)
 	
 	return function ()
 		if offset <= 1 then return nil, nil end
 		
-		local length
 		offset = GLib.UTF8.GetSequenceStart (str, offset - 1)
 		
 		-- Inline expansion of GLib.UTF8.SequenceLength (str, offset)
+		local length
 		local byte = string_byte (str, offset)
 		if not byte then length = 0
 		elseif byte >= 240 then length = 4
@@ -371,10 +379,10 @@ function GLib.UTF8.SubOffset (str, offset, startCharacter, endCharacter)
 	if offset < 1 then offset = 1 end
 	local charactersSkipped = offset - 1
 	
-	if startCharacter > string_len (str) - charactersSkipped then return "" end
+	if startCharacter > #str - charactersSkipped then return "" end
 	if endCharacter then
 		if endCharacter < startCharacter then return "" end
-		if endCharacter > string_len (str) - charactersSkipped then endCharacter = nil end
+		if endCharacter > #str - charactersSkipped then endCharacter = nil end
 	end
 
 	local iterator = GLib.UTF8.Iterator (str, offset)

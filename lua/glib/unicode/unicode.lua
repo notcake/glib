@@ -37,9 +37,6 @@ function GLib.Unicode.DecomposeCharacter (...)
 	
 	local recursiveDecomposition = ""
 	for c in GLib.UTF8.Iterator (decomposed) do
-		if #recursiveDecomposition > 100 then
-			GLib.Error ("GLib.Unicode.DecomposeCharacter : Decomposition bug! (" .. decomposed .. ")")
-		end
 		recursiveDecomposition = recursiveDecomposition .. GLib.Unicode.DecomposeCharacter (c)
 	end
 	return recursiveDecomposition
@@ -110,25 +107,35 @@ function GLib.Unicode.IsCodePointNamed (codePoint)
 	return characterNames [codePoint] and true or false
 end
 
-function GLib.Unicode.IsControl (...)
-	return GLib.Unicode.GetCharacterCategory (...) == GLib.UnicodeCategory.Control
-end
-
-function GLib.Unicode.IsControlCodePoint (codePoint)
-	return GLib.Unicode.GetCodePointCategory (codePoint) == GLib.UnicodeCategory.Control
-end
-
 local combiningCategories =
 {
 	[GLib.UnicodeCategory.NonSpacingMark]       = true,
 	[GLib.UnicodeCategory.SpacingCombiningMark] = true,
 	[GLib.UnicodeCategory.EnclosingMark]        = true
 }
+
+function GLib.Unicode.IsCombiningCategory (unicodeCategory)
+	return combiningCategories [unicodeCategory] or false
+end
+
 function GLib.Unicode.IsCombiningCharacter (...)
 	return combiningCategories [GLib.Unicode.GetCharacterCategory (...)] or false
 end
+
 function GLib.Unicode.IsCombiningCodePoint (codePoint)
 	return combiningCategories [GLib.Unicode.GetCodePointCategory (codePoint)] or false
+end
+
+function GLib.Unicode.IsControl (...)
+	return GLib.Unicode.GetCharacterCategory (...) == GLib.UnicodeCategory.Control
+end
+
+function GLib.Unicode.IsControlCategory (unicodeCategory)
+	return unicodeCategory == GLib.UnicodeCategory.Control
+end
+
+function GLib.Unicode.IsControlCodePoint (codePoint)
+	return GLib.Unicode.GetCodePointCategory (codePoint) == GLib.UnicodeCategory.Control
 end
 
 function GLib.Unicode.IsDigit (...)
@@ -211,6 +218,10 @@ local punctuationCategories =
 }
 function GLib.Unicode.IsPunctuation (...)
 	return punctuationCategories [GLib.Unicode.GetCharacterCategory (...)] or false
+end
+
+function GLib.Unicode.IsPunctuationCategory (unicodeCategory)
+	return punctuationCategories [unicodeCategory] or false
 end
 
 local separatorCategories =
@@ -303,8 +314,8 @@ function GLib.Unicode.ToTitleCodePoint (codePoint)
 	return titlecaseMap [char] or char
 end
 
-function GLib.Unicode.ToUpper (...)
-	local char = GLib.UTF8.NextChar (...)
+function GLib.Unicode.ToUpper (str, offset)
+	local char = GLib.UTF8.NextChar (str, offset)
 	return uppercaseMap [char] or char
 end
 
@@ -348,7 +359,7 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 			characterNames [codePoint] = bits [2]
 			
 			-- Decomposition
-			if bits [6] ~= "" then
+			if bits [6] and bits [6] ~= "" then
 				local decompositionBits = string.Split (bits [6], " ")
 				local decomposition = ""
 				for i = 1, #decompositionBits do
@@ -361,19 +372,19 @@ timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
 			end
 			
 			-- Uppercase
-			if bits [13] ~= "" then
+			if bits [13] and bits [13] ~= "" then
 				if bits [13]:find (" ") then print (bits [13]) end
 				uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
 			end
 			
 			-- Lowercase
-			if bits [14] ~= "" then
+			if bits [14] and bits [14] ~= "" then
 				if bits [14]:find (" ") then print (bits [14]) end
 				lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
 			end
 			
 			-- Titlecase
-			if bits [15] ~= "" then
+			if bits [15] and bits [15] ~= "" then
 				if bits [15]:find (" ") then print (bits [15]) end
 				titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
 			end
