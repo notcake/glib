@@ -156,10 +156,6 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	if GLib.Unicode.IsCombiningCategory (unicodeCategory) then return 0 end
 	if GLib.Unicode.IsControlCategory   (unicodeCategory) then return 0 end
 	if GLib.Unicode.IsSeparatorCategory (unicodeCategory) then return 0 end
-	if GLib.Unicode.IsSymbolCategory    (unicodeCategory) then
-		if substringCharacter == " " then return 1 end
-		return 0
-	end
 	
 	local transliterations = GLib.Unicode.GetTransliterationTable () [character]
 	if transliterations then
@@ -177,7 +173,7 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 				
 				if matchLength then
 					-- Character match succeeded, advance
-					totalMatchLength = totalMatchLength + 1
+					totalMatchLength = totalMatchLength + matchLength
 				else
 					-- Character match failed
 					fail = true
