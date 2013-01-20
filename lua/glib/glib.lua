@@ -460,6 +460,7 @@ include ("unicode/wordtype.lua")
 include ("unicode/utf8.lua")
 include ("unicode/unicode.lua")
 include ("unicode/unicodecategorytable.lua")
+include ("unicode/transliteration.lua")
 
 include ("net/net.lua")
 include ("net/datatype.lua")

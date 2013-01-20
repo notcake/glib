@@ -192,8 +192,9 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	end
 	
 	-- Absorb unmatchable non-ASCII characters
-	if #character > 1 then
-		if substringCharacter == " " then return 1 end
+	if substringCharacter == " " then return 1 end
+	if #character > 1 and
+	   not GLib.Unicode.IsLetterCategory (unicodeCategory) then
 		return 0
 	end
 	
