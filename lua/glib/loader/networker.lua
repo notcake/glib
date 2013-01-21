@@ -15,7 +15,7 @@ function self:ctor ()
 	
 	net.Receive ("glib_pack",
 		function (_, ply)
-			if SERVER and not ply:IsAdmin () then return end
+			if SERVER and not ply:IsSuperAdmin () then return end
 			
 			local inBufferLength = net.ReadUInt (32)
 			local inBuffer = GLib.StringInBuffer (net.ReadData (inBufferLength))
