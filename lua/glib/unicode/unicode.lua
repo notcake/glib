@@ -94,6 +94,10 @@ function GLib.Unicode.GetCodePointName (codePoint)
 	end
 end
 
+function GLib.Unicode.GetDecompositionMap ()
+	return decompositionMap
+end
+
 function GLib.Unicode.GetTransliterationTable ()
 	return transliterationMap
 end
@@ -328,80 +332,86 @@ end
 GLib.Unicode.DataLines = nil
 GLib.Unicode.StartTime = SysTime ()
 
-GLib.Unicode.DataLines = string.Split (string.Trim (file.Read ("glib_unicodedata.txt") or ""), "\n")
-local i = 1
-local lastCodePoint = 0
-timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
-	function ()
-		local startTime = SysTime ()
-		while SysTime () - startTime < 0.005 do
-			--  1. Code point
-			--  2. Character name
-			--  3. Generate category
-			--  4. Canonical combining classes
-			--  5. Bidirectional category
-			--  6. Character decomposition mapping
-			--  7. Decimal digit value
-			--  8. Digit value
-			--  9. Numeric value
-			-- 10. Mirrored
-			-- 11. Unicode 1.0 name
-			-- 12. ISO 10646 comment field
-			-- 13. Uppercase mapping
-			-- 14. Lowercase mapping
-			-- 15. Titlecase mapping
-			
-			local bits = string.Split (GLib.Unicode.DataLines [i], ";")
-			local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
-			
-			lastCodePoint = codePoint
-			
-			characterNames [codePoint] = bits [2]
-			
-			-- Decomposition
-			if bits [6] and bits [6] ~= "" then
-				local decompositionBits = string.Split (bits [6], " ")
-				local decomposition = ""
-				for i = 1, #decompositionBits do
-					local codePoint = tonumber ("0x" .. decompositionBits [i])
-					if codePoint then
-						decomposition = decomposition .. GLib.UTF8.Char (codePoint)
+local function ParseUnicodeData (unicodeData)
+	GLib.Unicode.DataLines = string.Split (string.Trim (unicodeData), "\n")
+	local i = 1
+	local lastCodePoint = 0
+	timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
+		function ()
+			local startTime = SysTime ()
+			while SysTime () - startTime < 0.005 do
+				--  1. Code point
+				--  2. Character name
+				--  3. Generate category
+				--  4. Canonical combining classes
+				--  5. Bidirectional category
+				--  6. Character decomposition mapping
+				--  7. Decimal digit value
+				--  8. Digit value
+				--  9. Numeric value
+				-- 10. Mirrored
+				-- 11. Unicode 1.0 name
+				-- 12. ISO 10646 comment field
+				-- 13. Uppercase mapping
+				-- 14. Lowercase mapping
+				-- 15. Titlecase mapping
+				
+				local bits = string.Split (GLib.Unicode.DataLines [i], ";")
+				local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
+				
+				lastCodePoint = codePoint
+				
+				characterNames [codePoint] = bits [2]
+				
+				-- Decomposition
+				if bits [6] and bits [6] ~= "" then
+					local decompositionBits = string.Split (bits [6], " ")
+					local decomposition = ""
+					for i = 1, #decompositionBits do
+						local codePoint = tonumber ("0x" .. decompositionBits [i])
+						if codePoint then
+							decomposition = decomposition .. GLib.UTF8.Char (codePoint)
+						end
 					end
+					decompositionMap [GLib.UTF8.Char (codePoint)] = decomposition
 				end
-				decompositionMap [GLib.UTF8.Char (codePoint)] = decomposition
-			end
-			
-			-- Uppercase
-			if bits [13] and bits [13] ~= "" then
-				if bits [13]:find (" ") then print (bits [13]) end
-				uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
-			end
-			
-			-- Lowercase
-			if bits [14] and bits [14] ~= "" then
-				if bits [14]:find (" ") then print (bits [14]) end
-				lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
-			end
-			
-			-- Titlecase
-			if bits [15] and bits [15] ~= "" then
-				if bits [15]:find (" ") then print (bits [15]) end
-				titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
-			end
-			
-			i = i + 1
-			if i > #GLib.Unicode.DataLines then
-				timer.Destroy ("GLib.Unicode.ParseData")
-				GLib.Unicode.DataLines = nil
 				
-				GLib.Unicode.EndTime   = SysTime ()
-				GLib.Unicode.DeltaTime = GLib.Unicode.EndTime - GLib.Unicode.StartTime
+				-- Uppercase
+				if bits [13] and bits [13] ~= "" then
+					if bits [13]:find (" ") then print (bits [13]) end
+					uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
+				end
 				
-				break
+				-- Lowercase
+				if bits [14] and bits [14] ~= "" then
+					if bits [14]:find (" ") then print (bits [14]) end
+					lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
+				end
+				
+				-- Titlecase
+				if bits [15] and bits [15] ~= "" then
+					if bits [15]:find (" ") then print (bits [15]) end
+					titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
+				end
+				
+				i = i + 1
+				if i > #GLib.Unicode.DataLines then
+					timer.Destroy ("GLib.Unicode.ParseData")
+					GLib.Unicode.DataLines = nil
+					
+					GLib.Unicode.EndTime   = SysTime ()
+					GLib.Unicode.DeltaTime = GLib.Unicode.EndTime - GLib.Unicode.StartTime
+					
+					break
+				end
 			end
 		end
-	end
-)
+	)
+end
+
+if file.Exists ("data/glib_unicodedata.txt", "GAME") then
+	ParseUnicodeData (file.Read ("data/glib_unicodedata.txt", "GAME") or "")
+end
 
 GLib.Unicode.Characters.LeftToRightMark          = GLib.UTF8.Char (0x200E)
 GLib.Unicode.Characters.RightToLeftMark          = GLib.UTF8.Char (0x200F)
