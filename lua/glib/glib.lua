@@ -451,6 +451,7 @@ include ("coroutine.lua")
 include ("loader/loader.lua")
 include ("loader/networker.lua")
 include ("loader/packfilesystem.lua")
+include ("loader/commands.lua")
 
 -- This has to be done after the Loader library is loaded.
 GLib.AddCSLuaFolderRecursive ("glib")

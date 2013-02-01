@@ -182,14 +182,64 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 				
 				packFileSystem:MergeInto (GLib.Loader.ServerPackFileSystem)
 				
+				-- Shared autoruns
 				local files, _ = packFileSystem:Find ("autorun/*.lua")
 				for _, fileName in ipairs (files) do
 					GLib.Loader.Include ("autorun/" .. fileName)
 				end
 				
+				-- Local autoruns
 				local files, _ = packFileSystem:Find ("autorun/" .. (SERVER and "server" or "client") .. "/*.lua")
 				for _, fileName in ipairs (files) do
 					GLib.Loader.Include ("autorun/" .. (SERVER and "server" or "client") .. "/" .. fileName)
+				end
+				
+				local prefix = SERVER and "" or "cl_"
+				
+				-- Entities
+				local _, folders = packFileSystem:Find ("entities/*")
+				for _, className in ipairs (folders) do
+					local _ENT = ENT
+					ENT = {}
+					ENT.Type = "anim"
+					ENT.Base = "base_anim"
+					ENT.ClassName = className
+					
+					if packFileSystem:Exists ("entities/" .. className .. "/" .. prefix .. "init.lua") then
+						GLib.Loader.Include ("entities/" .. className .. "/" .. prefix .. "init.lua")
+					elseif packFileSystem:Exists ("entities/" .. className .. "/shared.lua") then
+						GLib.Loader.Include ("entities/" .. className .. "/shared.lua")
+					end
+					
+					scripted_ents.Register (ENT, ENT.ClassName, true)
+					for _, ent in ipairs (ents.FindByClass (ENT.ClassName)) do
+						table.Merge (ent:GetTable (), ENT)
+					end
+					
+					ENT = _ENT
+				end
+				
+				-- Weapons
+				local _, folders = packFileSystem:Find ("weapons/*")
+				for _, className in ipairs (folders) do
+					local _SWEP = SWEP
+					SWEP = {}
+					SWEP.Primary   = {}
+					SWEP.Secondary = {}
+					SWEP.ClassName = className
+					
+					if packFileSystem:Exists ("weapons/" .. className .. "/" .. prefix .. "init.lua") then
+						GLib.Loader.Include ("weapons/" .. className .. "/" .. prefix .. "init.lua")
+					elseif packFileSystem:Exists ("weapons/" .. className .. "/shared.lua") then
+						GLib.Loader.Include ("weapons/" .. className .. "/shared.lua")
+					end
+					
+					weapons.Register (SWEP, SWEP.ClassName, true)
+					for _, ent in ipairs (ents.FindByClass (SWEP.ClassName)) do
+						table.Merge (ent:GetTable (), SWEP)
+					end
+					
+					SWEP = _SWEP
 				end
 			end
 		)
@@ -211,31 +261,6 @@ function GLib.Loader.ShouldPackOverrideLocalFiles ()
 	return not GetConVar ("glib_use_local_files"):GetBool ()
 end
 
--- HTTP Pack Loading
-local executionTargets = SERVER and { "sv", "sh", "cl" } or { "m" }
-for _, executionTarget in ipairs (executionTargets) do
-	concommand.Add ("glib_download_pack_" .. executionTarget,
-		function (ply, _, args)
-			if not ply or not ply:IsValid () then return end
-			if not ply:IsSuperAdmin () then return end
-			if #args == 0 then return end
-			args = table.concat (args)
-			if args == "" then return end
-			
-			print ("glib_download_pack_" .. executionTarget .. ": Fetching " .. args .. ".")
-			http.Fetch (args,
-				function (data, dataSize, headers, httpCode)
-					print ("glib_download_pack_" .. executionTarget .. ": Received " .. args .. " (" .. GLib.FormatFileSize (dataSize) .. ")")
-					GLib.Loader.RunPackFile (executionTarget, data, args)
-				end,
-				function (err)
-					print ("glib_download_pack_" .. executionTarget .. ": HTTP fetch failed (" .. tostring (err) .. ")")
-				end
-			)
-		end
-	)
-end
-
 if SERVER then
 	concommand.Add ("glib_request_pack",
 		function (ply)
@@ -254,110 +279,4 @@ elseif CLIENT then
 			)
 		end
 	)
-	
-	concommand.Add ("glib_pack",
-		function (ply, _, args)
-			if #args == 0 then
-				print ("glib_pack <addon_directory>")
-				return
-			end
-			
-			local addonName = table.concat (args, " ")
-			if not file.IsDir ("addons/" .. addonName .. "/lua", "GAME") then
-				print ("glib_pack: addons/" .. addonName .. "/lua not found.")
-				return
-			end
-			
-			local packFileSystem = GLib.Loader.PackFileSystem ()
-			local packFileName = addonName:gsub ("[\\/: %-]", "_")
-			packFileSystem:SetName (packFileName)
-			local pathPrefix = "addons/" .. addonName .. "/lua/"
-			GLib.EnumerateFolderRecursive ("addons/" .. addonName .. "/lua", "GAME",
-				function (path)
-					if path:sub (-4):lower () ~= ".lua" then return end
-					packFileSystem:Write (
-						path:sub (#pathPrefix + 1),
-						file.Read (path, "GAME")
-					)
-				end
-			)
-			
-			local autoruns, _ = packFileSystem:Find ("autorun/*.lua")
-			for _, autorun in ipairs (autoruns) do
-				local code = packFileSystem:Read ("autorun/" .. autorun) or ""
-				local includedPath = code:match ("[iI]nclude[ \t]*%(\"([^\"]*)\"%)") or ""
-				code = packFileSystem:Read (includedPath) or ""
-				local systemName = code:match ("^if ([^ ]*) then return end")
-				if systemName then
-					packFileSystem:AddSystemTable (systemName)
-				end
-			end
-			
-			-- Write pack file
-			file.CreateDir ("glibpack")
-			local f = file.Open ("glibpack/" .. packFileName .. "_pack.txt", "wb", "DATA")
-			f:Write (packFileSystem:GetPackFile ())
-			f:Close ()
-		end,
-		function (command, arg)
-			if arg:sub (1, 1) == " " then arg = arg:sub (2) end
-			
-			local _, addons = file.Find ("addons/*", "GAME")
-			local autocomplete = {}
-			for _, addonName in ipairs (addons) do
-				if addonName:lower ():sub (1, arg:len ()) == arg:lower () and
-				   file.IsDir ("addons/" .. addonName .. "/lua", "GAME") then
-					autocomplete [#autocomplete + 1] = command .. " " .. addonName
-				end
-			end
-			return autocomplete
-		end
-	)
-	
-	local executionTargets = { "cl", "sh", "sv", "m" }
-	for _, executionTarget in ipairs (executionTargets) do
-		concommand.Add ("glib_upload_pack_" .. executionTarget,
-			function (_, _, args)
-				if #args == 0 then
-					print ("glib_upload_pack_" .. executionTarget .. " <pack file name>")
-					return
-				end
-				
-				local packFileName = table.concat (args, " ")
-				
-				-- Read pack file
-				local packFile = nil
-				local f = file.Open ("data/glibpack/" .. packFileName, "rb", "GAME")
-				if not f then
-					print ("glib_upload_pack_" .. executionTarget .. " : " .. "data/glibpack/" .. packFileName .. " not found!")
-					return
-				end
-				
-				packFile = f:Read (f:Size ())
-				f:Close ()
-				
-				if executionTarget == "m" then
-					if GetConVar ("sv_allowcslua"):GetBool () then
-						GLib.Loader.RunPackFile ("m", packFile, packFileName)
-					else
-						print ("glib_upload_pack_m : sv_allowcslua is 0!")
-					end
-				else
-					GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, packFile, packFileName)
-				end
-			end,
-			function (command, arg)
-				if arg:sub (1, 1) == " " then arg = arg:sub (2) end
-				
-				local files, _ = file.Find ("data/glibpack/*.txt", "GAME")
-				local autocomplete = {}
-				for _, packName in ipairs (files) do
-					if packName:lower ():sub (1, arg:len ()) == arg:lower () then
-						autocomplete [#autocomplete + 1] = command .. " " .. packName
-					end
-				end
-				return autocomplete
-			end
-		)
-	end
 end
