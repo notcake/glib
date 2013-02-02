@@ -4,6 +4,14 @@ GLib.Net.NetInBuffer = GLib.MakeConstructor (self)
 function self:ctor ()
 end
 
+function self:GetBytesRemaining ()
+	return -1
+end
+
+function self:GetSize ()
+	return -1
+end
+
 function self:IsEndOfStream ()
 	return false
 end

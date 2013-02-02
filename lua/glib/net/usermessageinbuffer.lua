@@ -5,6 +5,14 @@ function self:ctor (umsg)
 	self.Usermessage = umsg
 end
 
+function self:GetBytesRemaining ()
+	return -1
+end
+
+function self:GetSize ()
+	return -1
+end
+
 function self:IsEndOfStream ()
 	return false
 end

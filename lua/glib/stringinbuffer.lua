@@ -6,6 +6,14 @@ function self:ctor (data)
 	self.Position = 1
 end
 
+function self:GetBytesRemaining ()
+	return math.max (0, #self.Data - self.Position + 1)
+end
+
+function self:GetSize ()
+	return #self.Data
+end
+
 function self:IsEndOfStream ()
 	return self.Position > self.Data:len ()
 end
@@ -81,6 +89,12 @@ function self:Char ()
 	local char = self.Data:sub (self.Position, self.Position)
 	self.Position = self.Position + 1
 	return char
+end
+
+function self:Bytes (length)
+	local str = self.Data:sub (self.Position, self.Position + length - 1)
+	self.Position = self.Position + length
+	return str
 end
 
 function self:String ()

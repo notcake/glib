@@ -75,6 +75,11 @@ function self:Char (char)
 	self.Data [#self.Data + 1] = char:sub (1, 1)
 end
 
+function self:Bytes (data, length)
+	length = length or #data
+	self.Data [#self.Data + 1] = string.sub (data, 1, length)
+end
+
 function self:String (data)
 	self:UInt16 (data:len ())
 	self.Data [#self.Data + 1] = data
