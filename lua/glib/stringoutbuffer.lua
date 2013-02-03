@@ -9,6 +9,10 @@ function self:Clear ()
 	self.Data = {}
 end
 
+function self:GetSize ()
+	return #self:GetString ()
+end
+
 function self:GetString ()
 	if #self.Data > 1 then
 		self.Data = { table.concat (self.Data) }
