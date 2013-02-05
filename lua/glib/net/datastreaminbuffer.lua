@@ -60,6 +60,21 @@ function self:Double ()
 	return tonumber (self.Data [self.NextReadIndex - 1]) or 0
 end
 
+function self:Vector ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return self.Data [self.NextReadIndex - 1] or Vector (0, 0, 0)
+end
+
+function self:Char ()
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tostring (self.Data [self.NextReadIndex - 1])
+end
+
+function self:Bytes (length)
+	self.NextReadIndex = self.NextReadIndex + 1
+	return tostring (self.Data [self.NextReadIndex - 1])
+end
+
 function self:String ()
 	self.NextReadIndex = self.NextReadIndex + 1
 	return tostring (self.Data [self.NextReadIndex - 1])

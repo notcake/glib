@@ -62,8 +62,17 @@ function self:Double (f)
 	net.WriteDouble (f)
 end
 
+function self:Vector (v)
+	net.WriteVector (v)
+end
+
 function self:Char (char)
 	self:UInt8 (string.byte (char))
+end
+
+function self:Bytes (data, length)
+	length = length or #data
+	net.WriteData (data, length)
 end
 
 function self:String (data)

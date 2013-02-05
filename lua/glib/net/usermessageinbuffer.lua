@@ -59,17 +59,25 @@ function self:Double ()
 	return self.Usermessage:ReadFloat ()
 end
 
+function self:Vector ()
+	return self.Usermessage:ReadVector ()
+end
+
 function self:Char ()
 	return string.char (self:UInt8 ())
 end
 
+function self:Bytes (length)
+	local data = ""
+	for i = 1, length do
+		data = data .. self:Char ()
+	end
+	return data
+end
+
 function self:String ()
 	local length = self:UInt8 ()
-	local str = ""
-	for i = 1, length do
-		str = str .. self:Char ()
-	end
-	return str
+	return self:Bytes (length)
 end
 
 function self:Boolean ()

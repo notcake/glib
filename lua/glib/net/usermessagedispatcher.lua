@@ -57,17 +57,26 @@ function self:Double (f)
 	umsg.Float (f)
 end
 
+function self:Vector (v)
+	umsg.Vector (v)
+end
+
 function self:Char (char)
 	self:UInt8 (string.byte (char))
+end
+
+function self:Bytes (data, length)
+	length = length or #data
+	for i = 1, length do
+		self:Char (string.sub (data, i, i))
+	end
 end
 
 function self:String (data)
 	-- umsg.String can mix up uppercase / lowercase characters.
 	
-	self:UInt8 (data:len ())
-	for i = 1, data:len () do
-		self:Char (data:sub (i, i))
-	end
+	self:UInt8 (#data)
+	self:Data (data, #data)
 end
 
 function self:Boolean (b)

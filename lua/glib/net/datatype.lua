@@ -10,25 +10,29 @@ GLib.Net.DataType = GLib.Enum (
 		Int64	= 7,
 		Float	= 8,
 		Double	= 9,
-		Char    = 10,
-		String	= 11,
-		Boolean	= 12
+		Vector  = 10,
+		Char    = 11,
+		Bytes   = 12,
+		String	= 13,
+		Boolean	= 14,
 	}
 )
 
 GLib.Net.DataTypeSizes =
 {
-	Boolean	= 1,
-	UInt8	= 1,
-	UInt16	= 2,
-	UInt32	= 4,
-	UInt64	= 8,
-	Int8	= 1,
-	Int16	= 2,
-	Int32	= 4,
-	Int64	= 8,
-	Float	= 4,
-	Double	= 8,
-	Char    = 1,
-	String	= function (str) return str:len () + 1 end
+	Boolean	=  1,
+	UInt8	=  1,
+	UInt16	=  2,
+	UInt32	=  4,
+	UInt64	=  8,
+	Int8	=  1,
+	Int16	=  2,
+	Int32	=  4,
+	Int64	=  8,
+	Float	=  4,
+	Double	=  8,
+	Vector  = 12,
+	Char    =  1,
+	Bytes	=  function (data) return #data end,
+	String	=  function (str) return #str + 1 end
 }

@@ -30,6 +30,16 @@ function self:GetSize ()
 	return self.Size
 end
 
+function self:Bytes (data, length)
+	length = length or #data
+	data = string.sub (data, 1, length - 1)
+	self.Data [self.NextDataId] = data
+	self.Types [self.NextDataId] = GLib.Net.DataType.Bytes
+	self.NextDataId = self.NextDataId + 1
+	
+	self.Size = self.Size + length
+end
+
 --[[
 	OutBuffer:OutBuffer (OutBuffer outBuffer)
 	

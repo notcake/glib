@@ -75,6 +75,12 @@ function self:Double (f)
 	self:String (tostring (f))
 end
 
+function self:Vector (v)
+	self:Float (v.x)
+	self:Float (v.y)
+	self:Float (v.z)
+end
+
 function self:Char (char)
 	self.Data [#self.Data + 1] = char:sub (1, 1)
 end

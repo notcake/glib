@@ -60,8 +60,16 @@ function self:Double ()
 	return net.ReadDouble ()
 end
 
+function self:Vector ()
+	return net.ReadVector ()
+end
+
 function self:Char ()
 	return string.char (self:UInt8 ())
+end
+
+function self:Bytes (length)
+	return net.ReadData (length)
 end
 
 function self:String ()
