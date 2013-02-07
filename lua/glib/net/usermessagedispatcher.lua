@@ -76,7 +76,7 @@ function self:String (data)
 	-- umsg.String can mix up uppercase / lowercase characters.
 	
 	self:UInt8 (#data)
-	self:Data (data, #data)
+	self:Bytes (data, #data)
 end
 
 function self:Boolean (b)
