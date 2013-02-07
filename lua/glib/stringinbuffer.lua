@@ -99,8 +99,8 @@ function self:Float ()
 		n = n - 0x80000000
 	end
 	
-	local exponent = bit.rshift (bit.band (uint32, 0x7F800000), 23)
-	local mantissa = bit.band (uint32, 0x007FFFFF) / (2 ^ 23)
+	local exponent = bit.rshift (bit.band (n, 0x7F800000), 23)
+	local mantissa = bit.band (n, 0x007FFFFF) / (2 ^ 23)
 	
 	if mantissa == 0 and exponent == 0 then
 		n = 0
