@@ -4,9 +4,9 @@ GLib.PlayerMonitor = GLib.MakeConstructor (self)
 function self:ctor (systemName)
 	self.SystemName = systemName
 
-	self.Players = {}           -- Map of Steam Ids to player data
-	self.EntitiesToUserIds = {} -- Map of Players to Steam Ids
-	self.QueuedPlayers = {}     -- Array of new Players to be processed
+	self.Players = {} -- Map of Steam Ids to player data
+	self.EntitiesToUserIds = SERVER and GLib.WeakKeyTable () or {} -- Map of Players to Steam Ids
+	self.QueuedPlayers = {}  -- Array of new Players to be processed
 	GLib.EventProvider (self)
 	
 	hook.Add (CLIENT and "OnEntityCreated" or "PlayerInitialSpawn", self.SystemName .. ".PlayerConnected", function (ply)
