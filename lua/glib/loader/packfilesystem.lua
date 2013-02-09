@@ -189,7 +189,7 @@ function self:Deserialize (data, callback)
 				self.CachedFunctions [path] = compiled
 			end
 		end
-		timer.Simple (0.001, unpackSome)
+		GLib.CallDelayed (unpackSome)
 	end
 	unpackSome ()
 end

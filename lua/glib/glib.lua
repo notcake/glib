@@ -118,7 +118,7 @@ function GLib.EnumerateDelayed (tbl, callback, finishCallback)
 			if not key then return end
 		end
 		
-		timer.Simple (0.001, timerCallback)
+		GLib.CallDelayed (timerCallback)
 	end
 	timerCallback ()
 end
@@ -407,7 +407,7 @@ if CLIENT then
 		if not LocalPlayer or
 		   not LocalPlayer () or
 		   not LocalPlayer ():IsValid () then
-			timer.Simple (0.001,
+			GLib.CallDelayed (
 				function ()
 					GLib.WaitForLocalPlayer (callback)
 				end
@@ -447,6 +447,7 @@ include ("stringinbuffer.lua")
 include ("stringoutbuffer.lua")
 
 include ("coroutine.lua")
+include ("timers.lua")
 
 include ("loader/loader.lua")
 include ("loader/networker.lua")
