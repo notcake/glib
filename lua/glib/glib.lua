@@ -438,6 +438,7 @@ end
 
 include ("colors.lua")
 include ("string.lua")
+include ("timers.lua")
 
 include ("userid.lua")
 include ("eventprovider.lua")
@@ -447,7 +448,6 @@ include ("stringinbuffer.lua")
 include ("stringoutbuffer.lua")
 
 include ("coroutine.lua")
-include ("timers.lua")
 
 include ("loader/loader.lua")
 include ("loader/networker.lua")
