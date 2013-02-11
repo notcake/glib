@@ -26,7 +26,7 @@ function self:dtor ()
 end
 
 function self:Dispatch (ply, channelName, packet)
-	self.Data = ""
+	self.Data = {}
 	self:String (channelName)
 	for i = 1, #packet.Data do
 		local data = packet.Data [i]
@@ -34,16 +34,18 @@ function self:Dispatch (ply, channelName, packet)
 		
 		self [GLib.Net.DataType [typeId]] (self, data)
 	end
-	self.Data = self.Data:gsub ("\\", "\\\\")
-	self.Data = self.Data:gsub ("%z", "\\0")
-	self.Data = self.Data:gsub ("\t", "\\t")
-	self.Data = self.Data:gsub ("\r", "\\r")
-	self.Data = self.Data:gsub ("\n", "\\n")
-	self.Data = self.Data:gsub ("\"", "\\q")
+	
+	local data = self:GetString ()
+	data = data:gsub ("\\", "\\\\")
+	data = data:gsub ("%z", "\\0")
+	data = data:gsub ("\t", "\\t")
+	data = data:gsub ("\r", "\\r")
+	data = data:gsub ("\n", "\\n")
+	data = data:gsub ("\"", "\\q")
 
 	local chunkSize = 497
-	for i = 1, self.Data:len (), chunkSize do
-		self.Queue [#self.Queue + 1] = (i == 1 and "\2" or "\1") .. self.Data:sub (i, i + chunkSize - 1)
+	for i = 1, #data, chunkSize do
+		self.Queue [#self.Queue + 1] = (i == 1 and "\2" or "\1") .. string.sub (data, i, i + chunkSize - 1)
 	end
 	if #self.Queue > 100 then
 		ErrorNoHalt ("GLib.Net : Warning: Concommand queue is now " .. #self.Queue .. " items long.\n")

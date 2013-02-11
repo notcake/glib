@@ -343,12 +343,19 @@ end
 
 function GLib.PrettifyString (str)
 	local out = ""
-	for i = 1, str:len () do
-		local char = str:sub (i, i)
+	for i = 1, #str do
+		local char = string.sub (str, i, i)
 		local byte = string.byte (char)
 		if byte < 32 or byte >= 127 then
-			out = out .. string.format ("[%02x]", byte)
+			out = out .. string.format ("\\x%02x", byte)
 		else
+			if char == "\\" then char = "\\\\"
+			elseif char == "\r" then char = "\\r"
+			elseif char == "\n" then char = "\\n"
+			elseif char == "\t" then char = "\\t"
+			elseif char == "\"" then char = "\\\""
+			elseif char == "\'" then char = "\\\'" end
+			
 			out = out .. char
 		end
 	end
@@ -467,6 +474,7 @@ include ("unicode/transliteration.lua")
 include ("net/net.lua")
 include ("net/datatype.lua")
 include ("net/outbuffer.lua")
+include ("net/concommanddispatcher.lua")
 include ("net/netdispatcher.lua")
 include ("net/usermessagedispatcher.lua")
 include ("net/concommandinbuffer.lua")
