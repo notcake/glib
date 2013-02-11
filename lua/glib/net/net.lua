@@ -85,8 +85,6 @@ function GLib.Net.RegisterChannel (channelName, handler)
 end
 
 if SERVER then
-	GLib.Net.ConCommandBuffers = {}
-
 	GLib.Net.PlayerMonitor:AddEventListener ("PlayerConnected",
 		function (_, ply, userId)
 			for channelName, _ in pairs (GLib.Net.OpenChannels) do
@@ -111,33 +109,6 @@ if SERVER then
 					umsg.String (channelName)
 				umsg.End ()
 			end
-		end
-	)
-	
-	concommand.Add ("glib_data",
-		function (ply, _, args)
-			local steamId = GLib.GetPlayerId (ply)
-			if not args [1] then return end
-			
-			GLib.Net.ConCommandBuffers [steamId] = GLib.Net.ConCommandBuffers [steamId] or ""
-			
-			if args [1]:sub (1, 1) == "\2" or args [1]:sub (1, 1) == "\3" then
-				if GLib.Net.ConCommandBuffers [steamId] ~= "" then
-					local inBuffer = GLib.Net.ConCommandInBuffer (GLib.Net.ConCommandBuffers [steamId])
-					local channelName = inBuffer:String ()
-					local handler = GLib.Net.ChannelHandlers [channelName]
-					if not handler then
-						ErrorNoHalt ("glib_data : From " .. steamId .. ": No handler for " .. GLib.PrettifyString (channelName) .. "\n")
-						ErrorNoHalt ("Original data: " .. GLib.PrettifyString (GLib.Net.ConCommandInBuffer (GLib.Net.ConCommandBuffers [steamId]):Bytes (100)) .. "\n")
-					end
-					if handler then
-						local success, error = pcall (handler, steamId, inBuffer)
-						if not success then ErrorNoHalt (error) end
-					end
-					GLib.Net.ConCommandBuffers [steamId] = ""
-				end
-			end
-			GLib.Net.ConCommandBuffers [steamId] = GLib.Net.ConCommandBuffers [steamId] .. args [1]:sub (2)
 		end
 	)
 elseif CLIENT then
