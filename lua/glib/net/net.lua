@@ -94,12 +94,6 @@ if SERVER then
 			end
 		end
 	)
-
-	GLib.Net.PlayerMonitor:AddEventListener ("PlayerDisconnected",
-		function (_, ply)
-			GLib.Net.ConCommandBuffers [GLib.GetPlayerId (ply)] = nil
-		end
-	)
 	
 	concommand.Add ("glib_request_channels",
 		function (ply, _, _)
