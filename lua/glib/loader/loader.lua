@@ -196,6 +196,18 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 				
 				local prefix = SERVER and "" or "cl_"
 				
+				-- Effects
+				if CLIENT then
+					local _, folders = packFileSystem:Find ("effects/*")
+					for _, className in ipairs (folders) do
+						local _EFFECT = EFFECT
+						EFFECT = {}
+						GLib.Loader.Include ("effects/" .. className .. "/init.lua")
+						effects.Register (EFFECT, className)
+						EFFECT = _EFFECT
+					end
+				end
+				
 				-- Entities
 				local _, folders = packFileSystem:Find ("entities/*")
 				for _, className in ipairs (folders) do
