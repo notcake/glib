@@ -366,6 +366,15 @@ function GLib.UTF8.SplitAt (str, char)
 	return str
 end
 
+function GLib.UTF8.StripCombiningCharacters (str)
+	return GLib.UTF8.TransformUnicodeString (str,
+		function (c)
+			if GLib.Unicode.IsCombiningCharacter (c) then return nil end
+			return c
+		end
+	)
+end
+
 function GLib.UTF8.Sub (str, startCharacter, endCharacter)
 	return GLib.UTF8.SubOffset (str, 1, startCharacter, endCharacter)
 end
@@ -411,39 +420,59 @@ function GLib.UTF8.SubOffset (str, offset, startCharacter, endCharacter)
 end
 
 function GLib.UTF8.ToLatin1 (str)
-	if not GLib.UTF8.ContainsSequences (str) then return str end
+	str = GLib.UTF8.Decompose (str)
 	
-	local latin1 = GLib.StringBuilder ()
-	local codePoint
-	for c in GLib.UTF8.Iterator (str) do
-		codePoint = GLib.UTF8.Byte (c)
-		if codePoint == -1 or codePoint > 255 then
-			latin1 = latin1 .. "?"
-		else
-			latin1 = latin1 .. string_char (codePoint)
+	return GLib.UTF8.TransformUnicodeString (str,
+		function (c)
+			codePoint = GLib.UTF8.Byte (c)
+			if codePoint == -1 or codePoint > 255 then
+				return "?"
+			end
+			return string_char (codePoint)
 		end
-	end
-	return latin1:ToString ()
+	)
 end
 
 function GLib.UTF8.ToLower (str)
 	if not GLib.UTF8.ContainsSequences (str) then return string_lower (str) end
-	
-	local lower = GLib.StringBuilder ()
-	for c in GLib.UTF8.Iterator (str) do
-		lower = lower .. GLib.Unicode.ToLower (c)
-	end
-	return lower:ToString ()
+	return GLib.UTF8.TransformString (str, GLib.Unicode.ToLower)
 end
 
 function GLib.UTF8.ToUpper (str)
 	if not GLib.UTF8.ContainsSequences (str) then return string_upper (str) end
-	
-	local upper = GLib.StringBuilder ()
+	return GLib.UTF8.TransformString (str, GLib.Unicode.ToUpper)
+end
+
+function GLib.UTF8.TransformString (str, f)
+	local transformed = GLib.StringBuilder ()
 	for c in GLib.UTF8.Iterator (str) do
-		upper = upper .. GLib.Unicode.ToUpper (c)
+		c = f (c)
+		if c then transformed = transformed .. c end
 	end
-	return upper:ToString ()
+	return transformed:ToString ()
+end
+
+function GLib.UTF8.TransformUnicodeString (str, f)
+	if not GLib.UTF8.ContainsSequences (str) then return str end
+	
+	local transformed = GLib.StringBuilder ()
+	for c in GLib.UTF8.Iterator (str) do
+		c = f (c)
+		if c then transformed = transformed .. c end
+	end
+	return transformed:ToString ()
+end
+
+function GLib.UTF8.Transliterate (str)
+	local transliterationTable = GLib.Unicode.GetTransliterationTable ()
+	return GLib.UTF8.TransformString (str,
+		function (c)
+			if transliterationTable [c] and transliterationTable [c] [1] then
+				return transliterationTable [c] [1]
+			end
+			return c
+		end
+	)
 end
 
 function GLib.UTF8.WordIterator (str, offset)
