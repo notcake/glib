@@ -57,7 +57,7 @@ function self:HandleIncomingPacket (sessionId, inBuffer)
 	local session = self.Sessions [sessionId]
 	if not session then
 		ErrorNoHalt (self.SystemName .. ".Net.EndPoint." .. self.UniqueId .. ":HandleIncomingPacket : Session " .. sessionId .. " not found!\n")
-		ErrorNoHalt ("Data: " .. GLib.PrettifyString (inBuffer:Bytes (100)) .. "\n")
+		ErrorNoHalt ("Data: " .. GLib.PrettifyString (inBuffer:Bytes (20)) .. "\n")
 		return
 	end
 	session:ResetTimeout ()
