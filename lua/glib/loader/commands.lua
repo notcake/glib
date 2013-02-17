@@ -13,7 +13,7 @@ for _, executionTarget in ipairs (executionTargets) do
 			http.Fetch (args,
 				function (data, dataSize, headers, httpCode)
 					print ("glib_download_pack_" .. executionTarget .. ": Received " .. args .. " (" .. GLib.FormatFileSize (dataSize) .. ")")
-					GLib.Loader.RunPackFile (executionTarget, data, args)
+					GLib.Loader.RunPackFile (executionTarget, data, false, args)
 				end,
 				function (err)
 					print ("glib_download_pack_" .. executionTarget .. ": HTTP fetch failed (" .. tostring (err) .. ")")
@@ -109,12 +109,12 @@ if CLIENT then
 				
 				if executionTarget == "m" then
 					if GetConVar ("sv_allowcslua"):GetBool () then
-						GLib.Loader.RunPackFile ("m", packFile, packFileName)
+						GLib.Loader.RunPackFile ("m", packFile, false, packFileName)
 					else
 						print ("glib_upload_pack_m : sv_allowcslua is 0!")
 					end
 				else
-					GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, packFile, packFileName)
+					GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, util.Compress (packFile), packFileName)
 				end
 			end,
 			function (command, arg)

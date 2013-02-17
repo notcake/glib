@@ -152,7 +152,7 @@ function GLib.Loader.Include (path)
 	end
 end
 
-function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
+function GLib.Loader.RunPackFile (executionTarget, packFile, compressed, packFileName)
 	local shouldRun = executionTarget == "sh"
 	shouldRun = shouldRun or executionTarget == "m"
 	if SERVER and executionTarget == "sv" then shouldRun = true end
@@ -162,9 +162,13 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 		local packFileSystem = GLib.Loader.PackFileSystem ()
 		packFileSystem:SetName (packFileName)
 		local startTime = SysTime ()
-		packFileSystem:Deserialize (packFile,
-			function ()
-				MsgN ("GLib : Running pack file \"" .. packFileSystem:GetName () .. "\", deserialization took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#packFile) .. ").")
+		packFileSystem:Deserialize (packFile, compressed,
+			function (decompressedSize)
+				local fileSize = GLib.FormatFileSize (#packFile)
+				if compressed then
+					fileSize = fileSize .. " decompressed to " .. GLib.FormatFileSize (decompressedSize)
+				end
+				MsgN ("GLib : Running pack file \"" .. packFileSystem:GetName () .. "\", deserialization took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. fileSize .. ").")
 				for i = 1, packFileSystem:GetSystemTableCount () do
 					GLib.Loader.ServerPackFileSystem:AddSystemTable (packFileSystem:GetSystemTableName (i))
 				end
@@ -262,7 +266,7 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, packFileName)
 			if not shouldRun then
 				print ("GLib : Forwarding pack file \"" .. packFileName .. "\" on to clients.")
 			end
-			GLib.Loader.Networker:StreamPack (GLib.GetEveryoneId (), executionTarget, packFile, packFileName)
+			GLib.Loader.Networker:StreamPack (GLib.GetEveryoneId (), executionTarget, compressed and packFile or util.Compress (packFile), packFileName)
 		end
 	end
 end
@@ -278,7 +282,7 @@ if SERVER then
 		function (ply)
 			if not ply or not ply:IsValid () then return end
 			
-			GLib.Loader.Networker:StreamPack (GLib.GetPlayerId (ply), "cl", GLib.Loader.ServerPackFileSystem:GetPackFile (), "Server")
+			GLib.Loader.Networker:StreamPack (GLib.GetPlayerId (ply), "cl", GLib.Loader.ServerPackFileSystem:GetCompressedPackFile (), "Server")
 		end
 	)
 elseif CLIENT then

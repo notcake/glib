@@ -15,6 +15,7 @@ function self:ctor ()
 	self.CachedFunctions = {}
 	
 	self.PackFile = ""
+	self.CompressedPackFile = ""
 	self.PackFileRevision = -1
 end
 
@@ -49,6 +50,16 @@ function self:Find (path)
 		end
 	end
 	return files, folders
+end
+
+function self:GetCompressedPackFile ()
+	if self.PackFileRevision ~= self.Revision then
+		self:BuildPackFile ()
+	end
+	if not self.CompressedPackFile then
+		self.CompressedPackFile = util.Compress (self.PackFile)
+	end
+	return self.CompressedPackFile
 end
 
 function self:GetFileCount ()
@@ -146,12 +157,20 @@ function self:BuildPackFile ()
 	outBuffer:String ("")
 	
 	self.PackFile = outBuffer:GetString ()
+	self.CompressedPackFile = util.Compress (self.PackFile)
 	self.PackFileRevision = self.Revision
 	
-	MsgN (" done (" .. self:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#self.PackFile) .. ", " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+	MsgN (" done (" .. self:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#self.PackFile) .. " compressed to " .. GLib.FormatFileSize (#self.CompressedPackFile) .. ", " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 end
 
-function self:Deserialize (data, callback)
+function self:Deserialize (data, compressed, callback)
+	local compressedData = nil
+	if compressed then
+		compressedData = data
+		data = util.Decompress (data)
+	end
+	local decompressedSize = #data
+	
 	local inBuffer = GLib.StringInBuffer (data)
 	
 	local originalRevision = self.Revision
@@ -175,10 +194,11 @@ function self:Deserialize (data, callback)
 					-- okay to use the data as the
 					-- serialized pack file.
 					self.PackFile = data
+					self.CompressedPackFile = compressedData
 					self.PackFileRevision = self.Revision
 				end
 				
-				callback ()
+				callback (decompressedSize)
 				return
 			end
 			local data = inBuffer:LongString ()

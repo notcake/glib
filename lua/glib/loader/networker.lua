@@ -36,7 +36,7 @@ function self:ctor ()
 				}
 				streamEntry.ExecutionTarget = inBuffer:String ()
 				streamEntry.DisplayName     = inBuffer:String ()
-				streamEntry.Data            = {}
+				streamEntry.CompressedData  = {}
 				
 				streamEntry.Length          = inBuffer:UInt32 ()
 				streamEntry.ChunkSize       = inBuffer:UInt32 ()
@@ -47,14 +47,14 @@ function self:ctor ()
 			if not streamEntry then return end
 			
 			-- Read chunk
-			streamEntry.Data [#streamEntry.Data + 1] = inBuffer:LongString ()
+			streamEntry.CompressedData [#streamEntry.CompressedData + 1] = inBuffer:LongString ()
 			streamEntry.NextChunk = streamEntry.NextChunk + 1
 			
 			if streamEntry.NextChunk > streamEntry.ChunkCount then
 				-- Finished
-				streamEntry.Data = table.concat (streamEntry.Data)
+				streamEntry.CompressedData = table.concat (streamEntry.CompressedData)
 				
-				GLib.Loader.RunPackFile (streamEntry.ExecutionTarget, streamEntry.Data, streamEntry.DisplayName)
+				GLib.Loader.RunPackFile (streamEntry.ExecutionTarget, streamEntry.CompressedData, true, streamEntry.DisplayName)
 				
 				self.InboundStreams [streamId] = nil
 			end
@@ -66,16 +66,16 @@ function self:dtor ()
 	hook.Remove ("Tick", "GLib.Loader.OutboundStreamer")
 end
 
-function self:AllocateOutboundStreamId (packData)
-	local outboundStreamId = tonumber (util.CRC (packData)) + self.NextOutboundStreamId
+function self:AllocateOutboundStreamId (compressedPackData)
+	local outboundStreamId = tonumber (util.CRC (compressedPackData)) + self.NextOutboundStreamId
 	self.NextOutboundStreamId = self.NextOutboundStreamId + 1
 	return outboundStreamId
 end
 
-function self:StreamPack (destinationId, executionTarget, packData, displayName)
-	local outboundStreamId = self:AllocateOutboundStreamId (packData)
+function self:StreamPack (destinationId, executionTarget, compressedPackData, displayName)
+	local outboundStreamId = self:AllocateOutboundStreamId (compressedPackData)
 	
-	local length     = #packData
+	local length     = #compressedPackData
 	local chunkSize  = 32768
 	local chunkCount = math.ceil (length / chunkSize)
 	self.OutboundStreams [outboundStreamId] =
@@ -85,7 +85,7 @@ function self:StreamPack (destinationId, executionTarget, packData, displayName)
 		ExecutionTarget = executionTarget,
 		Started         = false,
 		DisplayName     = displayName or tostring (outboundStreamId),
-		Data            = packData,
+		CompressedData  = compressedPackData,
 		
 		Length          = length,
 		ChunkSize       = chunkSize,
@@ -136,7 +136,7 @@ function self:StartOutboundStreamer ()
 					-- Include the next chunk
 					local chunkStart = (streamEntry.NextChunk - 1) * streamEntry.ChunkSize + 1
 					local chunkEnd   = streamEntry.NextChunk * streamEntry.ChunkSize
-					outBuffer:LongString (string.sub (streamEntry.Data, chunkStart, chunkEnd))
+					outBuffer:LongString (string.sub (streamEntry.CompressedData, chunkStart, chunkEnd))
 					
 					streamEntry.NextChunk = streamEntry.NextChunk + 1
 					
