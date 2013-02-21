@@ -158,6 +158,7 @@ function GLib.EnumerateLuaFolderRecursive (folder, pathId, callback)
 end
 
 function GLib.Error (message)
+	message = tostring (message)
 	ErrorNoHalt (" \n\t" .. message .. "\n\t\t" .. GLib.StackTrace (nil, 2):gsub ("\n", "\n\t\t") .. "\n")
 end
 
