@@ -23,17 +23,24 @@ if SERVER then
 			GLib.Error ("GLib.Net.DispatchPacket: Destination " .. destinationId .. " not found.")
 			return
 		end
-		if packet:GetSize () + channelName:len () + 2 > 256 then
+		if packet:GetSize () + #channelName + 2 <= 256 then
+			GLib.Net.UsermessageDispatcher:Dispatch (ply, channelName, packet)
+		elseif packet:GetSize () + #channelName + 2 < 65536 then
 			GLib.Net.NetDispatcher:Dispatch (ply, channelName, packet)
 		else
-			GLib.Net.UsermessageDispatcher:Dispatch (ply, channelName, packet)
+			GLib.Error ("GLib.Net.DispatchPacket : Packet for " .. channelName .. " is too big (" .. packet:GetSize () .. ")!")
 		end
 	end
 elseif CLIENT then
 	function GLib.Net.DispatchPacket (destinationId, channelName, packet)
 		if GLib.Net.IsChannelOpen (channelName) then
-			GLib.Net.NetDispatcher:Dispatch (destinationId, channelName, packet)
+			if packet:GetSize () + #channelName + 2 < 65536 then
+				GLib.Net.NetDispatcher:Dispatch (destinationId, channelName, packet)
+			else
+				GLib.Error ("GLib.Net.DispatchPacket : Packet is too big (" .. packet:GetSize () .. ")!")
+			end
 		else
+			-- Channel not open, queue up messages
 			GLib.Debug ("GLib.Net : Channel " .. channelName .. " is not open.\n")
 			GLib.Net.ChannelQueues [channelName] = GLib.Net.ChannelQueues [channelName] or {}
 			if #GLib.Net.ChannelQueues [channelName] > 256 then
