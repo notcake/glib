@@ -14,7 +14,7 @@ hook.Add ("Think", "GLib.DelayedCalls",
 	function ()
 		local startTime = SysTime ()
 		while SysTime () - startTime < 0.005 and #delayedCalls > 0 do
-			delayedCalls [1] ()
+			xpcall (delayedCalls [1], GLib.Error)
 			table.remove (delayedCalls, 1)
 		end
 	end
