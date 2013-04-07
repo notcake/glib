@@ -49,7 +49,11 @@ end
 
 function self:DebugMessage (message)
 	message = tostring (CurTime ()) .. ": " .. message
-	self.Log [#self.Log + 1] = message
+	self.Log [#self.Log + 1] =
+	{
+		Message = message,
+		StackTrace = GLib.StackTrace ()
+	}
 	if #self.Log > 100 then
 		table.remove (self.Log, 1)
 	end
