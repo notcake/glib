@@ -244,23 +244,25 @@ end
 
 function GLib.IncludeDirectory (folder, recursive)
 	local included = {}
-	local paths = { "LUA", SERVER and "LSV" or "LCL" }
+	local paths = { "LUA" }
+	if SERVER then paths [#paths + 1] = "LSV" end
+	if CLIENT and GetConVar ("sv_allowcslua"):GetBool () then paths [#paths + 1] = "LCL" end
 	
 	for _, path in ipairs (paths) do
 		local files, folders = GLib.Loader.Find (folder .. "/*", path)
 		for _, file in ipairs (files) do
-			if file:sub (-4):lower () == ".lua" and
-			   not included [file:lower ()] then
+			if string.lower (string.sub (file, -4)) == ".lua" and
+			   not included [string.lower (file)] then
 				GLib.Loader.Include (folder .. "/" .. file)
-				included [file:lower ()] = true
+				included [string.lower (file)] = true
 			end
 		end
 		if recursive then
 			for _, childFolder in ipairs (folders) do
 				if childFolder ~= "." and childFolder ~= ".." and
-				   not included [childFolder:lower ()] then
+				   not included [string.lower (childFolder)] then
 					GLib.IncludeDirectory (folder .. "/" .. childFolder, recursive)
-					included [childFolder:lower ()] = true
+					included [string.lower (childFolder)] = true
 				end
 			end
 		end
