@@ -38,17 +38,19 @@ function self:Resume ()
 	self.Suspended = false
 end
 
-function self:Start (callback)
+function self:Start (f, ...)
 	if self.State ~= GLib.Threading.ThreadState.Unstarted then return end
 	
 	self.State = GLib.Threading.ThreadState.Running
 	
 	GLib.Threading.Threads [self] = true
 	
+	f = GLib.Curry (f, ...)
+	
 	self.Coroutine = coroutine.create (
 		function ()
 			self.StartTime = SysTime ()
-			callback ()
+			f ()
 			self:Terminate ()
 		end
 	)
