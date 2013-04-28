@@ -298,7 +298,7 @@ function self:ToString ()
 			content = content .. ", "
 		end
 		
-		if content:len () > 2048 then
+		if #content > 2048 then
 			content = content .. "..."
 			break
 		end

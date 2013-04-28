@@ -177,7 +177,9 @@ function GLib.Loader.RunPackFile (executionTarget, packFile, compressed, packFil
 					-- Unload systems in reverse load order
 					for i = packFileSystem:GetSystemTableCount (), 1, -1 do
 						local systemTableName = packFileSystem:GetSystemTableName (i)
-						if _G [systemTableName] then
+						if systemTableName == "GLib" then
+							_G [systemTableName].Stage2 = nil
+						elseif _G [systemTableName] then
 							print ("GLib : Unloading " .. systemTableName .. " to prepare for replacement...")
 							GLib.UnloadSystem (systemTableName)
 						end
