@@ -17,7 +17,7 @@ function GLib.Loader.CompileString (code, path, errorMode)
 			"local include      = GLib.Loader.Include ",
 			"return function () ",
 			code,
-			" end"
+			"\n end"
 		}
 	)
 	local compiled = CompileString (code, path, errorMode)
