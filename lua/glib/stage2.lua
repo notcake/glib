@@ -24,6 +24,11 @@ include ("containers/queue.lua")
 include ("containers/stack.lua")
 include ("containers/tree.lua")
 
+GLib.Threading = {}
+include ("threading/threading.lua")
+include ("threading/thread.lua")
+include ("threading/threadstate.lua")
+
 include ("net/net.lua")
 include ("net/datatype.lua")
 include ("net/outbuffer.lua")
