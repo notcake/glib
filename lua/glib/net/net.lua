@@ -91,6 +91,20 @@ function GLib.Net.RegisterChannel (channelName, handler)
 	end
 end
 
+function GLib.Net.UnregisterChannel (channelName)
+	GLib.Net.ChannelHandlers [channelName] = nil
+	
+	if SERVER then
+		for _, ply in GLib.Net.PlayerMonitor:GetPlayerEnumerator () do
+			umsg.Start ("glib_channel_closed", ply)
+				umsg.String (channelName)
+			umsg.End ()
+		end
+		
+		GLib.Net.OpenChannels [channelName] = nil
+	end
+end
+
 if SERVER then
 	GLib.Net.PlayerMonitor:AddEventListener ("PlayerConnected",
 		function (_, ply, userId)
@@ -113,28 +127,37 @@ if SERVER then
 		end
 	)
 elseif CLIENT then
-	usermessage.Hook ("glib_channel_open", function (umsg)
-		local channelName = umsg:ReadString ()
-		GLib.Net.OpenChannels [channelName] = true
-		
-		if not usermessage.GetTable () [channelName] then
-			-- Suppress unhandled usermessage warnings
-			usermessage.Hook (channelName, GLib.NullCallback)
-		end
-		
-		if GLib.Net.ChannelQueues [channelName] then
-			for _, packet in ipairs (GLib.Net.ChannelQueues [channelName]) do
-				xpcall (GLib.Net.DispatchPacket,
-					function (message)
-						GLib.Error (message .. " whilst dispatching packet via " .. channelName .. ".")
-						GLib.Net.LastBadPacket = packet
-					end,
-					packet.DestinationId, channelName, packet
-				)
+	usermessage.Hook ("glib_channel_open",
+		function (umsg)
+			local channelName = umsg:ReadString ()
+			GLib.Net.OpenChannels [channelName] = true
+			
+			if not usermessage.GetTable () [channelName] then
+				-- Suppress unhandled usermessage warnings
+				usermessage.Hook (channelName, GLib.NullCallback)
 			end
-			GLib.Net.ChannelQueues [channelName] = {}
+			
+			if GLib.Net.ChannelQueues [channelName] then
+				for _, packet in ipairs (GLib.Net.ChannelQueues [channelName]) do
+					xpcall (GLib.Net.DispatchPacket,
+						function (message)
+							GLib.Error (message .. " whilst dispatching packet via " .. channelName .. ".")
+							GLib.Net.LastBadPacket = packet
+						end,
+						packet.DestinationId, channelName, packet
+					)
+				end
+				GLib.Net.ChannelQueues [channelName] = {}
+			end
 		end
-	end)
+	)
+	
+	usermessage.Hook ("glib_channel_closed",
+		function (umsg)
+			local channelName = umsg:ReadString ()
+			GLib.Net.OpenChannels [channelName] = nil
+		end
+	)
 	
 	GLib.WaitForLocalPlayer (
 		function ()
