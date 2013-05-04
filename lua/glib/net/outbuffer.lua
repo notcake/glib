@@ -11,10 +11,25 @@ end
 
 for typeName, enumValue in pairs (GLib.Net.DataType) do
 	self [typeName] = function (self, n)
-		if n == nil then GLib.Error ("OutBuffer : Received nil value") end
-	
+		if n == nil then GLib.Error ("OutBuffer:" .. typeName .. " : Called with nil value") end
+		
 		self.Data [self.NextDataId] = n
 		self.Types [self.NextDataId] = enumValue
+		self.NextDataId = self.NextDataId + 1
+		
+		local typeSize = GLib.Net.DataTypeSizes [typeName]
+		if type (typeSize) == "number" then
+			self.Size = self.Size + typeSize
+		else
+			self.Size = self.Size + typeSize (n)
+		end
+	end
+	
+	self ["Prepend" .. typeName] = function (self, n)
+		if n == nil then GLib.Error ("OutBuffer:Prepend" .. typeName .. " : Called with nil value") end
+		
+		table.insert (self.Data, 1, n)
+		table.insert (self.Types, 1, enumValue)
 		self.NextDataId = self.NextDataId + 1
 		
 		local typeSize = GLib.Net.DataTypeSizes [typeName]
