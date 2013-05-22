@@ -1,8 +1,15 @@
 GLib.Resources = {}
 GLib.Resources.Resources = {}
 
-function GLib.Resources.Get (namespace, id, callback)
+function GLib.Resources.Get (namespace, id, versionHashOrCallback, callback)
 	namespace = namespace or ""
+	
+	local versionHash = ""
+	if type (versionHashOrCallback) == "string" then
+		versionHash = versionHashOrCallback
+	elseif type (versionHashOrCallback) == "function" then
+		callback = versionHashOrCallback
+	end
 	callback = callback or GLib.NullCallback
 	
 	local resource = GLib.Resources.Resources [namespace .. "/" .. id]
@@ -28,10 +35,20 @@ function GLib.Resources.Get (namespace, id, callback)
 		resource = GLib.Resources.Resource (namespace, id)
 		GLib.Resources.Resources [namespace .. "/" .. id] = resource
 		
+		-- Check if the resource is cached.
+		if GLib.Resources.ResourceCache:IsResourceCached (namespace, id, versionHash) then
+			print ("GLib.Resources : Using cached resource " .. namespace .. "/" .. id .. " (" .. versionHash .. ").")
+			resource:SetLocalPath (GLib.Resources.ResourceCache:GetCachePath (namespace, id, versionHash))
+			resource:SetState (GLib.Resources.ResourceState.Available)
+			callback (true, resource:GetData ())
+			return
+		end
+		
 		-- Prepare transfer request arguments
 		local outBuffer = GLib.StringOutBuffer ()
 		outBuffer:String (namespace)
 		outBuffer:String (id)
+		outBuffer:String (versionHash or "")
 		
 		-- Send transfer request
 		print ("GLib.Resources : Requesting resource " .. namespace .. "/" .. id .. "...")
