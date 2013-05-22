@@ -106,7 +106,11 @@ function self:SetCacheable (cacheable)
 end
 
 function self:SetData (data)
+	if self.Data == data then return end
+	
 	self.Data = data
+	self.CompressedData = nil
+	
 	self:UpdateVersionHash (self.Data)
 end
 
