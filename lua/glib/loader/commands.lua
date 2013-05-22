@@ -13,7 +13,7 @@ for _, executionTarget in ipairs (executionTargets) do
 			http.Fetch (args,
 				function (data, dataSize, headers, httpCode)
 					print ("glib_download_pack_" .. executionTarget .. ": Received " .. args .. " (" .. GLib.FormatFileSize (dataSize) .. ")")
-					GLib.Loader.RunPackFile (executionTarget, data, false, args)
+					GLib.Loader.RunSerializedPackFile (executionTarget, data, false, args)
 				end,
 				function (err)
 					print ("glib_download_pack_" .. executionTarget .. ": HTTP fetch failed (" .. tostring (err) .. ")")
@@ -66,7 +66,7 @@ if CLIENT then
 			-- Write pack file
 			file.CreateDir ("glibpack")
 			local f = file.Open ("glibpack/" .. packFileName .. "_pack.txt", "wb", "DATA")
-			f:Write (packFileSystem:GetPackFile ())
+			f:Write (packFileSystem:GetSerializedPackFile ())
 			f:Close ()
 		end,
 		function (command, arg)
@@ -97,24 +97,24 @@ if CLIENT then
 				local packFileName = table.concat (args, " ")
 				
 				-- Read pack file
-				local packFile = nil
+				local serializedPackFile = nil
 				local f = file.Open ("data/glibpack/" .. packFileName, "rb", "GAME")
 				if not f then
 					print ("glib_upload_pack_" .. executionTarget .. " : " .. "data/glibpack/" .. packFileName .. " not found!")
 					return
 				end
 				
-				packFile = f:Read (f:Size ())
+				serializedPackFile = f:Read (f:Size ())
 				f:Close ()
 				
 				if executionTarget == "m" then
 					if GetConVar ("sv_allowcslua"):GetBool () then
-						GLib.Loader.RunPackFile ("m", packFile, false, packFileName)
+						GLib.Loader.RunSerializedPackFile ("m", serializedPackFile, false, packFileName)
 					else
 						print ("glib_upload_pack_m : sv_allowcslua is 0!")
 					end
 				else
-					GLib.Loader.Networker:StreamPack (GLib.GetServerId (), executionTarget, util.Compress (packFile), packFileName)
+					GLib.Loader.StreamPack (GLib.GetServerId (), executionTarget, util.Compress (serializedPackFile), packFileName)
 				end
 			end,
 			function (command, arg)

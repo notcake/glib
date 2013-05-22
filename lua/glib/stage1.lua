@@ -23,7 +23,7 @@ if SERVER then
 	end
 	
 	function GLib.AddCSLuaPackFile (path, pathId)
-		GLib.Loader.ServerPackFileSystem:Write (
+		GLib.Loader.PackFileManager:Write (
 			path,
 			GLib.Loader.Read (path, pathId or "LUA")
 		)
@@ -33,18 +33,20 @@ if SERVER then
 		local startTime = SysTime ()
 		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, recursive)
-		MsgN (" done (" .. GLib.Loader.ServerPackFileSystem:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		MsgN (" done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 
 	function GLib.AddCSLuaPackFolderRecursive (folder)
 		local startTime = SysTime ()
 		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, true)
-		MsgN (" done (" .. GLib.Loader.ServerPackFileSystem:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		MsgN (" done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 	
 	function GLib.AddCSLuaPackSystem (systemTableName)
-		GLib.Loader.ServerPackFileSystem:AddSystemTable (systemTableName)
+		GLib.Loader.PackFileManager:CreatePackFileSystem (systemTableName)
+		GLib.Loader.PackFileManager:SetCurrentPackFileSystem (systemTableName)
+		GLib.Loader.PackFileManager:AddSystemTable (systemTableName)
 	end
 	
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
@@ -466,8 +468,8 @@ include ("resources/resourcestate.lua")
 include ("resources/resourcecache.lua")
 
 include ("loader/loader.lua")
-include ("loader/networker.lua")
 include ("loader/packfilesystem.lua")
+include ("loader/packfilemanager.lua")
 include ("loader/commands.lua")
 
 -- This has to be done after the Loader library is loaded,

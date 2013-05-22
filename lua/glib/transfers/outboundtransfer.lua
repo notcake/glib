@@ -40,6 +40,7 @@ end
 
 function self:IsDestinationValid ()
 	if CLIENT then return true end
+	if SERVER and self:GetDestinationId () == GLib.GetEveryoneId () then return true end
 	return self.DestinationPlayer and self.DestinationPlayer:IsValid () or false
 end
 
@@ -86,7 +87,7 @@ function self:SetDestinationId (destinationId)
 	self.DestinationPlayer = nil
 	if SERVER then
 		for _, v in ipairs (player.GetAll ()) do
-			if v:SteamID () == destinationId then
+			if GLib.GetPlayerId (v) == destinationId then
 				self.DestinationPlayer = v
 				break
 			end

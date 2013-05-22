@@ -334,6 +334,7 @@ GLib.Unicode.StartTime = SysTime ()
 
 local function ParseUnicodeData (unicodeData)
 	GLib.Unicode.DataLines = string.Split (string.Trim (unicodeData), "\n")
+	local dataLines = GLib.Unicode.DataLines
 	local i = 1
 	local lastCodePoint = 0
 	timer.Create ("GLib.Unicode.ParseData", 0.001, 0,
@@ -356,7 +357,7 @@ local function ParseUnicodeData (unicodeData)
 				-- 14. Lowercase mapping
 				-- 15. Titlecase mapping
 				
-				local bits = string.Split (string.Trim (GLib.Unicode.DataLines [i]), ";")
+				local bits = string.Split (string.Trim (dataLines [i]), ";")
 				local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
 				
 				lastCodePoint = codePoint
@@ -395,7 +396,7 @@ local function ParseUnicodeData (unicodeData)
 				end
 				
 				i = i + 1
-				if i > #GLib.Unicode.DataLines then
+				if i > #dataLines then
 					timer.Destroy ("GLib.Unicode.ParseData")
 					GLib.Unicode.DataLines = nil
 					

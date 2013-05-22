@@ -114,7 +114,7 @@ function self:SetSourceId (sourceId)
 	self.SourcePlayer = nil
 	if SERVER then
 		for _, v in ipairs (player.GetAll ()) do
-			if v:SteamID () == sourceId then
+			if GLib.GetPlayerId (v) == sourceId then
 				self.SourcePlayer = v
 				break
 			end

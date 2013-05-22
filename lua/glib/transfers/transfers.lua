@@ -18,18 +18,24 @@ local function EndNetMessage (userId)
 	if CLIENT then
 		net.SendToServer ()
 	elseif SERVER then
-		for _, v in ipairs (player.GetAll ()) do
-			if v:SteamID () == userId then
-				net.Send (v)
-				break
+		if userId == GLib.GetEveryoneId () then
+			net.Broadcast ()
+		else
+			for _, v in ipairs (player.GetAll ()) do
+				if GLib.GetPlayerId (v) == userId then
+					net.Send (v)
+					return
+				end
 			end
+			
+			GLib.Error ("GLib.Transfers : Unknown userId " .. userId .. "!")
 		end
 	end
 end
 
 net.Receive ("glib_cancel_transfer",
 	function (_, ply)
-		local userId = SERVER and ply:SteamID () or "Server"
+		local userId = SERVER and GLib.GetPlayerId (ply) or "Server"
 		
 		local transferId = net.ReadUInt (32)
 		
@@ -43,7 +49,7 @@ net.Receive ("glib_cancel_transfer",
 
 net.Receive ("glib_transfer",
 	function (_, ply)
-		local userId = SERVER and ply:SteamID () or "Server"
+		local userId = SERVER and GLib.GetPlayerId (ply) or "Server"
 		local messageType = net.ReadUInt (8)
 		local transferId = net.ReadUInt (32)
 		
@@ -142,7 +148,7 @@ end
 
 net.Receive ("glib_transfer_request",
 	function (_, ply)
-		local userId = SERVER and ply:SteamID () or "Server"
+		local userId = SERVER and GLib.GetPlayerId (ply) or "Server"
 		
 		local channelName = net.ReadString ()
 		local requestId = net.ReadUInt (32)
@@ -155,7 +161,7 @@ net.Receive ("glib_transfer_request",
 
 net.Receive ("glib_transfer_request_response",
 	function (_, ply)
-		local userId = SERVER and ply:SteamID () or "Server"
+		local userId = SERVER and GLib.GetPlayerId (ply) or "Server"
 		
 		local requestId = net.ReadUInt (32)
 		local requestAccepted = net.ReadUInt (8) == 1

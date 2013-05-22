@@ -52,12 +52,15 @@ function self:Find (path)
 	return files, folders
 end
 
-function self:GetCompressedPackFile ()
+function self:GetCompressedSerializedPackFile ()
 	if self.PackFileRevision ~= self.Revision then
 		self:BuildPackFile ()
 	end
 	if not self.CompressedPackFile then
+		local startTime = SysTime ()
+		Msg ("GLib.Loader : Compressing pack file \"" .. self:GetName () .. "\" (" .. table.concat (self.SystemTableNames, ", ") .. ")...")
 		self.CompressedPackFile = util.Compress (self.PackFile)
+		MsgN (" done (" .. self:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#self.PackFile) .. " compressed to " .. GLib.FormatFileSize (#self.CompressedPackFile) .. ", " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 	return self.CompressedPackFile
 end
@@ -70,15 +73,15 @@ function self:GetName ()
 	return self.Name
 end
 
-function self:GetPackFile ()
+function self:GetRevision ()
+	return self.Revision
+end
+
+function self:GetSerializedPackFile ()
 	if self.PackFileRevision ~= self.Revision then
 		self:BuildPackFile ()
 	end
 	return self.PackFile
-end
-
-function self:GetRevision ()
-	return self.Revision
 end
 
 function self:GetSystemTableCount ()
@@ -145,7 +148,7 @@ function self:BuildPackFile ()
 	if self.PackFileRevision == self.Revision then return end
 	
 	local startTime = SysTime ()
-	Msg ("GLib : Building pack file \"" .. self:GetName () .. "\" (" .. table.concat (self.SystemTableNames, ", ") .. ")...")
+	Msg ("GLib.Loader : Building pack file \"" .. self:GetName () .. "\" (" .. table.concat (self.SystemTableNames, ", ") .. ")...")
 	
 	local outBuffer = GLib.StringOutBuffer ()
 	for i = 1, #self.SystemTableNames do
@@ -157,10 +160,10 @@ function self:BuildPackFile ()
 	outBuffer:String ("")
 	
 	self.PackFile = outBuffer:GetString ()
-	self.CompressedPackFile = util.Compress (self.PackFile)
+	self.CompressedPackFile = nil
 	self.PackFileRevision = self.Revision
 	
-	MsgN (" done (" .. self:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#self.PackFile) .. " compressed to " .. GLib.FormatFileSize (#self.CompressedPackFile) .. ", " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+	MsgN (" done (" .. self:GetFileCount () .. " total files, " .. GLib.FormatFileSize (#self.PackFile) .. ", " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 end
 
 function self:Deserialize (data, compressed, callback)
@@ -251,16 +254,4 @@ function self:SerializeDirectory (fullPath, folderTable, outBuffer)
 			self:SerializeDirectory (fullPath .. name .. "/", data, outBuffer)
 		end
 	end
-end
-
-local previousPackFileSystem = GetGLibPackFileSystem and GetGLibPackFileSystem ()
-local currentPackFileSystem = GLib.Loader.PackFileSystem ()
-currentPackFileSystem:SetName ("Server")
-GLib.Loader.ServerPackFileSystem = currentPackFileSystem
-if previousPackFileSystem then
-	previousPackFileSystem:MergeInto (currentPackFileSystem)
-end
-
-function GetGLibPackFileSystem ()
-	return currentPackFileSystem
 end
