@@ -82,7 +82,7 @@ function self:Vector (v)
 end
 
 function self:Char (char)
-	self.Data [#self.Data + 1] = char:sub (1, 1)
+	self.Data [#self.Data + 1] = string.sub (char, 1, 1)
 end
 
 function self:Bytes (data, length)
@@ -103,3 +103,6 @@ end
 function self:Boolean (b)
 	self:UInt8 (b and 1 or 0)
 end
+
+self.__len      = self.GetSize
+self.__tostring = self.GetString

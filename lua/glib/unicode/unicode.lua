@@ -356,7 +356,7 @@ local function ParseUnicodeData (unicodeData)
 				-- 14. Lowercase mapping
 				-- 15. Titlecase mapping
 				
-				local bits = string.Split (GLib.Unicode.DataLines [i], ";")
+				local bits = string.Split (string.Trim (GLib.Unicode.DataLines [i]), ";")
 				local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
 				
 				lastCodePoint = codePoint
@@ -409,9 +409,18 @@ local function ParseUnicodeData (unicodeData)
 	)
 end
 
-if file.Exists ("data/glib_unicodedata.txt", "GAME") then
-	ParseUnicodeData (file.Read ("data/glib_unicodedata.txt", "GAME") or "")
-end
+GLib.Resources.RegisterFile ("UnicodeData", "UnicodeData", "data/glib_unicodedata.txt")
+
+timer.Simple (1,
+	function ()
+		GLib.Resources.Get ("UnicodeData", "UnicodeData",
+			function (success, data)
+				if not success then return end
+				ParseUnicodeData (data)
+			end
+		)
+	end
+)
 
 GLib.Unicode.Characters.LeftToRightMark          = GLib.UTF8.Char (0x200E)
 GLib.Unicode.Characters.RightToLeftMark          = GLib.UTF8.Char (0x200F)

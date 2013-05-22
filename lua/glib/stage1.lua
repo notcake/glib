@@ -456,6 +456,15 @@ include ("stringbuilder.lua")
 include ("stringinbuffer.lua")
 include ("stringoutbuffer.lua")
 
+include ("transfers/transfers.lua")
+include ("transfers/inboundtransfer.lua")
+include ("transfers/outboundtransfer.lua")
+
+include ("resources/resources.lua")
+include ("resources/resource.lua")
+include ("resources/resourcestate.lua")
+include ("resources/resourcecache.lua")
+
 include ("loader/loader.lua")
 include ("loader/networker.lua")
 include ("loader/packfilesystem.lua")
@@ -473,6 +482,8 @@ GLib.AddCSLuaFile ("glib/playermonitor.lua")
 GLib.AddCSLuaFile ("glib/stringbuilder.lua")
 GLib.AddCSLuaFile ("glib/stringinbuffer.lua")
 GLib.AddCSLuaFile ("glib/stringoutbuffer.lua")
+GLib.AddCSLuaFolderRecursive ("glib/transfers")
+GLib.AddCSLuaFolderRecursive ("glib/resources")
 GLib.AddCSLuaFolderRecursive ("glib/loader")
 
 -- Stage 2
