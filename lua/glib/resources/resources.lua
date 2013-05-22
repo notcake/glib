@@ -78,13 +78,15 @@ function GLib.Resources.Get (namespace, id, callback)
 end
 
 function GLib.Resources.RegisterData (namespace, id, data)
-	local resource = GLib.Resources.Resource (namespace, id)
+	local resource = GLib.Resources.Resources [namespace .. "/" .. id]
+	if not resource then
+		resource = GLib.Resources.Resource (namespace, id)
+		GLib.Resources.Resources [namespace .. "/" .. id] = resource
+		print ("GLib.Resources : Resource " .. namespace .. "/" .. id .. " registered (" .. GLib.FormatFileSize (#data) .. ").")
+	end
+	
 	resource:SetData (data)
 	resource:SetState (GLib.Resources.ResourceState.Available)
-	
-	GLib.Resources.Resources [namespace .. "/" .. id] = resource
-	
-	print ("GLib.Resources : Resource " .. namespace .. "/" .. id .. " registered (" .. GLib.FormatFileSize (#data) .. ").")
 	
 	return resource
 end
@@ -92,13 +94,15 @@ end
 function GLib.Resources.RegisterFile (namespace, id, localPath)
 	if not file.Exists (localPath, "GAME") then return nil end
 	
-	local resource = GLib.Resources.Resource (namespace, id)
+	local resource = GLib.Resources.Resources [namespace .. "/" .. id]
+	if not resource then
+		resource = GLib.Resources.Resource (namespace, id)
+		GLib.Resources.Resources [namespace .. "/" .. id] = resource
+		print ("GLib.Resources : Resource " .. namespace .. "/" .. id .. " registered (" .. localPath .. ").")
+	end
+	
 	resource:SetLocalPath (localPath)
 	resource:SetState (GLib.Resources.ResourceState.Available)
-	
-	GLib.Resources.Resources [namespace .. "/" .. id] = resource
-	
-	print ("GLib.Resources : Resource " .. namespace .. "/" .. id .. " registered (" .. localPath .. ").")
 	
 	return resource
 end
