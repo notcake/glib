@@ -43,7 +43,8 @@ elseif CLIENT then
 			-- Channel not open, queue up messages
 			GLib.Debug ("GLib.Net : Channel " .. channelName .. " is not open.\n")
 			GLib.Net.ChannelQueues [channelName] = GLib.Net.ChannelQueues [channelName] or {}
-			if #GLib.Net.ChannelQueues [channelName] > 256 then
+			if #GLib.Net.ChannelQueues [channelName] > 256 and not GLib.Net.ChannelQueues [channelName].PrintedLengthWarning then
+				GLib.Net.ChannelQueues [channelName].PrintedLengthWarning = true
 				GLib.Error ("GLib.Net.DispatchPacket : " .. channelName .. " queue is growing too long!")
 			end
 			GLib.Net.ChannelQueues [channelName] [#GLib.Net.ChannelQueues [channelName] + 1] = packet
@@ -147,7 +148,10 @@ elseif CLIENT then
 						packet.DestinationId, channelName, packet
 					)
 				end
-				GLib.Net.ChannelQueues [channelName] = {}
+				GLib.Net.ChannelQueues [channelName] =
+				{
+					PrintedLengthWarning = false
+				}
 			end
 		end
 	)
