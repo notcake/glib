@@ -226,7 +226,6 @@ timer.Create ("GLib.Transfers", 1, 0,
 				EndNetMessage (outboundTransfer:GetDestinationId ())
 				
 				if outboundTransfer:IsFinished () then
-					print ("GLib.Transfers : Outbound transfer " .. outboundTransfer:GetDisplayId () .. " finished.")
 					GLib.Transfers.OutboundTransfers [outboundTransfer:GetDestinationId () .. "/" .. outboundTransfer:GetId ()] = nil
 				end
 			end
