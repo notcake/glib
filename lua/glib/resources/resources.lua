@@ -140,7 +140,7 @@ GLib.Transfers.RegisterRequestHandler ("GLib.Resources",
 			return false
 		end
 		
-		print ("GLib.Resources : Sending resource " .. namespace .. "/" .. id .. " to " .. userId .. ".")
+		-- print ("GLib.Resources : Sending resource " .. namespace .. "/" .. id .. " to " .. userId .. ".")
 		local outBuffer = GLib.StringOutBuffer (data)
 		outBuffer:String (namespace)
 		outBuffer:String (id)
