@@ -242,6 +242,13 @@ function GLib.Initialize (systemName, systemTable)
 			systemTable:DispatchEvent ("Unloaded")
 		end
 	)
+	
+	GLib.CallDelayed (
+		function ()
+			hook.Call ("GLibSystemLoaded", GAMEMODE or GM, tostring (systemName))
+			hook.Call (tostring (systemName) .. "Loaded", GAMEMODE or GM)
+		end
+	)
 end
 
 function GLib.IncludeDirectory (folder, recursive)
@@ -412,6 +419,9 @@ function GLib.UnloadSystem (systemTableName)
 		_G [systemTableName]:DispatchEvent ("Unloaded")
 	end
 	_G [systemTableName] = nil
+	
+	hook.Call ("GLibSystemUnloaded", GAMEMODE or GM, systemTableName)
+	hook.Call (systemTableName .. "Unloaded", GAMEMODE or GM)
 end
 
 if CLIENT then
