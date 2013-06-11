@@ -1,6 +1,11 @@
 local self = {}
 GLib.EventProvider = GLib.MakeConstructor (self)
 
+local pairs    = pairs
+local pcall    = pcall
+local tostring = tostring
+local xpcall   = xpcall
+
 function self:ctor (host, getParentEventProvider)
 	if host then
 		host.AddEventListener = function (host, ...)
