@@ -78,6 +78,15 @@ function self:RemoveEventListener (eventName, nameOrCallback)
 	end
 end
 
+function self:RemoveEventListeners (nameOrCallback)
+	for	eventName, eventListeners in pairs (self.EventListeners) do
+		eventListeners [nameOrCallback] = nil
+		if next (eventListeners) == nil then
+			self.EventListeners [eventName] = nil
+		end
+	end
+end
+
 function self:SuppressEvents (suppress)
 	self.ShouldSuppressEvents = suppress
 end

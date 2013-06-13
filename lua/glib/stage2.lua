@@ -4,6 +4,7 @@ GLib.Stage2 = true
 include ("colors.lua")
 
 include ("coroutine.lua")
+include ("glue.lua")
 
 include ("memoryusagereport.lua")
 
