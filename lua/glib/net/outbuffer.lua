@@ -23,6 +23,8 @@ for typeName, enumValue in pairs (GLib.Net.DataType) do
 		else
 			self.Size = self.Size + typeSize (n)
 		end
+		
+		return self
 	end
 	
 	self ["Prepend" .. typeName] = function (self, n)
@@ -38,6 +40,8 @@ for typeName, enumValue in pairs (GLib.Net.DataType) do
 		else
 			self.Size = self.Size + typeSize (n)
 		end
+		
+		return self
 	end
 end
 
@@ -68,4 +72,12 @@ function self:OutBuffer (outBuffer)
 	end
 	
 	self.Size = self.Size + outBuffer:GetSize ()
+end
+
+function self:GetString ()
+	local outBuffer = GLib.StringOutBuffer ()
+	for i = 1, #self.Data do
+		outBuffer [GLib.Net.DataType [self.Types [i]]] (outBuffer, self.Data [i])
+	end
+	return outBuffer:GetString ()
 end
