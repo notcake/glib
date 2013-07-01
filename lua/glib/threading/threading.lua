@@ -24,6 +24,11 @@ end
 
 hook.Add ("Think", "GLib.Threading",
 	function ()
+		if not GLib.Threading then
+			hook.Remove ("Think", "GLib.Threading")
+			return
+		end
+		
 		GLib.Threading.LastThreadResumeTime = SysTime ()
 		
 		for thread, _ in pairs (GLib.Threading.Threads) do

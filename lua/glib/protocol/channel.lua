@@ -3,7 +3,7 @@ GLib.Protocol.Channel = GLib.MakeConstructor (self)
 
 function self:ctor (channelName, handlerFunction)
 	self.ChannelName = channelName
-	self.StringTable = GLib.Net.StringTable ()
+	self.StringTable = GLib.StringTable ()
 	self.PacketHandlers = {}
 	self.HandlerFunction = handlerFunction or self.DefaultHandlerFunction
 	GLib.EventProvider (self)

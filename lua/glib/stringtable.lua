@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.StringTable = GLib.MakeConstructor (self)
+GLib.StringTable = GLib.MakeConstructor (self)
 
 function self:ctor ()
 	self.StringHashes = {}

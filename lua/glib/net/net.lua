@@ -7,6 +7,11 @@ GLib.Net.OpenChannels = {}
 GLib.Net.LastBadPacket = nil
 
 local function PlayerFromId (userId)
+	if type (userId) == "table" then
+		-- Assume it's a SubscriberSet
+		return userId:GetRecipientFilter ()
+	end
+	
 	if userId == "Everyone" then return player.GetAll () end
 	local ply = GLib.Net.PlayerMonitor:GetUserEntity (userId)
 	if not ply then
@@ -20,7 +25,7 @@ if SERVER then
 	function GLib.Net.DispatchPacket (destinationId, channelName, packet)
 		local ply = PlayerFromId (destinationId)
 		if not ply then
-			GLib.Error ("GLib.Net.DispatchPacket: Destination " .. destinationId .. " not found.")
+			GLib.Error ("GLib.Net.DispatchPacket: Destination " .. tostring (destinationId) .. " not found.")
 			return
 		end
 		if packet:GetSize () + #channelName + 2 <= 256 then

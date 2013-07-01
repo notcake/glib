@@ -290,7 +290,7 @@ end
 
 --[[
 	GLib.MakeConstructor (metatable, base, base2)
-		Returns: ()->Object
+		Returns: () -> Object
 		
 		Produces a constructor for the object defined by metatable.
 		base may be nil or the constructor of a base class.
