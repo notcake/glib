@@ -30,6 +30,8 @@ function self:GetChildNetworkableRecursive (addressBuffer)
 			GLib.Error ("NetworkableContainer:GetChildNetworkableRecursive : " .. address .. " is not a NetworkableContainer.")
 			break
 		end
+		
+		address = addressBuffer:String ()
 	end
 	
 	return networkable
@@ -50,7 +52,7 @@ end
 
 function self:NetworkChildMessage (childNetworkable, sourceNetworkable, subscriberSet, addressBuffer, outBuffer)
 	subscriberSet = subscriberSet or self:GetSubscriberSet ()
-	addressBuffer:Prepend (self:GetChildNetworkableAddress (childNetworkable))
+	addressBuffer:PrependString (tostring (self:GetChildNetworkableAddress (childNetworkable)))
 	self:DispatchEvent ("NetworkMessage", sourceNetworkable, subscriberSet or self:GetSubscriberSet (), addressBuffer, outBuffer)
 end
 

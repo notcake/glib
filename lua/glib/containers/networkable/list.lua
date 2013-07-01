@@ -1,5 +1,6 @@
 local self = {}
 GLib.Containers.NetworkableList = GLib.MakeConstructor (self, GLib.NetworkableContainer)
+GLib.RegisterSerializable ("GLib.Containers.NetworkableList", GLib.Containers.NetworkableList)
 
 --[[
 	Events:
@@ -78,6 +79,10 @@ end
 
 function self:Contains (item)
 	return self.ItemRefCounts [item] ~= nil
+end
+
+function self:Get (index)
+	return self.Items [index]
 end
 
 function self:GetCount ()
@@ -185,8 +190,8 @@ function self:ToString ()
 		
 		item = item or "[nil]"
 		
-		if type (item) == "table" and item.ToString then item = item:ToString () end
-		if type (item) == "string" then item = "\"" .. GLib.String.Escape (self.Value) .. "\"" end
+		if type (item) == "table" and item.ToString then item = item:ToString ()
+		elseif type (item) == "string" then item = "\"" .. GLib.String.Escape (item) .. "\"" end
 		item = tostring (item)
 		
 		content = content .. item

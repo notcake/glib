@@ -33,7 +33,7 @@ function GLib.Serialize (object, outBuffer)
 	local className = type (object)
 	if className == "table" and
 	   object.__className then
-		className = object._className
+		className = object.__className
 	end
 	
 	local serializationInfo = currentSerializableRegistry:GetSerializationInfo (className)
