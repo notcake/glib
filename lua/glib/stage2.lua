@@ -63,3 +63,7 @@ include ("protocol/channel.lua")
 include ("protocol/endpoint.lua")
 include ("protocol/endpointmanager.lua")
 include ("protocol/session.lua")
+
+-- Interfaces
+GLib.Interfaces = {}
+include ("interfaces/interfaces.lua")

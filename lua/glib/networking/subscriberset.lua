@@ -19,11 +19,13 @@ end
 
 function self:AddPlayer (ply)
 	if self.PlayerSet [ply] then return end
-	
-	self.Players [#self.Players + 1] = ply
-	self.PlayerSet [ply] = true
-	
-	self:DispatchEvent ("PlayerAdded", ply)
+		self.PlayerSet [ply] = self.PlayerSet [ply] + 1
+	else
+		self.Players [#self.Players + 1] = ply
+		self.PlayerSet [ply] = 1
+		
+		self:DispatchEvent ("PlayerAdded", ply)
+	end
 end
 
 function self:Clear ()
@@ -34,7 +36,7 @@ function self:Clear ()
 end
 
 function self:ContainsPlayer (ply)
-	return self.PlayerSet [ply] or false
+	return self.PlayerSet [ply] and true or false
 end
 
 function self:ContainsUser (userId)
@@ -70,6 +72,10 @@ end
 function self:RemovePlayer (ply)
 	if not self.PlayerSet [ply] then return end
 	
+	self.PlayerSet [ply] = self.PlayerSet [ply] - 1
+	if self.PlayerSet [ply] > 0 then return end
+	
+	self.PlayerSet [ply] = nil
 	for i = 1, #self.Players do
 		if self.Players [i] == ply then
 			table.remove (self.Players, i)
@@ -100,6 +106,7 @@ self.__tostring = self.ToString
 function self:CleanUp ()
 	for i = #self.Players, 1, -1 do
 		if not self.Players [i]:IsValid () then
+			self:DispatchEvent ("PlayerRemoved", self.Players [i])
 			self.PlayerSet [self.Players [i]] = nil
 			table.remove (self.Players, i)
 		end
