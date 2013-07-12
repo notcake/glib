@@ -42,7 +42,7 @@ net.Receive ("glib_cancel_transfer",
 		local outboundTransfer = GLib.Transfers.OutboundTransfers [userId .. "/" .. transferId]
 		if not outboundTransfer then return end
 		
-		print ("GLib.Transfers : Outbound transfer " .. outboundTransfer:GetDisplayId () .. " cancelled.")
+		-- print ("GLib.Transfers : Outbound transfer " .. outboundTransfer:GetDisplayId () .. " cancelled.")
 		GLib.Transfers.OutboundTransfers [userId .. "/" .. transferId] = nil
 	end
 )
