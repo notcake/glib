@@ -18,7 +18,7 @@ function self:ctor ()
 end
 
 function self:AddPlayer (ply)
-	if self.PlayerSet [ply] then return end
+	if self.PlayerSet [ply] then
 		self.PlayerSet [ply] = self.PlayerSet [ply] + 1
 	else
 		self.Players [#self.Players + 1] = ply
