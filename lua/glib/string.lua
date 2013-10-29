@@ -15,6 +15,39 @@ function GLib.String.ConsoleEscape (str)
 	return str
 end
 
+function GLib.String.DumpHex (str)
+	local charsPerLine = 16
+	local lines = {}
+	local i = 1
+	
+	while i < #str do
+		local line = string.sub (str, i, i + charsPerLine - 1)
+		local left = ""
+		local right = ""
+		
+		for j = 1, #line do
+			local char = string.byte (line, j)
+			left  = left .. string.format ("%02x ", char)
+			
+			if char >= 32 and char <= 127 then
+				right = right .. string.sub (line, j, j)
+			else
+				right = right .. "."
+			end
+		end
+		
+		if #left < 3 * charsPerLine then
+		    left = left .. string.rep (" ", 3 * charsPerLine - #left)
+		end
+		
+		lines [#lines + 1] = left .. "| " .. right
+		
+	    i = i + charsPerLine
+	end
+	
+	return table.concat (lines, "\n")
+end
+
 function GLib.String.Escape (str)
 	if type (str) ~= "string" then
 		ErrorNoHalt ("GLib.String.Escape: Expected string, got " .. type (str) .. " instead.\n")
