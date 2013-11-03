@@ -9,12 +9,17 @@ include ("glue.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
 
+-- Unicode
 include ("unicode/unicodecategory.lua")
 include ("unicode/wordtype.lua")
 include ("unicode/utf8.lua")
 include ("unicode/unicode.lua")
 include ("unicode/unicodecategorytable.lua")
 include ("unicode/transliteration.lua")
+
+-- Formatting
+include ("formatting/date.lua")
+include ("formatting/tableformatter.lua")
 
 -- Serialization
 GLib.Serialization = {}
