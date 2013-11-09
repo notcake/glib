@@ -174,11 +174,6 @@ function GLib.FindUpValue (func, name)
 	end
 end
 
-function GLib.FormatDate (date)
-	local dateTable = os.date ("*t", date)
-	return string.format ("%02d/%02d/%04d %02d:%02d:%02d", dateTable.day, dateTable.month, dateTable.year, dateTable.hour, dateTable.min, dateTable.sec)
-end
-
 local timeUnits = { "ns", "µs", "ms", "s", "ks", "Ms", "Gs", "Ts", "Ps", "Es", "Zs", "Ys" }
 function GLib.FormatDuration (duration)
 	duration = duration * 1000000000
