@@ -72,3 +72,6 @@ include ("protocol/session.lua")
 -- Interfaces
 GLib.Interfaces = {}
 include ("interfaces/interfaces.lua")
+
+-- Addons
+include ("addons.lua")

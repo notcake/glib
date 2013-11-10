@@ -477,8 +477,6 @@ include ("loader/packfilesystem.lua")
 include ("loader/packfilemanager.lua")
 include ("loader/commands.lua")
 
-include ("addons.lua")
-
 -- This has to be done after the Loader library is loaded,
 -- since GLib.EnumerateFolder calls GLib.Loader.Find.
 GLib.AddCSLuaFile ("glib/glib.lua")
