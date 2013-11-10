@@ -13,7 +13,7 @@ GLib.PolledWait (1, 30,
 					end
 					return nil
 				end
-				local r0, r1, r2 = originalFunction (...)
+				local success, r0, r1, r2 = xpcall (originalFunction, GLib.Error, ...)
 				string.find = string_find
 				return r0, r1, r2
 			end
@@ -29,7 +29,7 @@ GLib.PolledWait (1, 30,
 					end
 					return nil
 				end
-				local r0, r1, r2 = originalFunction (...)
+				local success, r0, r1, r2 = xpcall (originalFunction, GLib.Error, ...)
 				string.find = string_find
 				return r0, r1, r2
 			end
