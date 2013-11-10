@@ -9,6 +9,13 @@ include ("glue.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
 
+-- Lua
+GLib.Lua = {}
+include ("lua/lua.lua")
+include ("lua/sessionvariables.lua")
+include ("lua/backup.lua")
+include ("lua/detours.lua")
+
 -- Unicode
 include ("unicode/unicodecategory.lua")
 include ("unicode/wordtype.lua")

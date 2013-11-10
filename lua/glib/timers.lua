@@ -10,6 +10,24 @@ function GLib.CallDelayed (callback)
 	delayedCalls [#delayedCalls + 1] = callback
 end
 
+function GLib.PolledWait (interval, timeout, predicate, callback)
+	if not callback then return end
+	if not predicate then return end
+	
+	if predicate () then
+		callback ()
+		return
+	end
+	
+	if timeout < 0 then return end
+	
+	timer.Simple (interval,
+		function ()
+			GLib.PolledWait (interval, timeout - interval, predicate, callback)
+		end
+	)
+end
+
 hook.Add ("Think", "GLib.DelayedCalls",
 	function ()
 		local startTime = SysTime ()
