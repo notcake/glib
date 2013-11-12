@@ -16,6 +16,10 @@ include ("lua/sessionvariables.lua")
 include ("lua/backup.lua")
 include ("lua/detours.lua")
 
+include ("lua/stackframe.lua")
+include ("lua/stacktrace.lua")
+include ("lua/stacktracecache.lua")
+
 -- Unicode
 include ("unicode/unicodecategory.lua")
 include ("unicode/wordtype.lua")

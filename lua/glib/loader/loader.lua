@@ -1,6 +1,8 @@
 GLib.Loader = {}
 GLib.Loader.File = {}
 
+local CompileString = CompileString
+
 for k, v in pairs (file) do
 	GLib.Loader.File [k] = v
 end
