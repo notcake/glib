@@ -91,6 +91,7 @@ function self:Bytes (data, length)
 end
 
 function self:String (data)
+	data = data or ""
 	self:UInt16 (data:len ())
 	self.Data [#self.Data + 1] = data
 end
