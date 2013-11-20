@@ -1,8 +1,16 @@
 local self = {}
 GLib.Lua.BytecodeReader = GLib.MakeConstructor (self)
 
-function self:ctor (dump)
-	self.Dump = dump
+function self:ctor (functionOrDump)
+	self.Function = nil
+	self.Dump = nil
+
+	if type (functionOrDump) == "string" then
+		self.Dump = functionOrDump
+	else
+		self.Function = functionOrDump
+		self.Dump = string.dump (self.Function)
+	end
 	
 	local reader = GLib.StringInBuffer (self.Dump)
 	reader.Int = function (self)
@@ -31,14 +39,14 @@ function self:ctor (dump)
 	self.DataLength = reader:Int ()
 	
 	self.VariadicFlags = reader:UInt8 ()
-	self.IsVariadic = bit.band (self.VariadicFlags, 2) ~= 0
+	self.Variadic = bit.band (self.VariadicFlags, 2) ~= 0
 	
 	self.ParameterCount = reader:UInt8 ()
 	self.FrameSize = reader:UInt8 ()
 	self.UpvalueCount = reader:UInt8 ()
 	
-	self.ConstantCount = reader:Int ()
-	self.KNCount = reader:Int ()
+	self.GarbageCollectedConstantCount = reader:Int ()
+	self.NumericConstantCount = reader:Int ()
 	self.BCCount = reader:Int ()
 	
 	self.DebugDataLength = reader:Int ()
@@ -65,10 +73,10 @@ function self:ctor (dump)
 		self.UpvalueData [i - 1] = reader:UInt16 ()
 	end
 	
-	self.Constants = {}
-	for i = 1, self.ConstantCount do
+	self.GarbageCollectedConstants = {}
+	for i = 1, self.GarbageCollectedConstantCount do
 		local constant = {}
-		self.Constants [i - 1] = constant
+		self.GarbageCollectedConstants [i] = constant
 		
 		constant.Type = reader:Int ()
 		if constant.Type >= 4 then
@@ -79,32 +87,99 @@ function self:ctor (dump)
 		end
 	end
 	
+	self.NumericConstants = {}
+	for i = 1, self.NumericConstantCount do
+		local constant = {}
+		self.NumericConstants [i] = constant
+		
+		local low32 = reader:Int ()
+		local high32 = 0
+		
+		if (low32 % 2) == 1 then
+			high32 = reader:Int ()
+		end
+		
+		low32 = math.floor (low32 / 2)
+		constant.High = string.format ("0x%08x", high32)
+		constant.Low = string.format ("0x%08x", low32)
+		constant.Value = low32 + high32 * 4294967296
+	end
+	
 	self.Bytecode = reader:Bytes (1024)
+end
+
+function self:GetGarbageCollectedConstantCount ()
+	return self.GarbageCollectedConstantCount
+end
+
+function self:GetGarbageCollectedConstantValue (constantId)
+	local constant = self.GarbageCollectedConstants [constantId]
+	if not constant then return nil end
+	return constant.Value
+end
+
+function self:GetFunction ()
+	return self.Function
+end
+
+function self:GetInstruction (instructionId, instruction)
+	instruction = instruction or GLib.Lua.Instruction (self)
+	
+	local instructionTable = self.Instructions [instructionId]
+	instruction:SetOpcode (instructionTable.Opcode)
+	instruction:SetOperandA (instructionTable.OperandA)
+	instruction:SetOperandB (instructionTable.OperandB)
+	instruction:SetOperandC (instructionTable.OperandC)
+	
+	return instruction
+end
+
+function self:GetInstructionCount ()
+	return #self.Instructions
+end
+
+function self:GetParameterCount ()
+	return self.ParameterCount
+end
+
+function self:IsVariadic ()
+	return self.Variadic
 end
 
 function self:ToString ()
 	local str = GLib.StringBuilder ()
 	
-	for _, instruction in ipairs (self.Instructions) do
-		str:Append (instruction.OpcodeName)
-		str:Append (" ")
-		if not GLib.Lua.OpcodeInfo [instruction.Opcode].OperandDType then
-			-- A, B, C
-			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (instruction.OperandB) .. ", " .. tostring (instruction.OperandC))
-		else
-			-- A, D
-			local operandD = instruction.OperandD
-			if instruction.Opcode == GLib.Lua.Opcode.KSTR then
-				local constant = self.Constants [operandD]
-				if constant then
-					operandD = "\"" .. constant.Value .. "\""
-				else
-				end
-			end
-			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (operandD))
+	local instruction = GLib.Lua.Instruction (self)
+	
+	str:Append ("function (")
+	for i = 1, self:GetParameterCount () do
+		if i > 1 then
+			str:Append (", ")
 		end
+		str:Append ("_" .. tostring (i))
+	end
+	
+	if self:IsVariadic () then
+		if self:GetParameterCount () > 0 then
+			str:Append (", ")
+		end
+		str:Append ("...")
+	end
+	
+	str:Append (")\n")
+	
+	for _, instructionTable in ipairs (self.Instructions) do
+		instruction:SetOpcode (instructionTable.Opcode)
+		instruction:SetOperandA (instructionTable.OperandA)
+		instruction:SetOperandB (instructionTable.OperandB)
+		instruction:SetOperandC (instructionTable.OperandC)
+		
+		str:Append ("\t")
+		str:Append (instruction:ToString ())
 		str:Append ("\n")
 	end
+	
+	str:Append ("end")
 	
 	return str:ToString ()
 end

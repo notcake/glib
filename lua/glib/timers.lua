@@ -30,10 +30,16 @@ end
 
 hook.Add ("Think", "GLib.DelayedCalls",
 	function ()
+		local lastCalled = nil
 		local startTime = SysTime ()
 		while SysTime () - startTime < 0.005 and #delayedCalls > 0 do
+			lastCalled = delayedCalls [1]
 			xpcall (delayedCalls [1], GLib.Error)
 			table.remove (delayedCalls, 1)
+		end
+		
+		if SysTime () - startTime > 0.2 and lastCalled then
+			MsgN ("GLib.DelayedCalls : " .. tostring (lastCalled) .. " took " .. ((SysTime () - startTime) * 1000) .. " ms.")
 		end
 	end
 )

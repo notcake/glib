@@ -1,5 +1,4 @@
 GLib.Lua.Opcode = {}
-GLib.Lua.OpcodeInfo = {}
 
 local opcodeData = [[
   /* Comparison ops. ORDER OPR. */ \
@@ -126,8 +125,28 @@ local opcodeData = [[
   _(FUNCCW,rbase,___,___,___)
 ]]
 
+local operandTypeMap =
+{
+	["___"]   = GLib.Lua.OperandType.None,
+	["var"]   = GLib.Lua.OperandType.Variable,
+	["dst"]   = GLib.Lua.OperandType.DestinationVariable,
+	["base"]  = GLib.Lua.OperandType.WritableBase,
+	["rbase"] = GLib.Lua.OperandType.ReadOnlyBase,
+	["uv"]    = GLib.Lua.OperandType.UpvalueId,
+	["lit"]   = GLib.Lua.OperandType.Literal,
+	["lits"]  = GLib.Lua.OperandType.SignedLiteral,
+	["pri"]   = GLib.Lua.OperandType.Primitive,
+	["num"]   = GLib.Lua.OperandType.NumericConstantId,
+	["str"]   = GLib.Lua.OperandType.StringConstantId,
+	["tab"]   = GLib.Lua.OperandType.TableConstantId,
+	["func"]  = GLib.Lua.OperandType.FunctionConstantId,
+	["cdata"] = GLib.Lua.OperandType.CDataConstantId,
+	["jump"]  = GLib.Lua.OperandType.RelativeJump,
+}
+
 local i = 0
 local opcodeLines = string.Split (opcodeData, "\n")
+
 for _, opcodeLine in ipairs (opcodeLines) do
 	local opcodeName, operandAType, operandBType, operandCType, functionName = string.match (opcodeLine, "_%(([A-Z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+)%)")
 	local operandDType = nil
@@ -141,15 +160,18 @@ for _, opcodeLine in ipairs (opcodeLines) do
 			operandCType = nil
 		end
 		
-		GLib.Lua.OpcodeInfo [i] =
-		{
-			Name = opcodeName,
-			OperandAType = operandAType,
-			OperandBType = operandBType,
-			OperandCType = operandCType,
-			OperandDType = operandDType,
-			FunctionName = functionName
-		}
+		if operandAType and not operandTypeMap [operandAType] then GLib.Error ("GLib.Lua.Opcode : Invalid operand type (" .. operandAType .. ").") end
+		if operandBType and not operandTypeMap [operandBType] then GLib.Error ("GLib.Lua.Opcode : Invalid operand type (" .. operandBType .. ").") end
+		if operandCType and not operandTypeMap [operandCType] then GLib.Error ("GLib.Lua.Opcode : Invalid operand type (" .. operandCType .. ").") end
+		if operandDType and not operandTypeMap [operandDType] then GLib.Error ("GLib.Lua.Opcode : Invalid operand type (" .. operandDType .. ").") end
+		
+		local opcodeInfo = GLib.Lua.Opcodes:AddOpcode (i, opcodeName)
+		opcodeInfo:SetOperandAType (operandTypeMap [operandAType] or GLib.Lua.OperandType.None)
+		opcodeInfo:SetOperandBType (operandTypeMap [operandBType] or GLib.Lua.OperandType.None)
+		opcodeInfo:SetOperandCType (operandTypeMap [operandCType] or GLib.Lua.OperandType.None)
+		opcodeInfo:SetOperandDType (operandTypeMap [operandDType] or GLib.Lua.OperandType.None)
+		opcodeInfo:SetFunctionName (functionName ~= "___" and functionName or nil)
+		
 		i = i + 1
 	end
 end

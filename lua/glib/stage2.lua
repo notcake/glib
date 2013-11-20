@@ -1,6 +1,8 @@
 if GLib.Stage2 then return end
 GLib.Stage2 = true
 
+include ("bitconverter.lua")
+
 include ("colors.lua")
 
 include ("coroutine.lua")
@@ -20,7 +22,11 @@ include ("lua/stackframe.lua")
 include ("lua/stacktrace.lua")
 include ("lua/stacktracecache.lua")
 
+include ("lua/opcodeinfo.lua")
+include ("lua/opcodes.lua")
 include ("lua/opcode.lua")
+include ("lua/operandtype.lua")
+include ("lua/instruction.lua")
 include ("lua/bytecodereader.lua")
 
 -- Unicode

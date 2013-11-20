@@ -68,11 +68,14 @@ function self:Int64 (n)
 end
 
 function self:Float (f)
-	self:String (tostring (f))
+	local n = GLib.BitConverter.FloatToUInt32 (f)
+	self:UInt32 (n)
 end
 
 function self:Double (f)
-	self:String (tostring (f))
+	local low, high = GLib.BitConverter.DoubleToUInt32s (f)
+	self:UInt32 (low)
+	self:UInt32 (high)
 end
 
 function self:Vector (v)

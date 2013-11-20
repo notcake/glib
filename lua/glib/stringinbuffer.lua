@@ -92,29 +92,13 @@ end
 
 function self:Float ()
 	local n = self:UInt32 ()
-	local negative = false
-	
-	if n >= 0x80000000 then
-		negative = true
-		n = n - 0x80000000
-	end
-	
-	local exponent = bit.rshift (bit.band (n, 0x7F800000), 23)
-	local mantissa = bit.band (n, 0x007FFFFF) / (2 ^ 23)
-	
-	if mantissa == 0 and exponent == 0 then
-		n = 0
-	elseif exponent == 255 then
-		n = math.huge
-	else
-		n = math.ldexp (1 + mantissa, exponent - 127)
-	end
-	
-	return negative and -n or n
+	return GLib.BitConverter.UInt32ToFloat (n)
 end
 
 function self:Double ()
-	return tonumber (self:String ()) or 0
+	local low = self:UInt32 ()
+	local high = self:UInt32 ()
+	return GLib.BitConverter.UInt32sToDouble (low, high)
 end
 
 function self:Vector ()
