@@ -47,7 +47,7 @@ function self:ctor (functionOrDump)
 	
 	self.GarbageCollectedConstantCount = reader:Int ()
 	self.NumericConstantCount = reader:Int ()
-	self.BCCount = reader:Int ()
+	self.InstructionCount = reader:Int ()
 	
 	self.DebugDataLength = reader:Int ()
 	
@@ -55,17 +55,15 @@ function self:ctor (functionOrDump)
 	self.LineCount = reader:Int ()
 	self.EndLine = self.StartLine + self.LineCount
 	
-	self.Instructions = {}
-	for i = 1, self.BCCount do
-		local instruction = {}
-		self.Instructions [#self.Instructions + 1] = instruction
-		
-		instruction.Opcode = reader:UInt8 ()
-		instruction.OpcodeName = GLib.Lua.Opcode [instruction.Opcode]
-		instruction.OperandA = reader:UInt8 ()
-		instruction.OperandC = reader:UInt8 ()
-		instruction.OperandB = reader:UInt8 ()
-		instruction.OperandD = instruction.OperandB * 256 + instruction.OperandC
+	self.InstructionOpcodes = {}
+	self.InstructionOperandAs = {}
+	self.InstructionOperandBs = {}
+	self.InstructionOperandCs = {}
+	for i = 1, self.InstructionCount do
+		self.InstructionOpcodes [#self.InstructionOpcodes + 1] = reader:UInt8 ()
+		self.InstructionOperandAs [#self.InstructionOperandAs + 1] = reader:UInt8 ()
+		self.InstructionOperandCs [#self.InstructionOperandCs + 1] = reader:UInt8 ()
+		self.InstructionOperandBs [#self.InstructionOperandBs + 1] = reader:UInt8 ()
 	end
 	
 	self.UpvalueData = {}
@@ -97,15 +95,20 @@ function self:ctor (functionOrDump)
 		
 		if (low32 % 2) == 1 then
 			high32 = reader:Int ()
+			low32 = math.floor (low32 / 2)
+			constant.Value = GLib.BitConverter.UInt32sToDouble (low32, high32)
+		else
+			low32 = math.floor (low32 / 2)
+			constant.Value = low32
 		end
 		
-		low32 = math.floor (low32 / 2)
 		constant.High = string.format ("0x%08x", high32)
 		constant.Low = string.format ("0x%08x", low32)
-		constant.Value = low32 + high32 * 4294967296
 	end
 	
-	self.Bytecode = reader:Bytes (1024)
+	self.DebugData = reader:Bytes (self.DebugDataLength)
+	
+	self.Rest = reader:Bytes (1024)
 end
 
 function self:GetGarbageCollectedConstantCount ()
@@ -135,7 +138,21 @@ function self:GetInstruction (instructionId, instruction)
 end
 
 function self:GetInstructionCount ()
+	return self.InstructionCount
+end
+
+function self:GetInstructionCount ()
 	return #self.Instructions
+end
+
+function self:GetNumericConstantCount ()
+	return self.NumericConstantCount
+end
+
+function self:GetNumericConstantValue (constantId)
+	local constant = self.NumericConstants [constantId]
+	if not constant then return nil end
+	return constant.Value
 end
 
 function self:GetParameterCount ()
@@ -168,11 +185,12 @@ function self:ToString ()
 	
 	str:Append (")\n")
 	
-	for _, instructionTable in ipairs (self.Instructions) do
-		instruction:SetOpcode (instructionTable.Opcode)
-		instruction:SetOperandA (instructionTable.OperandA)
-		instruction:SetOperandB (instructionTable.OperandB)
-		instruction:SetOperandC (instructionTable.OperandC)
+	for i = 1, self.InstructionCount do
+		instruction:SetIndex (i)
+		instruction:SetOpcode (self.InstructionOpcodes [i])
+		instruction:SetOperandA (self.InstructionOperandAs [i])
+		instruction:SetOperandB (self.InstructionOperandBs [i])
+		instruction:SetOperandC (self.InstructionOperandCs [i])
 		
 		str:Append ("\t")
 		str:Append (instruction:ToString ())

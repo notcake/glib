@@ -3,6 +3,7 @@ GLib.Lua.Instruction = GLib.MakeConstructor (self)
 
 function self:ctor (bytecodeReader)
 	self.BytecodeReader = bytecodeReader
+	self.Index = 1
 	
 	self.Opcode = nil
 	self.OpcodeName = nil
@@ -12,6 +13,10 @@ function self:ctor (bytecodeReader)
 	self.OperandB = 0
 	self.OperandC = 0
 	self.OperandD = 0
+end
+
+function self:GetIndex ()
+	return self.Index
 end
 
 function self:GetOperandA ()
@@ -56,6 +61,10 @@ end
 
 function self:GetOpcodeName ()
 	return self.OpcodeName
+end
+
+function self:SetIndex (index)
+	self.Index = index
 end
 
 function self:SetOperandA (operandA)
@@ -129,12 +138,19 @@ function self:FormatOperand (operand, operandType)
 		elseif operand == 1 then return "false"
 		elseif operand == 2 then return "true" end
 		return "pri" .. tostring (operand)
+	elseif operandType == GLib.Lua.OperandType.NumericConstantId then
+		local constantValue = self.BytecodeReader:GetNumericConstantValue (operand + 1)
+		if constantValue then
+			return constantValue
+		else
+			return "num" .. tostring (operand)
+		end
 	elseif operandType == GLib.Lua.OperandType.StringConstantId then
 		local constantValue = self.BytecodeReader:GetGarbageCollectedConstantValue (self.BytecodeReader:GetGarbageCollectedConstantCount () - operand)
 		if constantValue then
 			return "\"" .. GLib.String.EscapeNonprintable (constantValue) .. "\""
 		else
-			return "const-" .. tostring (operand)
+			return "str-" .. tostring (operand)
 		end
 	elseif operandType == GLib.Lua.OperandType.RelativeJump then
 		return tostring (operand - 0x8000)

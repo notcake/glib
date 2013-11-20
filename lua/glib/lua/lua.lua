@@ -25,7 +25,7 @@ function GLib.Lua.GetTableValue (valueName)
 	local valueName = parts [#parts]
 	parts [#parts] = nil
 	
-	local tableName = table.concat (parts, ".")
+	local tableName = #parts > 0 and table.concat (parts, ".") or "_G"
 	
 	local t = _G
 	for i = 1, #parts do
@@ -39,7 +39,7 @@ function GLib.Lua.GetTableValue (valueName)
 	end
 	
 	if not t then
-		GLib.Error ("GLib.Lua.GetTableValue : Table " .. tableName .. " does not exist.")
+		GLib.Error ("GLib.Lua.GetTableValue : Table " .. tostring (tableName) .. " does not exist.")
 		return nil
 	end
 	

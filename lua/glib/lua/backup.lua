@@ -9,7 +9,20 @@ function GLib.Lua.GetBackupTable (tableName)
 	return backupTable [tableName]
 end
 
-function GLib.Lua.Backup (tableName, key, value)
+function GLib.Lua.Backup (fullyQualifiedName)
+	if type (fullyQualifiedName) == "table" then
+		for _, v in ipairs (fullyQualifiedName) do
+			GLib.Lua.Backup (v)
+		end
+		return
+	end
+	
+	local value, table, tableName, key = GLib.Lua.GetTableValue (fullyQualifiedName)
+	
+	GLib.Lua.BackupTableMember (tableName, key, value)
+end
+
+function GLib.Lua.BackupTableMember (tableName, key, value)
 	local backupTable = GLib.Lua.GetBackupTable (tableName)
 	
 	if value == nil then
