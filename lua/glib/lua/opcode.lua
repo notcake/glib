@@ -129,16 +129,26 @@ local opcodeData = [[
 local i = 0
 local opcodeLines = string.Split (opcodeData, "\n")
 for _, opcodeLine in ipairs (opcodeLines) do
-	local opcodeName, operandAType, operandBType, operandCType, operandDType = string.match (opcodeLine, "_%(([A-Z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+)%)")
+	local opcodeName, operandAType, operandBType, operandCType, functionName = string.match (opcodeLine, "_%(([A-Z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+),([a-z0-9_]+)%)")
+	local operandDType = nil
+	
 	if opcodeName then
 		GLib.Lua.Opcode [opcodeName] = i
+		
+		if operandBType == "___" then
+			operandDType = operandCType
+			operandBType = nil
+			operandCType = nil
+		end
+		
 		GLib.Lua.OpcodeInfo [i] =
 		{
 			Name = opcodeName,
 			OperandAType = operandAType,
 			OperandBType = operandBType,
 			OperandCType = operandCType,
-			OperandDType = operandDType
+			OperandDType = operandDType,
+			FunctionName = functionName
 		}
 		i = i + 1
 	end

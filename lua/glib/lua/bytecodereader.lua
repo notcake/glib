@@ -82,7 +82,7 @@ function self:ToString ()
 	for _, instruction in ipairs (self.Instructions) do
 		str:Append (instruction.OpcodeName)
 		str:Append (" ")
-		if GLib.Lua.OpcodeInfo [instruction.Opcode].OperandDType == "___" then
+		if not GLib.Lua.OpcodeInfo [instruction.Opcode].OperandDType then
 			-- A, B, C
 			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (instruction.OperandB) .. ", " .. tostring (instruction.OperandC))
 		else
