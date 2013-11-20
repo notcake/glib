@@ -20,6 +20,9 @@ include ("lua/stackframe.lua")
 include ("lua/stacktrace.lua")
 include ("lua/stacktracecache.lua")
 
+include ("lua/opcode.lua")
+include ("lua/bytecodereader.lua")
+
 -- Unicode
 include ("unicode/unicodecategory.lua")
 include ("unicode/wordtype.lua")

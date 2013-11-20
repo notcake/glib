@@ -63,6 +63,21 @@ function GLib.String.Escape (str)
 	return str
 end
 
+function GLib.String.EscapeNonprintable (str)
+	if type (str) ~= "string" then
+		ErrorNoHalt ("GLib.String.EscapeNonprintable: Expected string, got " .. type (str) .. " instead.\n")
+		return ""
+	end
+	str = str:gsub (".",
+		function (c)
+			c = string.byte (c)
+			if c < string.byte (" ") then return string.format ("\\x%02x", c) end
+			if c >= 127 then return string.format ("\\x%02x", c) end
+		end
+	)
+	return str
+end
+
 function GLib.String.EscapeWhitespace (str)
 	if type (str) ~= "string" then
 		ErrorNoHalt ("GLib.String.EscapeNewlines: Expected string, got " .. type (str) .. " instead.\n")
