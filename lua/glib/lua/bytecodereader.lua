@@ -37,7 +37,7 @@ function self:ctor (dump)
 	self.FrameSize = reader:UInt8 ()
 	self.UpvalueCount = reader:UInt8 ()
 	
-	self.KGCCount = reader:Int ()
+	self.ConstantCount = reader:Int ()
 	self.KNCount = reader:Int ()
 	self.BCCount = reader:Int ()
 	
@@ -62,15 +62,21 @@ function self:ctor (dump)
 	
 	self.UpvalueData = {}
 	for i = 1, self.UpvalueCount do
-		self.UpvalueData [#self.UpvalueData + 1] = reader:UInt16 ()
+		self.UpvalueData [i - 1] = reader:UInt16 ()
 	end
 	
 	self.Constants = {}
-	for i = 1, self.KGCCount do
+	for i = 1, self.ConstantCount do
 		local constant = {}
-		self.Constants [#self.Constants + 1] = constant
+		self.Constants [i - 1] = constant
 		
 		constant.Type = reader:Int ()
+		if constant.Type >= 4 then
+			local stringLength = constant.Type - 4
+			constant.Type = 4
+			constant.Length = stringLength - 1
+			constant.Value = reader:Bytes (constant.Length)
+		end
 	end
 	
 	self.Bytecode = reader:Bytes (1024)
@@ -87,7 +93,15 @@ function self:ToString ()
 			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (instruction.OperandB) .. ", " .. tostring (instruction.OperandC))
 		else
 			-- A, D
-			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (instruction.OperandD))
+			local operandD = instruction.OperandD
+			if instruction.Opcode == GLib.Lua.Opcode.KSTR then
+				local constant = self.Constants [operandD]
+				if constant then
+					operandD = "\"" .. constant.Value .. "\""
+				else
+				end
+			end
+			str:Append (tostring (instruction.OperandA) .. ", " .. tostring (operandD))
 		end
 		str:Append ("\n")
 	end
