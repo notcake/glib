@@ -5,6 +5,8 @@ function self:ctor (bytecodeReader)
 	self.BytecodeReader = bytecodeReader
 	self.Index = 1
 	
+	self.Line = nil
+	
 	self.Opcode = nil
 	self.OpcodeName = nil
 	self.OpcodeInfo = nil
@@ -17,6 +19,10 @@ end
 
 function self:GetIndex ()
 	return self.Index
+end
+
+function self:GetLine ()
+	return self.Line
 end
 
 function self:GetOperandA ()
@@ -65,6 +71,10 @@ end
 
 function self:SetIndex (index)
 	self.Index = index
+end
+
+function self:SetLine (line)
+	self.Line = line
 end
 
 function self:SetOperandA (operandA)
@@ -125,6 +135,9 @@ function self:FormatOperand (operand, operandType)
 		return "_" .. tostring (operand)
 	elseif operandType == GLib.Lua.OperandType.DestinationVariable then
 		return "_" .. tostring (operand)
+	elseif operandType == GLib.Lua.OperandType.UpvalueId then
+		local upvalueName = self.BytecodeReader:GetUpvalueName (operand + 1)
+		return upvalueName or tostring (operand)
 	elseif operandType == GLib.Lua.OperandType.Literal then
 		return tostring (operand)
 	elseif operandType == GLib.Lua.OperandType.SignedLiteral then

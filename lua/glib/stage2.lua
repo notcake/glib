@@ -22,11 +22,12 @@ include ("lua/stackframe.lua")
 include ("lua/stacktrace.lua")
 include ("lua/stacktracecache.lua")
 
+include ("lua/operandtype.lua")
 include ("lua/opcodeinfo.lua")
 include ("lua/opcodes.lua")
 include ("lua/opcode.lua")
-include ("lua/operandtype.lua")
 include ("lua/instruction.lua")
+include ("lua/functionbytecodereader.lua")
 include ("lua/bytecodereader.lua")
 
 -- Unicode

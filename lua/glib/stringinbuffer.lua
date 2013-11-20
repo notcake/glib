@@ -66,6 +66,26 @@ function self:UInt64 ()
 	return n
 end
 
+function self:ULEB128 ()
+	local n = 0
+	local factor = 1
+	
+	local done = false
+	repeat
+		local byte = self:UInt8 ()
+		if byte >= 0x80 then
+			byte = byte - 0x80
+		else
+			done = true
+		end
+		
+		n = n + byte * factor
+		factor = factor * 128
+	until done
+	
+	return n
+end
+
 function self:Int8 ()
 	local n = self:UInt8 ()
 	if n >= 128 then n = n - 256 end
@@ -131,6 +151,17 @@ function self:LongString ()
 	local length = self:UInt32 ()
 	local str = self.Data:sub (self.Position, self.Position + length - 1)
 	self.Position = self.Position + length
+	return str
+end
+
+function self:StringZ ()
+	local str = ""
+	local c = self:Char ()
+	while c and c ~= "" and c ~= "\0" do
+		str = str .. c
+		c = self:Char ()
+	end
+	
 	return str
 end
 
