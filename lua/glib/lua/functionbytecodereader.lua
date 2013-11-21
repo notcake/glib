@@ -13,10 +13,9 @@ function self:ctor (bytecodeReader, functionDump)
 	-- Variables
 	-- Frame
 	self.FrameSize = 0
-	self.FrameVariableNames = {}
-	self.FrameVariableStartInstructions = {}
-	self.FrameVariableEndInstructions = {}
-	self.FrameVariableTags = {}
+	self.FrameVariables = {}
+	self.VariadicFrameVariable = GLib.Lua.FrameVariable (self, "...")
+	self.VariadicFrameVariable:SetName ("...")
 	
 	-- Parameters
 	self.ParameterCount = 0
@@ -169,12 +168,11 @@ function self:ctor (bytecodeReader, functionDump)
 	
 	-- Frame Variables
 	for i = 1, self.FrameSize do
-		self.FrameVariableNames [i] = debugReader:StringZ ()
-		if self.FrameVariableNames [i] == "" then
-			self.FrameVariableNames [i] = nil
-		end
-		self.FrameVariableStartInstructions [i] = debugReader:ULEB128 ()
-		self.FrameVariableEndInstructions [i] = debugReader:ULEB128 ()
+		local frameVariable = GLib.Lua.FrameVariable (self, i)
+		self.FrameVariables [i] = frameVariable
+		frameVariable:SetName (debugReader:StringZ ())
+		frameVariable:SetStartInstruction (debugReader:ULEB128 ())
+		frameVariable:SetEndInstruction (debugReader:ULEB128 ())
 	end
 	
 	self.DebugResidualData = debugReader:Bytes (1024)
@@ -262,38 +260,25 @@ function self:GetFrameSize ()
 	return self.FrameSize
 end
 
-function self:GetFrameVariable (id, frameVariable)
-	frameVariable = frameVariable or GLib.Lua.FrameVariable (self)
-	
-	frameVariable:SetIndex (id)
-	
-	return frameVariable
+function self:GetFrameVariable (id)
+	if id == "..." then
+		return self.VariadicFrameVariable
+	end
+	return self.FrameVariables [id]
+end
+
+function self:GetFrameVariableEnumerator ()
+	local i = 0
+	return function ()
+		i = i + 1
+		return self.FrameVariables [i]
+	end
 end
 
 function self:GetFrameVariableName (id)
-	return self.FrameVariableNames [id]
-end
-
-function self:GetFrameVariableStartInstruction (id)
-	return self.FrameVariableStartInstructions [id]
-end
-
-function self:GetFrameVariableEndInstruction (id)
-	return self.FrameVariableEndInstructions [id]
-end
-
-function self:GetFrameVariableInstructionRange (id)
-	return self.FrameVariableStartInstructions [id], self.FrameVariableEndInstructions [id]
-end
-
-function self:GetFrameVariableTag (id, tagId)
-	if not self.FrameVariableTags [tagId] then return nil end
-	return self.FrameVariableTags [tagId] [id]
-end
-
-function self:SetFrameVariableTag (id, tagId, data)
-	self.FrameVariableTags [tagId] = self.FrameVariableTags [tagId] or {}
-	self.FrameVariableTags [tagId] [id] = data
+	local frameVariable = self:GetFrameVariable (id)
+	if not frameVariable then return nil end
+	return frameVariable:GetName ()
 end
 
 -- Parameters
@@ -361,13 +346,18 @@ function self:ToString ()
 		lastLine = instruction:GetLine ()
 		
 		-- Instruction
-		str:Append ("\t")
 		if instruction:GetTag ("Lua") then
 			if instruction:GetTag ("Lua") ~= "" then
+				str:Append ("\t")
 				str:Append (instruction:GetTag ("Lua"):gsub ("\n", "\n\t"))
+				if instruction:GetTag ("Comment") then
+					str:Append ("\t// ")
+					str:Append (instruction:GetTag ("Comment"))
+				end
 				str:Append ("\n")
 			end
 		else
+			str:Append ("\t")
 			str:Append (instruction:ToString ())
 			if instruction:GetTag ("Comment") then
 				str:Append ("\t// ")
@@ -388,13 +378,216 @@ self.__tostring = self.ToString
 
 -- Internal, do not call
 function self:Decompile ()
-	local frameVariableTags = {}
+	self:DecompilePass1 ()
+	self:DecompilePass2 ()
+	self:DecompilePass3 ()
+end
+
+function self:DecompilePass1 ()
+	local variable
+	local destinationVariable
+	local assignmentExpression
+	local assignmentExpressionRawValue
 	
-	local variable = GLib.Lua.FrameVariable (self)
-	local aVariable = GLib.Lua.FrameVariable (self)
-	local bVariable = GLib.Lua.FrameVariable (self)
-	local cVariable = GLib.Lua.FrameVariable (self)
-	local dVariable = GLib.Lua.FrameVariable (self)
+	for instruction in self:GetInstructionEnumerator () do
+		local opcodeName = instruction:GetOpcodeName ()
+		assignmentExpression = nil
+		assignmentExpressionRawValue = nil
+		destinationVariable = nil
+		
+		if instruction:GetOperandAType () == GLib.Lua.OperandType.DestinationVariable then
+			destinationVariable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+		end
+		
+		-- Constant loads
+		if opcodeName == "KSTR" then
+			assignmentExpressionRawValue = instruction:GetOperandDValue ()
+			assignmentExpression = "\"" .. GLib.String.EscapeNonprintable (assignmentExpressionRawValue) .. "\""
+		elseif opcodeName == "KSHORT" then
+			assignmentExpressionRawValue = instruction:GetOperandDValue ()
+			assignmentExpression = tostring (assignmentExpressionRawValue)
+		elseif opcodeName == "KNUM" then
+			assignmentExpressionRawValue = instruction:GetOperandDValue ()
+			assignmentExpression = tostring (assignmentExpressionRawValue)
+		elseif opcodeName == "KPRI" then
+			assignmentExpressionRawValue = instruction:GetOperandDValue ()
+			assignmentExpression = tostring (assignmentExpressionRawValue)
+		elseif opcodeName == "KNIL" then
+			for i = instruction:GetOperandA (), instruction:GetOperandD () do
+				destinationVariable = self:GetFrameVariable (i + 1)
+				destinationVariable:AddStore (instruction:GetIndex (), "nil", nil)
+			end
+			
+			destinationVariable = nil -- Don't add another store at the end of the loop
+		end
+		
+		-- Upvalue operations
+		if opcodeName == "UGET" then
+			assignmentExpression = self:GetUpvalueName (instruction:GetOperandD () + 1) or ("_up" .. tostring (instruction:GetOperandD ()))
+		end
+		
+		-- Calls
+		if opcodeName == "CALLM" then
+			-- Function
+			variable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+			
+			-- Parameters
+			for i = instruction:GetOperandA () + 1, instruction:GetOperandA () + instruction:GetOperandC () do
+				variable = self:GetFrameVariable (i + 1)
+				variable:AddLoad (instruction:GetIndex ())
+			end
+			self.VariadicFrameVariable:AddLoad (instruction:GetIndex ())
+			
+			-- Return values
+			local returnCount = instruction:GetOperandB () - 1
+			if returnCount > 0 then
+				for i = instruction:GetOperandA (), instruction:GetOperandA () + instruction:GetOperandB () - 2 do
+					destinationVariable = self:GetFrameVariable (i + 1)
+					destinationVariable:AddStore (instruction:GetIndex ())
+				end
+				destinationVariable = nil
+			elseif returnCount == -1 then
+				self.VariadicFrameVariable:AddStore (instruction:GetIndex ())
+			end
+		elseif opcodeName == "CALL" then
+			-- Function
+			variable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+			
+			-- Parameters
+			for i = instruction:GetOperandA () + 1, instruction:GetOperandA () + instruction:GetOperandC () - 1 do
+				variable = self:GetFrameVariable (i + 1)
+				variable:AddLoad (instruction:GetIndex ())
+			end
+			
+			-- Return values
+			local returnCount = instruction:GetOperandB () - 1
+			if returnCount > 0 then
+				for i = instruction:GetOperandA (), instruction:GetOperandA () + instruction:GetOperandB () - 2 do
+					destinationVariable = self:GetFrameVariable (i + 1)
+					destinationVariable:AddStore (instruction:GetIndex ())
+				end
+				destinationVariable = nil
+			elseif returnCount == -1 then
+				self.VariadicFrameVariable:AddStore (instruction:GetIndex ())
+			end
+		end
+		
+		-- Generic loads
+		if instruction:GetOperandBType () == GLib.Lua.OperandType.Variable then
+			variable = self:GetFrameVariable (instruction:GetOperandB () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+		end
+		if instruction:GetOperandCType () == GLib.Lua.OperandType.Variable then
+			variable = self:GetFrameVariable (instruction:GetOperandC () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+		end
+		if instruction:GetOperandDType () == GLib.Lua.OperandType.Variable then
+			variable = self:GetFrameVariable (instruction:GetOperandD () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+		end
+		
+		if destinationVariable then
+			local storeId = destinationVariable:AddStore (instruction:GetIndex (), assignmentExpression, assignmentExpressionRawValue)
+			instruction:SetStoreVariable (destinationVariable)
+			instruction:SetStoreId (storeId)
+		end
+	end
+end
+
+function self:DecompilePass2 ()
+	for frameVariable in self:GetFrameVariableEnumerator () do
+		self:AnalyseFrameVariableUsage (frameVariable)
+	end
+	self:AnalyseFrameVariableUsage (self.VariadicFrameVariable)
+end
+
+function self:AnalyseFrameVariableUsage (frameVariable)
+	local loadStore = GLib.Lua.LoadStore (frameVariable)
+	local store = nil
+	
+	loadStore = loadStore:GetNext ()
+	
+	local loadCount = 0
+	while loadStore do
+		if loadStore:IsStore () then
+			-- Commit last store data
+			if store then
+				store:SetLoadCount (loadCount)
+				if loadCount == 1 then
+					store:SetExpressionInlineable (true)
+				end
+			end
+			
+			-- Reset data for new store
+			store = loadStore:Clone (store or GLib.Lua.LoadStore (frameVariable))
+			loadCount = 0
+		else
+			loadCount = loadCount + 1
+		end
+		
+		loadStore = loadStore:GetNext ()
+	end
+	
+	-- Commit last store data
+	if store then
+		store:SetLoadCount (loadCount)
+		if loadCount == 1 then
+			store:SetExpressionInlineable (true)
+		end
+	end
+end
+
+local function GetNextLoad (loadCache, frameVariable, instructionId)
+	local frameVariableId = frameVariable:GetIndex ()
+	local loadStore = loadCache [frameVariableId]
+	loadStore = loadStore or GLib.Lua.LoadStore (frameVariable)
+	loadCache [loadStore] = loadStore
+	
+	loadStore = loadStore:GetNextLoad ()
+	while loadStore do
+		loadCache [frameVariableId] = loadStore
+		if loadStore:GetInstructionId () == instructionId then
+			return loadStore
+		end
+		
+		loadStore = loadStore:GetNextLoad ()
+	end
+	
+	return nil
+end
+
+local function GetNextStore (storeCache, frameVariable, instructionId)
+	local frameVariableId = frameVariable:GetIndex ()
+	local loadStore = storeCache [frameVariableId]
+	loadStore = loadStore or GLib.Lua.LoadStore (frameVariable)
+	storeCache [loadStore] = loadStore
+	
+	loadStore = loadStore:GetNextStore ()
+	while loadStore do
+		storeCache [frameVariableId] = loadStore
+		if loadStore:GetInstructionId () == instructionId then
+			return loadStore
+		end
+		
+		loadStore = loadStore:GetNextStore ()
+	end
+	
+	return nil
+end
+
+function self:DecompilePass3 ()
+	local loadCache = {}
+	local storeCache = {}
+	
+	local variable
+	local aVariable
+	local bVariable
+	local cVariable
+	local dVariable
+	
+	local loadStore = GLib.Lua.LoadStore ()
 	
 	for instruction in self:GetInstructionEnumerator () do
 		local destinationVariable
@@ -403,11 +596,13 @@ function self:Decompile ()
 		local firstAssignment = false
 		local assignmentExpression
 		local assignmentExpressionIndexable = false
+		local assignmentInlineable = false
+		local store = nil
 		
-		aVariable = self:GetFrameVariable (instruction:GetOperandA () + 1, aVariable)
-		bVariable = self:GetFrameVariable (instruction:GetOperandB () + 1, bVariable)
-		cVariable = self:GetFrameVariable (instruction:GetOperandC () + 1, cVariable)
-		dVariable = self:GetFrameVariable (instruction:GetOperandD () + 1, dVariable)
+		aVariable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+		bVariable = self:GetFrameVariable (instruction:GetOperandB () + 1)
+		cVariable = self:GetFrameVariable (instruction:GetOperandC () + 1)
+		dVariable = self:GetFrameVariable (instruction:GetOperandD () + 1)
 		
 		if instruction:GetOperandAType () == GLib.Lua.OperandType.DestinationVariable then
 			destinationVariable = aVariable
@@ -419,22 +614,14 @@ function self:Decompile ()
 		local opcode = instruction:GetOpcodeName ()
 		
 		-- Loads
-		if opcode == "KSTR" then
+		if opcode == "KSTR" or
+		   opcode == "KSHORT" or
+		   opcode == "KNUM" or
+		   opcode == "KPRI" then
+			store = GetNextStore (storeCache, destinationVariable, instruction:GetIndex ())
 			isAssignment = true
-			assignmentExpressionRawValue = instruction:GetOperandDValue ()
-			assignmentExpression = "\"" .. GLib.String.EscapeNonprintable (assignmentExpressionRawValue) .. "\""
-		elseif opcode == "KSHORT" then
-			isAssignment = true
-			assignmentExpressionRawValue = instruction:GetOperandDValue ()
-			assignmentExpression = tostring (assignmentExpressionRawValue)
-		elseif opcode == "KNUM" then
-			isAssignment = true
-			assignmentExpressionRawValue = instruction:GetOperandDValue ()
-			assignmentExpression = tostring (assignmentExpressionRawValue)
-		elseif opcode == "KPRI" then
-			isAssignment = true
-			assignmentExpressionRawValue = instruction:GetOperandDValue ()
-			assignmentExpression = tostring (assignmentExpressionRawValue)
+			assignmentExpressionRawValue = store:GetExpressionRawValue ()
+			assignmentExpression = store:GetExpression ()
 		elseif opcode == "KNIL" then
 			assignmentExpression = "nil"
 			local lua = ""
@@ -446,7 +633,7 @@ function self:Decompile ()
 					lua = lua .. "\n"
 				end
 				
-				variable = self:GetFrameVariable (i + 1, variable)
+				variable = self:GetFrameVariable (i + 1)
 				firstAssignment = variable:SetAssigned (instruction:GetIndex ())
 				lua = lua .. (firstAssignment and "local " or "") .. variable:GetNameOrFallbackName () .. " = " .. assignmentExpression
 				variable:SetExpression ("nil", false, nil)
@@ -492,7 +679,7 @@ function self:Decompile ()
 			
 			-- Parameters
 			for i = instruction:GetOperandA () + 1, instruction:GetOperandA () + instruction:GetOperandC () do
-				variable = self:GetFrameVariable (i + 1, variable)
+				variable = self:GetFrameVariable (i + 1)
 				
 				assignmentExpression = assignmentExpression .. variable:GetExpressionOrFallback () .. ", "
 			end
@@ -512,7 +699,7 @@ function self:Decompile ()
 						destinationVariableNames = destinationVariableNames ..  ", "
 					end
 					
-					variable = self:GetFrameVariable (i + 1, variable)
+					variable = self:GetFrameVariable (i + 1)
 					variable:ClearExpression ()
 					firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
 					destinationVariableNames = destinationVariableNames .. variable:GetNameOrFallbackName ()
@@ -535,7 +722,7 @@ function self:Decompile ()
 				end
 				first = false
 				
-				variable = self:GetFrameVariable (i + 1, variable)
+				variable = self:GetFrameVariable (i + 1)
 				
 				assignmentExpression = assignmentExpression .. variable:GetExpressionOrFallback ()
 			end
@@ -554,7 +741,7 @@ function self:Decompile ()
 						destinationVariableNames = destinationVariableNames ..  ", "
 					end
 					
-					variable = self:GetFrameVariable (i + 1, variable)
+					variable = self:GetFrameVariable (i + 1)
 					variable:ClearExpression ()
 					firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
 					destinationVariableNames = destinationVariableNames .. variable:GetNameOrFallbackName ()
@@ -580,7 +767,12 @@ function self:Decompile ()
 			if destinationVariable then
 				destinationVariable:SetExpression (assignmentExpression, assignmentExpressionIndexable, assignmentExpressionRawValue)
 			end
-			instruction:SetTag ("Lua", (firstAssignment and "local " or "") .. destinationVariableName .. " = " .. assignmentExpression)
+			store = store or instruction:GetStore (store)
+			if store and store:IsExpressionInlineable () then
+				instruction:SetTag ("Lua", "")
+			else
+				instruction:SetTag ("Lua", (firstAssignment and "local " or "") .. destinationVariableName .. " = " .. assignmentExpression)
+			end
 		end
 	end
 end

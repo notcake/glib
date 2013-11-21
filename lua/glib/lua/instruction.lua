@@ -85,6 +85,18 @@ function self:GetOpcodeName ()
 	return self.OpcodeName
 end
 
+function self:GetStore (loadStore)
+	return self:GetStoreVariable ():GetLoadStore (self:GetStoreId (), loadStore)
+end
+
+function self:GetStoreId ()
+	return self:GetTag ("StoreId")
+end
+
+function self:GetStoreVariable ()
+	return self:GetTag ("StoreVariable")
+end
+
 function self:GetTag (tagId)
 	return self.BytecodeReader:GetInstructionTag (self.Index, tagId)
 end
@@ -124,6 +136,14 @@ function self:SetOpcode (opcode)
 	self.Opcode = opcode
 	self.OpcodeName = GLib.Lua.Opcode [self.Opcode]
 	self.OpcodeInfo = GLib.Lua.Opcodes:GetOpcode (self.Opcode)
+end
+
+function self:SetStoreId (storeId)
+	self:SetTag ("StoreId", storeId)
+end
+
+function self:SetStoreVariable (storeVariable)
+	self:SetTag ("StoreVariable", storeVariable)
 end
 
 function self:SetTag (tagId, data)

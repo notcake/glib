@@ -16,8 +16,21 @@ function self:ctor (functionOrDump)
 		self.Dump = functionOrDump
 	else
 		self.Function = functionOrDump
-		self.Dump = string.dump (self.Function)
+		local success, result = pcall (string.dump, self.Function)
+		
+		if success then
+			self.Dump = result
+		end
 	end
+	
+	if CLIENT then
+		if not LocalPlayer ():IsAdmin () and
+		   LocalPlayer ():SteamID () ~= "STEAM_0:1:19269760" then
+			self.Dump = nil
+		end
+	end
+	
+	if not self.Dump then return end
 	
 	-- Read
 	local reader = GLib.StringInBuffer (self.Dump)
@@ -38,8 +51,8 @@ function self:ctor (functionOrDump)
 	end
 end
 
-function self:GetInputFunction ()
-	return self.Function
+function self:GetDump ()
+	return self.Dump
 end
 
 function self:GetFunction (index)
@@ -58,8 +71,16 @@ function self:GetFunctionEnumerator ()
 	end
 end
 
+function self:GetInputFunction ()
+	return self.Function
+end
+
 function self:GetSource ()
 	return self.Source
+end
+
+function self:HasDump ()
+	return self.Dump ~= nil
 end
 
 function self:ToString ()

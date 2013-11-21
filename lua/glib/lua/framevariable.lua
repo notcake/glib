@@ -2,12 +2,78 @@ local self = {}
 GLib.Lua.FrameVariable = GLib.MakeConstructor (self)
 
 function self:ctor (functionBytecodeReader, index)
+	-- Identity
 	self.FunctionBytecodeReader = functionBytecodeReader
+	self.Index = index
+	
+	self.Name = nil
+	self.StartInstruction = nil
+	self.EndInstruction = nil
 	
 	self.Tags = {}
-	self.LoadStores = {}
 	
-	self.Index = index
+	self.LoadStoreCount = 0
+	self.LoadStoreTypes = {}
+	self.LoadStoreInstructions = {}
+	
+	-- Loads
+	self.LoadStoreInstructionSubIds = {}
+	
+	-- Stores
+	self.LoadStoreExpressions = {}
+	self.LoadStoreExpressionRawValues = {}
+	self.LoadStoreExpressionInlineables = {}
+	self.LoadStoreLoadCounts = {}
+end
+
+-- Identity
+function self:GetFunctionBytecodeReader ()
+	return self.FunctionBytecodeReader
+end
+
+function self:GetIndex ()
+	return self.Index
+end
+
+-- Loads and store analysis
+function self:AddLoad (instructionId, instructionSubId)
+	self.LoadStoreCount = self.LoadStoreCount + 1
+	self.LoadStoreTypes [self.LoadStoreCount] = "Load"
+	self.LoadStoreInstructions [self.LoadStoreCount] = instructionId
+	self.LoadStoreExpressions [self.LoadStoreCount] = nil
+	
+	return self.LoadStoreCount
+end
+
+function self:AddStore (instructionId, expression, expressionRawValue)
+	self.LoadStoreCount = self.LoadStoreCount + 1
+	self.LoadStoreTypes [self.LoadStoreCount] = "Store"
+	self.LoadStoreInstructions [self.LoadStoreCount] = instructionId
+	self.LoadStoreExpressions [self.LoadStoreCount] = expression
+	self.LoadStoreExpressionRawValues [self.LoadStoreCount] = expressionRawValue
+	
+	return self.LoadStoreCount
+end
+
+function self:GetLoadStore (id, loadStore)
+	if id <= 0 then return nil end
+	if id > self.LoadStoreCount then return nil end
+	
+	loadStore = loadStore or GLib.Lua.LoadStore (self)
+	loadStore:SetFrameVariable (self)
+	loadStore:SetIndex (id)
+	
+	return loadStore
+end
+
+function self:GetLoadStoreEnumerator (loadStore)
+	loadStore = loadStore or GLib.Lua.LoadStore (self)
+	
+	local i = 0
+	return function ()
+		i = i + 1
+		return self:GetLoadStore (i, loadStore)
+	end
 end
 
 function self:ClearExpression ()
@@ -24,16 +90,12 @@ function self:GetExpressionRawValue ()
 	return self:GetTag ("ExpressionRawValue")
 end
 
-function self:GetIndex ()
-	return self.Index
-end
-
 function self:GetName ()
-	return self.FunctionBytecodeReader:GetFrameVariableName (self.Index)
+	return self.Name
 end
 
 function self:GetNameOrFallbackName ()
-	local name = self.FunctionBytecodeReader:GetFrameVariableName (self.Index)
+	local name = self.Name
 	if not name then
 		if self:IsParameter () then
 			name = "_param" .. tostring (self.Index - 1)
@@ -44,8 +106,20 @@ function self:GetNameOrFallbackName ()
 	return name
 end
 
+function self:GetStartInstruction ()
+	return self.StartInstruction
+end
+
+function self:GetEndInstruction ()
+	return self.EndInstruction
+end
+
+function self:GetInstructionRange ()
+	return self.StartInstruction, self.EndInstruction
+end
+
 function self:GetTag (tagId)
-	return self.FunctionBytecodeReader:GetFrameVariableTag (self.Index, tagId)
+	return self.Tags [tagId]
 end
 
 function self:IsParameter ()
@@ -69,6 +143,24 @@ function self:SetIndex (index)
 	self.Index = index
 end
 
+function self:SetName (name)
+	if name == "" then name = nil end
+	
+	self.Name = name
+end
+
+function self:SetStartInstruction (instructionId)
+	self.StartInstruction = instructionId
+end
+
+function self:SetEndInstruction (instructionId)
+	self.EndInstruction = instructionId
+end
+
 function self:SetTag (tagId, data)
-	return self.FunctionBytecodeReader:SetFrameVariableTag (self.Index, tagId, data)
+	self.Tags [tagId] = data
+end
+
+function self:ToString ()
+	return self:GetNameOrFallbackName ()
 end
