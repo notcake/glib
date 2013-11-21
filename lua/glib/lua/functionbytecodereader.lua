@@ -388,6 +388,7 @@ self.__tostring = self.ToString
 -- Internal, do not call
 function self:Decompile ()
 	self:DecompilePass1 ()
+	self:AnalyseJumps ()
 	self:DecompilePass2 ()
 	self:DecompilePass3 ()
 end
@@ -523,6 +524,11 @@ function self:DecompilePass1 ()
 			instruction:SetStoreVariable (destinationVariable)
 			instruction:SetStoreId (storeId)
 		end
+	end
+end
+
+function self:AnalyseJumps ()
+	for instruction in self:GetInstructionEnumerator () do
 	end
 end
 
@@ -831,27 +837,27 @@ function self:DecompilePass3 ()
 		
 		-- Comparison operators
 		if opcode == "ISLT" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " >= " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " >= " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISGE" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " < " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " < " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISLE" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " > " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " > " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISGT" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " <= " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " <= " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISEQV" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISNEV" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. dVariable:GetExpressionOrFallback ())
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. dVariable:GetExpressionOrFallback () .. " then")
 		elseif opcode == "ISEQS" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"")
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"" .. " then")
 		elseif opcode == "ISNES" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"")
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"" .. " then")
 		elseif opcode == "ISEQN" or
 		       opcode == "ISEQP" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())))
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())) .. " then")
 		elseif opcode == "ISNEN" or
 		       opcode == "ISNEP" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())))
+			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())) .. " then")
 		end
 		
 		-- Unary testing operators
