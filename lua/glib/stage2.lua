@@ -27,6 +27,7 @@ include ("lua/opcodeinfo.lua")
 include ("lua/opcodes.lua")
 include ("lua/opcode.lua")
 include ("lua/instruction.lua")
+include ("lua/framevariable.lua")
 include ("lua/functionbytecodereader.lua")
 include ("lua/bytecodereader.lua")
 

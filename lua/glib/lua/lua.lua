@@ -45,3 +45,32 @@ function GLib.Lua.GetTableValue (valueName)
 	
 	return t [valueName], t, tableName, valueName
 end
+
+local keywords =
+{
+	["if"]       = true,
+	["then"]     = true,
+	["elseif"]   = true,
+	["else"]     = true,
+	["for"]      = true,
+	["while"]    = true,
+	["do"]       = true,
+	["repeat"]   = true,
+	["until"]    = true,
+	["end"]      = true,
+	["return"]   = true,
+	["break"]    = true,
+	["continue"] = true,
+	["function"] = true,
+	["not"]      = true,
+	["and"]      = true,
+	["or"]       = true,
+	["true"]     = true,
+	["false"]    = true,
+	["nil"]      = true
+}
+
+function GLib.Lua.IsValidVariableName (name)
+	if not keywords [name] and string.match (name, "^[_a-zA-Z][_a-zA-Z0-9]*$") then return true end
+	return false
+end
