@@ -18,9 +18,11 @@ function self:ctor (functionBytecodeReader, index)
 	
 	-- Loads
 	self.LoadStoreInstructionSubIds = {}
+	self.LoadStoreLastStoreIds = {}
 	
 	-- Stores
 	self.LoadStoreExpressions = {}
+	self.LoadStoreExpressionPrecedences = {}
 	self.LoadStoreExpressionRawValues = {}
 	self.LoadStoreExpressionInlineables = {}
 	self.LoadStoreLoadCounts = {}
@@ -45,11 +47,12 @@ function self:AddLoad (instructionId, instructionSubId)
 	return self.LoadStoreCount
 end
 
-function self:AddStore (instructionId, expression, expressionRawValue)
+function self:AddStore (instructionId, expression, expressionPrecedence, expressionRawValue)
 	self.LoadStoreCount = self.LoadStoreCount + 1
 	self.LoadStoreTypes [self.LoadStoreCount] = "Store"
 	self.LoadStoreInstructions [self.LoadStoreCount] = instructionId
 	self.LoadStoreExpressions [self.LoadStoreCount] = expression
+	self.LoadStoreExpressionPrecedences [self.LoadStoreCount] = expressionPrecedence or GLib.Lua.Precedence.Lowest
 	self.LoadStoreExpressionRawValues [self.LoadStoreCount] = expressionRawValue
 	
 	return self.LoadStoreCount

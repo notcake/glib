@@ -15,11 +15,49 @@ function self:Clone (loadStore)
 	return loadStore
 end
 
+function self:GetBracketedExpression (outerPrecedence)
+	local expression, precedence = self:GetExpression ()
+	
+	if outerPrecedence > precedence or
+	   (outerPrecedence == precedence and not GLib.Lua.IsPrecedenceAssociative (precedence)) then
+		expression = "(" .. expression .. ")"
+	end
+	
+	return expression
+end
+
 function self:GetExpression ()
-	return self.FrameVariable.LoadStoreExpressions [self.Index]
+	if self:IsLoad () then
+		local expression = nil
+		local expressionPrecedence = nil
+		if self:IsExpressionInlineable () then
+			local lastStoreId = self:GetLastStoreId ()
+			expression = self.FrameVariable.LoadStoreExpressions [lastStoreId]
+			expressionPrecedence = self.FrameVariable.LoadStoreExpressionPrecedences [lastStoreId]
+		end
+		if not expression then
+			expression = self.FrameVariable:GetNameOrFallbackName ()
+			expressionPrecedence = GLib.Lua.Precedence.Atom
+		end
+		expressionPrecedence = expressionPrecedence or GLib.Lua.Precedence.Lowest
+		return expression, expressionPrecedence
+	end
+	return self.FrameVariable.LoadStoreExpressions [self.Index], self.FrameVariable.LoadStoreExpressionPrecedences [self.Index]
+end
+
+function self:GetExpressionPrecedence ()
+	local _, expressionPrecedence = self:GetExpression ()
+	return expressionPrecedence
 end
 
 function self:GetExpressionRawValue ()
+	if self:IsLoad () then
+		if self:IsExpressionInlineable () then
+			local lastStoreId = self:GetLastStoreId ()
+			return self.FrameVariable.LoadStoreExpressionRawValues [lastStoreId]
+		end
+		return nil
+	end
 	return self.FrameVariable.LoadStoreExpressionRawValues [self.Index]
 end
 
@@ -37,6 +75,14 @@ end
 
 function self:GetInstructionId ()
 	return self.FrameVariable.LoadStoreInstructions [self.Index]
+end
+
+function self:GetLastStore (loadStore)
+	return self.FrameVariable:GetLoadStore (self:GetLastStoreId (), loadStore)
+end
+
+function self:GetLastStoreId ()
+	return self.FrameVariable.LoadStoreLastStoreIds [self.Index]
 end
 
 function self:GetLoadCount ()
@@ -68,6 +114,10 @@ function self:GetPrevious (loadStore)
 end
 
 function self:IsExpressionInlineable ()
+	if self:IsLoad () then
+		local lastStoreId = self:GetLastStoreId ()
+		return self.FrameVariable.LoadStoreExpressionInlineables [lastStoreId] or false
+	end
 	return self.FrameVariable.LoadStoreExpressionInlineables [self.Index] or false
 end
 
@@ -79,8 +129,15 @@ function self:IsStore ()
 	return self.FrameVariable.LoadStoreTypes [self.Index] == "Store"
 end
 
-function self:SetExpression (expression)
+function self:SetExpression (expression, expressionPrecedence)
+	expressionPrecedence = expressionPrecedence or GLib.Lua.Precedence.Lowest
+	
 	self.FrameVariable.LoadStoreExpressions [self.Index] = expression
+	self.FrameVariable.LoadStoreExpressionPrecedences [self.Index] = expressionPrecedence
+end
+
+function self:SetExpressionPrecedence (expressionPrecedence)
+	self.FrameVariable.LoadStoreExpressionPrecedences [self.Index] = expressionPrecedence
 end
 
 function self:SetExpressionRawValue (expressionRawValue)
@@ -101,6 +158,13 @@ end
 
 function self:SetInstructionId (instructionId)
 	self.FrameVariable.LoadStoreInstructions [self.Index] = instructionId
+end
+
+function self:SetLastStore (loadStoreOrIndex)
+	if type (loadStoreOrIndex) == "table" then
+		loadStoreOrIndex = loadStoreOrIndex:GetIndex ()
+	end
+	self.FrameVariable.LoadStoreLastStoreIds [self.Index] = loadStoreOrIndex
 end
 
 function self:SetLoadCount (loadCount)
