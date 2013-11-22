@@ -161,7 +161,7 @@ function self:ctor (bytecodeReader, functionDump)
 	-- Upvalues
 	for i = 1, self.UpvalueCount do
 		self.UpvalueNames [i] = debugReader:StringZ ()
-		if self.UpvalueNames [i] == "" then
+		if self.UpvalueNames [i] == "" or not GLib.Lua.IsValidVariableName (self.UpvalueNames [i]) then
 			self.UpvalueNames [i] = nil
 		end
 	end

@@ -86,7 +86,9 @@ function self:GetOpcodeName ()
 end
 
 function self:GetStore (loadStore)
-	return self:GetStoreVariable ():GetLoadStore (self:GetStoreId (), loadStore)
+	local storeVariable = self:GetStoreVariable ()
+	if not storeVariable then return nil end
+	return storeVariable:GetLoadStore (self:GetStoreId (), loadStore)
 end
 
 function self:GetStoreId ()
