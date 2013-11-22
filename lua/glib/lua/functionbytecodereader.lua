@@ -506,6 +506,10 @@ function self:DecompilePass1 ()
 		end
 		
 		-- Generic loads
+		if instruction:GetOperandAType () == GLib.Lua.OperandType.Variable then
+			variable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+		end
 		if instruction:GetOperandBType () == GLib.Lua.OperandType.Variable then
 			variable = self:GetFrameVariable (instruction:GetOperandB () + 1)
 			variable:AddLoad (instruction:GetIndex ())
@@ -616,6 +620,60 @@ local function GetNextStore (storeCache, frameVariable, instructionId)
 	return nil
 end
 
+local conditionalOpcodes =
+{
+	[GLib.Lua.Opcode.ISLT]  = ">=",
+	[GLib.Lua.Opcode.ISGE]  = "<",
+	[GLib.Lua.Opcode.ISLE]  = ">",
+	[GLib.Lua.Opcode.ISGT]  = "<=",
+	[GLib.Lua.Opcode.ISEQV] = "~=",
+	[GLib.Lua.Opcode.ISNEV] = "==",
+	[GLib.Lua.Opcode.ISEQS] = "~=",
+	[GLib.Lua.Opcode.ISNES] = "==",
+	[GLib.Lua.Opcode.ISEQN] = "~=",
+	[GLib.Lua.Opcode.ISNEN] = "==",
+	[GLib.Lua.Opcode.ISEQP] = "~=",
+	[GLib.Lua.Opcode.ISNEP] = "==",
+}
+
+local binaryOpcodes =
+{
+	[GLib.Lua.Opcode.ADDVN] = "+",
+	[GLib.Lua.Opcode.SUBVN] = "-",
+	[GLib.Lua.Opcode.MULVN] = "*",
+	[GLib.Lua.Opcode.DIVVN] = "/",
+	[GLib.Lua.Opcode.MODVN] = "%",
+	[GLib.Lua.Opcode.ADDNV] = "+",
+	[GLib.Lua.Opcode.SUBNV] = "-",
+	[GLib.Lua.Opcode.MULNV] = "*",
+	[GLib.Lua.Opcode.DIVNV] = "/",
+	[GLib.Lua.Opcode.MODNV] = "%",
+	[GLib.Lua.Opcode.ADDVV] = "+",
+	[GLib.Lua.Opcode.SUBVV] = "-",
+	[GLib.Lua.Opcode.MULVV] = "*",
+	[GLib.Lua.Opcode.DIVVV] = "/",
+	[GLib.Lua.Opcode.MODVV] = "%"
+}
+
+local binaryOpcodePrecedences =
+{
+	[GLib.Lua.Opcode.ADDVN] = GLib.Lua.Precedence.Addition,
+	[GLib.Lua.Opcode.SUBVN] = GLib.Lua.Precedence.Subtraction,
+	[GLib.Lua.Opcode.MULVN] = GLib.Lua.Precedence.Multiplication,
+	[GLib.Lua.Opcode.DIVVN] = GLib.Lua.Precedence.Division,
+	[GLib.Lua.Opcode.MODVN] = GLib.Lua.Precedence.Modulo,
+	[GLib.Lua.Opcode.ADDNV] = GLib.Lua.Precedence.Addition,
+	[GLib.Lua.Opcode.SUBNV] = GLib.Lua.Precedence.Subtraction,
+	[GLib.Lua.Opcode.MULNV] = GLib.Lua.Precedence.Multiplication,
+	[GLib.Lua.Opcode.DIVNV] = GLib.Lua.Precedence.Division,
+	[GLib.Lua.Opcode.MODNV] = GLib.Lua.Precedence.Modulo,
+	[GLib.Lua.Opcode.ADDVV] = GLib.Lua.Precedence.Addition,
+	[GLib.Lua.Opcode.SUBVV] = GLib.Lua.Precedence.Subtraction,
+	[GLib.Lua.Opcode.MULVV] = GLib.Lua.Precedence.Multiplication,
+	[GLib.Lua.Opcode.DIVVV] = GLib.Lua.Precedence.Division,
+	[GLib.Lua.Opcode.MODVV] = GLib.Lua.Precedence.Modulo
+}
+
 function self:DecompilePass3 ()
 	local loadCache = {}
 	local storeCache = {}
@@ -686,15 +744,6 @@ function self:DecompilePass3 ()
 			isAssignment = true
 		end
 		
-		-- Unary operations
-		if opcode == "MOV" then
-			isAssignment = true
-			
-			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
-			assignmentExpression, assignmentExpressionPrecedence = load:GetExpression ()
-			store:SetExpression (assignmentExpression, assignmentExpressionPrecedence)
-		end
-		
 		-- Tables
 		if opcode == "GGET" then
 			isAssignment = true
@@ -702,28 +751,44 @@ function self:DecompilePass3 ()
 			isAssignment = true
 			destinationVariableName = instruction:GetOperandDValue ()
 			assignmentExpression = aVariable:GetExpressionOrFallback ()
-		elseif opcode == "TGETS" then
+		elseif opcode == "TGETV" or
+		       opcode == "TGETS" or
+			   opcode == "TGETB" then
 			isAssignment = true
 			
-			-- varA = varB [strC]
+			-- varA = varB [varC]
 			local bExpression = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
 			bExpression = bExpression:GetExpression ()
 			
-			local cValue = instruction:GetOperandCValue ()
-			if type (cValue) == "string" and GLib.Lua.IsValidVariableName (cValue) then
-				assignmentExpression = bExpression .. "." .. cValue
+			local squareBrackets = true
+			if instruction:GetOperandCType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, cVariable, instruction:GetIndex ())
+				cValue = load:GetExpressionRawValue ()
+				if not cValue then
+					cExpression = load:GetExpression ()
+				end
 			else
-				assignmentExpression = bExpression .. " [\"" .. GLib.String.EscapeNonprintable (cValue) .. "\"]"
+				cValue = instruction:GetOperandCValue ()
 			end
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Atom)
-		elseif opcode == "TGETB" then
-			isAssignment = true
 			
-			-- varA = varB [numC]
-			local bExpression = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			bExpression = bExpression:GetExpression ()
+			if cValue then
+				if type (cValue) == "string" then
+					if GLib.Lua.IsValidVariableName (cValue) then
+						cExpression = cValue
+						squareBrackets = false
+					else
+						cExpression = "\"" .. GLib.String.EscapeNonprintable (cValue) .. "\""
+					end
+				else
+					cExpression = tostring (cValue)
+				end
+			end
 			
-			assignmentExpression = bExpression .. " [" .. tostring (instruction:GetOperandCValue ()) .. "]"
+			if squareBrackets then
+				assignmentExpression = bExpression .. " [" .. cExpression .. "]"
+			else
+				assignmentExpression = bExpression .. "." .. cExpression
+			end
 			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Atom)
 		end
 		
@@ -836,80 +901,98 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Comparison operators
-		if opcode == "ISLT" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " >= " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISGE" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " < " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISLE" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " > " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISGT" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " <= " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISEQV" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISNEV" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. dVariable:GetExpressionOrFallback () .. " then")
-		elseif opcode == "ISEQS" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"" .. " then")
-		elseif opcode == "ISNES" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\"" .. " then")
-		elseif opcode == "ISEQN" or
-		       opcode == "ISEQP" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " ~= " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())) .. " then")
-		elseif opcode == "ISNEN" or
-		       opcode == "ISNEP" then
-			instruction:SetTag ("Lua", "if " .. aVariable:GetExpressionOrFallback () .. " == " .. tostring (GLib.String.EscapeNonprintable (instruction:GetOperandDValue ())) .. " then")
+		if conditionalOpcodes [instruction:GetOpcode ()] then
+			local operator = conditionalOpcodes [instruction:GetOpcode ()]
+			
+			local aExpression
+			local dExpression
+			
+			if instruction:GetOperandAType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+				aExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Lowest)
+			elseif instruction:GetOperandAType () == GLib.Lua.OperandType.StringConstantId then
+				aExpression = "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandAValue ()) .. "\""
+			else
+				aExpression = tostring (instruction:GetOperandAValue ())
+			end
+			
+			if instruction:GetOperandDType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
+				dExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Lowest)
+			elseif instruction:GetOperandDType () == GLib.Lua.OperandType.StringConstantId then
+				dExpression = "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandDValue ()) .. "\""
+			else
+				dExpression = tostring (instruction:GetOperandDValue ())
+			end
+			
+			instruction:SetTag ("Lua", "if " .. aExpression .. " " .. operator .. " " .. dExpression .. " then")
 		end
 		
 		-- Unary testing operators
 		if opcode == "IST" then
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
-			instruction:SetTag ("Lua", "if not " .. load:GetExpression () .. " then")
+			instruction:SetTag ("Lua", "if not " .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator) .. " then")
 		elseif opcode == "ISF" then
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			instruction:SetTag ("Lua", "if " .. load:GetExpression () .. " then")
 		end
 		
+		-- Unary operations
+		if opcode == "MOV" then
+			isAssignment = true
+			
+			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
+			assignmentExpression, assignmentExpressionPrecedence = load:GetExpression ()
+			store:SetExpression (assignmentExpression, assignmentExpressionPrecedence)
+		elseif opcode == "NOT" then
+			isAssignment = true
+			
+			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
+			assignmentExpression = "not " .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator)
+			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.LeftUnaryOperator)
+		elseif opcode == "UNM" then
+			isAssignment = true
+			
+			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
+			assignmentExpression = "-" .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator)
+			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.LeftUnaryOperator)
+		elseif opcode == "LEN" then
+			isAssignment = true
+			
+			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
+			assignmentExpression = "#" .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator)
+			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.LeftUnaryOperator)
+		end
+		
 		-- Binary operators
-		if opcode == "DIVVN" then
+		if binaryOpcodes [instruction:GetOpcode ()] then
+			local operator = binaryOpcodes [instruction:GetOpcode ()]
+			assignmentExpressionPrecedence = binaryOpcodePrecedences [instruction:GetOpcode ()]
+			
+			local bExpression
+			local cExpression
+			
+			if instruction:GetOperandBType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
+				bExpression = load:GetBracketedExpression (assignmentExpressionPrecedence)
+			elseif instruction:GetOperandBType () == GLib.Lua.OperandType.StringConstantId then
+				bExpression = "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandBValue ()) .. "\""
+			else
+				bExpression = tostring (instruction:GetOperandBValue ())
+			end
+			
+			if instruction:GetOperandCType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, cVariable, instruction:GetIndex ())
+				cExpression = load:GetBracketedExpression (assignmentExpressionPrecedence)
+			elseif instruction:GetOperandCType () == GLib.Lua.OperandType.StringConstantId then
+				cExpression = "\"" .. GLib.String.EscapeNonprintable (instruction:GetOperandCValue ()) .. "\""
+			else
+				cExpression = tostring (instruction:GetOperandCValue ())
+			end
+			
 			isAssignment = true
-			
-			load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			assignmentExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Division) .. " / " .. tostring (instruction:GetOperandCValue ())
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Division)
-		elseif opcode == "MODVN" then
-			isAssignment = true
-			
-			load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			assignmentExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Modulo) .. " % " .. tostring (instruction:GetOperandCValue ())
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Modulo)
-		elseif opcode == "ADDNV" then
-			isAssignment = true
-			
-			load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			assignmentExpression = tostring (instruction:GetOperandCValue ()) .. " + " .. load:GetBracketedExpression (GLib.Lua.Precedence.Addition)
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Addition)
-		elseif opcode == "ADDVV" then
-			isAssignment = true
-			
-			load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			local bExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Addition)
-			
-			load = GetNextLoad (loadCache, cVariable, instruction:GetIndex ())
-			local cExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Addition)
-			
-			assignmentExpression = bExpression .. " + " .. cExpression
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Addition)
-		elseif opcode == "MULVV" then
-			isAssignment = true
-			
-			load = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
-			local bExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Multiplication)
-			
-			load = GetNextLoad (loadCache, cVariable, instruction:GetIndex ())
-			local cExpression = load:GetBracketedExpression (GLib.Lua.Precedence.Multiplication)
-			
-			assignmentExpression = bExpression .. " * " .. cExpression
-			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Multiplication)
+			assignmentExpression = bExpression .. " " .. operator .. " " .. cExpression
+			store:SetExpression (assignmentExpression, assignmentExpressionPrecedence)
 		elseif opcode == "CAT" then
 			isAssignment = true
 			
