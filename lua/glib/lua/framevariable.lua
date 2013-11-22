@@ -152,6 +152,7 @@ end
 
 function self:SetName (name)
 	if name == "" then name = nil end
+	if name and not GLib.Lua.IsValidVariableName (name) and name ~= "..." then name = nil end
 	
 	self.Name = name
 end

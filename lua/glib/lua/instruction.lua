@@ -194,6 +194,8 @@ function self:GetOperandValue (operand, operandType)
 			return constantValue
 		end
 		return "str-" .. tostring (operand)
+	elseif operandType == GLib.Lua.OperandType.RelativeJump then
+		return operand - 0x8000
 	end
 	
 	return nil

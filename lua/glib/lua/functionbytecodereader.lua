@@ -336,19 +336,36 @@ function self:ToString ()
 	local instruction = GLib.Lua.Instruction (self)
 	
 	local lastLine = 0
+	local lastIndentation = 0
 	for i = 1, self.InstructionCount do
 		instruction = self:GetInstruction (i, instruction)
 		
+		local instructionVisible = true
+		if instruction:GetTag ("Lua") and instruction:GetTag ("Lua") == "" then
+			instructionVisible = false
+		end
+		
+		-- End of blocks
+		local indentation = instruction:GetTag ("Indentation")
+		if indentation < lastIndentation then
+			for i = lastIndentation - 1, indentation, -1 do
+				str:Append (string.rep ("\t", 1 + i))
+				str:Append ("end\n")
+			end
+		end
+		lastIndentation = indentation
+		
 		-- Newlines
 		if lastLine and instruction:GetLine () and instruction:GetLine () - lastLine >= 2 then
-			str:Append ("\t\n")
+			str:Append (string.rep ("\t", 1 + lastIndentation))
+			str:Append ("\n")
 		end
 		lastLine = instruction:GetLine ()
 		
 		-- Instruction
 		if instruction:GetTag ("Lua") then
 			if instruction:GetTag ("Lua") ~= "" then
-				str:Append ("\t")
+				str:Append (string.rep ("\t", 1 + indentation))
 				str:Append (instruction:GetTag ("Lua"):gsub ("\n", "\n\t"))
 				if instruction:GetTag ("Comment") then
 					str:Append ("\t// ")
@@ -366,7 +383,7 @@ function self:ToString ()
 				-- str:Append ("\n")
 			end
 		else
-			str:Append ("\t")
+			str:Append (string.rep ("\t", 1 + indentation))
 			str:Append (instruction:ToString ())
 			if instruction:GetTag ("Comment") then
 				str:Append ("\t// ")
@@ -387,10 +404,63 @@ self.__tostring = self.ToString
 
 -- Internal, do not call
 function self:Decompile ()
-	self:DecompilePass1 ()
 	self:AnalyseJumps ()
+	self:GenerateIndentation ()
+	
+	self:DecompilePass1 ()
 	self:DecompilePass2 ()
 	self:DecompilePass3 ()
+end
+
+function self:AnalyseJumps ()
+	local targetInstruction = GLib.Lua.Instruction (self)
+	
+	self.JumpSources = {}
+	self.DestinationForwardJumpCount = {}
+	self.DestinationBackwardJumpCount = {}
+	
+	for instruction in self:GetInstructionEnumerator () do
+		local opcode = instruction:GetOpcode ()
+		local opcodeName = instruction:GetOpcodeName ()
+		
+		if opcode == GLib.Lua.Opcode.JMP then
+			local jump = instruction:GetOperandDValue ()
+			local destinationInstructionId = instruction:GetIndex () + 1 + jump
+			local destinationInstruction = self:GetInstruction (destinationInstructionId)
+			self.JumpSources [instruction:GetIndex ()] = destinationInstructionId
+			if jump > 0 then
+				self.DestinationForwardJumpCount [destinationInstructionId] = self.DestinationForwardJumpCount [destinationInstructionId] or 0
+				self.DestinationForwardJumpCount [destinationInstructionId] = self.DestinationForwardJumpCount [destinationInstructionId] + 1
+			else
+				self.DestinationBackwardJumpCount [destinationInstructionId] = self.DestinationBackwardJumpCount [destinationInstructionId] or 0
+				self.DestinationBackwardJumpCount [destinationInstructionId] = self.DestinationBackwardJumpCount [destinationInstructionId] + 1
+			end
+		end
+	end
+end
+
+function self:GenerateIndentation ()
+	local indentation = 0
+	for instruction in self:GetInstructionEnumerator () do
+		local instructionId = instruction:GetIndex ()
+		
+		if self.DestinationForwardJumpCount [instructionId] then
+			indentation = indentation - self.DestinationForwardJumpCount [instructionId]
+		elseif self.DestinationBackwardJumpCount [instruction:GetIndex ()] then
+			indentation = indentation + self.DestinationForwardJumpCount [instructionId]
+		end
+		
+		instruction:SetTag ("Indentation", indentation)
+		
+		if self.JumpSources [instructionId] then
+			local destinationInstructionId = self.JumpSources [instructionId]
+			if destinationInstructionId > instructionId then
+				indentation = indentation + 1
+			else
+				indentation = indentation - 1
+			end
+		end
+	end
 end
 
 function self:DecompilePass1 ()
@@ -401,6 +471,7 @@ function self:DecompilePass1 ()
 	local assignmentExpressionRawValue
 	
 	for instruction in self:GetInstructionEnumerator () do
+		local opcode = instruction:GetOpcode ()
 		local opcodeName = instruction:GetOpcodeName ()
 		assignmentExpression = nil
 		assignmentExpressionPrecedence = GLib.Lua.Precedence.Lowest
@@ -505,6 +576,17 @@ function self:DecompilePass1 ()
 			end
 		end
 		
+		-- Returns
+		if opcodeName == "RET" then
+			for i = instruction:GetOperandA (), instruction:GetOperandA () + instruction:GetOperandD () - 2 do
+				variable = self:GetFrameVariable (i + 1)
+				variable:AddLoad (instruction:GetIndex ())
+			end
+		elseif opcodeName == "RET1" then
+			variable = self:GetFrameVariable (instruction:GetOperandA () + 1)
+			variable:AddLoad (instruction:GetIndex ())
+		end
+		
 		-- Generic loads
 		if instruction:GetOperandAType () == GLib.Lua.OperandType.Variable then
 			variable = self:GetFrameVariable (instruction:GetOperandA () + 1)
@@ -528,11 +610,6 @@ function self:DecompilePass1 ()
 			instruction:SetStoreVariable (destinationVariable)
 			instruction:SetStoreId (storeId)
 		end
-	end
-end
-
-function self:AnalyseJumps ()
-	for instruction in self:GetInstructionEnumerator () do
 	end
 end
 
@@ -686,7 +763,13 @@ function self:DecompilePass3 ()
 	
 	local loadStore = GLib.Lua.LoadStore ()
 	
+	local lastInstructionOpcode
+	local lastInstructionOpcodeName
+	
 	for instruction in self:GetInstructionEnumerator () do
+		local opcode = instruction:GetOpcode ()
+		local opcodeName = instruction:GetOpcodeName ()
+		
 		local destinationVariable
 		local destinationVariableName
 		local isAssignment = false
@@ -712,15 +795,13 @@ function self:DecompilePass3 ()
 			assignmentExpression = store:GetExpression ()
 		end
 		
-		local opcode = instruction:GetOpcodeName ()
-		
 		-- Loads
-		if opcode == "KSTR" or
-		   opcode == "KSHORT" or
-		   opcode == "KNUM" or
-		   opcode == "KPRI" then
+		if opcodeName == "KSTR" or
+		   opcodeName == "KSHORT" or
+		   opcodeName == "KNUM" or
+		   opcodeName == "KPRI" then
 			isAssignment = true
-		elseif opcode == "KNIL" then
+		elseif opcodeName == "KNIL" then
 			assignmentExpression = "nil"
 			local lua = ""
 			local first = true
@@ -740,20 +821,22 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Upvalue operations
-		if opcode == "UGET" then
+		if opcodeName == "UGET" then
 			isAssignment = true
 		end
 		
 		-- Tables
-		if opcode == "GGET" then
+		if opcodeName == "GGET" then
 			isAssignment = true
-		elseif opcode == "GSET" then
+		elseif opcodeName == "GSET" then
 			isAssignment = true
 			destinationVariableName = instruction:GetOperandDValue ()
-			assignmentExpression = aVariable:GetExpressionOrFallback ()
-		elseif opcode == "TGETV" or
-		       opcode == "TGETS" or
-			   opcode == "TGETB" then
+			
+			load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+			assignmentExpression = load:GetExpression ()
+		elseif opcodeName == "TGETV" or
+		       opcodeName == "TGETS" or
+			   opcodeName == "TGETB" then
 			isAssignment = true
 			
 			-- varA = varB [varC]
@@ -790,12 +873,56 @@ function self:DecompilePass3 ()
 				assignmentExpression = bExpression .. "." .. cExpression
 			end
 			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Atom)
+		elseif opcodeName == "TSETV" or
+		       opcodeName == "TSETS" or
+			   opcodeName == "TSETB" then
+			load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+			local aExpression = load:GetExpression ()
+			
+			-- varB [varC] = varA
+			local bExpression = GetNextLoad (loadCache, bVariable, instruction:GetIndex ())
+			bExpression = bExpression:GetExpression ()
+			
+			local squareBrackets = true
+			if instruction:GetOperandCType () == GLib.Lua.OperandType.Variable then
+				load = GetNextLoad (loadCache, cVariable, instruction:GetIndex ())
+				cValue = load:GetExpressionRawValue ()
+				if not cValue then
+					cExpression = load:GetExpression ()
+				end
+			else
+				cValue = instruction:GetOperandCValue ()
+			end
+			
+			if cValue then
+				if type (cValue) == "string" then
+					if GLib.Lua.IsValidVariableName (cValue) then
+						cExpression = cValue
+						squareBrackets = false
+					else
+						cExpression = "\"" .. GLib.String.EscapeNonprintable (cValue) .. "\""
+					end
+				else
+					cExpression = tostring (cValue)
+				end
+			end
+			
+			local lua
+			if squareBrackets then
+				lua = bExpression .. " [" .. cExpression .. "]"
+			else
+				lua = bExpression .. "." .. cExpression
+			end
+			lua = lua .. " = " .. aExpression
+			instruction:SetTag ("Lua", lua)
 		end
 		
 		-- Calls
-		if opcode == "CALLM" then
+		if opcodeName == "CALLM" then
 			local returnCount = instruction:GetOperandB () - 1
-			assignmentExpression = aVariable:GetExpressionOrFallback () .. " ("
+			
+			load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+			assignmentExpression = load:GetExpression () .. " ("
 			
 			-- Parameters
 			for i = instruction:GetOperandA () + 1, instruction:GetOperandA () + instruction:GetOperandC () do
@@ -828,9 +955,12 @@ function self:DecompilePass3 ()
 					if not first then
 						destinationVariableNames = destinationVariableNames ..  ", "
 					end
+					first = false
 					
 					variable = self:GetFrameVariable (i + 1)
-					firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
+					if returnCount ~= 1 then
+						firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
+					end
 					destinationVariableNames = destinationVariableNames .. variable:GetNameOrFallbackName ()
 				end
 				
@@ -841,13 +971,19 @@ function self:DecompilePass3 ()
 					destinationVariable = self:GetFrameVariable (instruction:GetOperandA () + 1)
 					store = GetNextStore (storeCache, variable, instruction:GetIndex ())
 					store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Atom)
+					
+					if not store:IsExpressionInlineable () then
+						firstAssignment = firstAssignment or destinationVariable:SetAssigned (instruction:GetIndex ())
+					end
 				else
 					instruction:SetTag ("Lua", (firstAssignment and "local " or "") .. destinationVariableNames .. " = " .. assignmentExpression)
 				end
 			end
-		elseif opcode == "CALL" then
+		elseif opcodeName == "CALL" then
 			local returnCount = instruction:GetOperandB () - 1
-			assignmentExpression = aVariable:GetExpressionOrFallback () .. " ("
+			
+			load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+			assignmentExpression = load:GetExpression () .. " ("
 			
 			-- Parameters
 			local first = true
@@ -881,9 +1017,12 @@ function self:DecompilePass3 ()
 					if not first then
 						destinationVariableNames = destinationVariableNames ..  ", "
 					end
+					first = false
 					
 					variable = self:GetFrameVariable (i + 1)
-					firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
+					if returnCount ~= 1 then
+						firstAssignment = firstAssignment or variable:SetAssigned (instruction:GetIndex ())
+					end
 					destinationVariableNames = destinationVariableNames .. variable:GetNameOrFallbackName ()
 				end
 				
@@ -894,6 +1033,10 @@ function self:DecompilePass3 ()
 					destinationVariable = self:GetFrameVariable (instruction:GetOperandA () + 1)
 					store = GetNextStore (storeCache, variable, instruction:GetIndex ())
 					store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Atom)
+					
+					if not store:IsExpressionInlineable () then
+						firstAssignment = firstAssignment or destinationVariable:SetAssigned (instruction:GetIndex ())
+					end
 				else
 					instruction:SetTag ("Lua", (firstAssignment and "local " or "") .. destinationVariableNames .. " = " .. assignmentExpression)
 				end
@@ -901,8 +1044,8 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Comparison operators
-		if conditionalOpcodes [instruction:GetOpcode ()] then
-			local operator = conditionalOpcodes [instruction:GetOpcode ()]
+		if conditionalOpcodes [opcode] then
+			local operator = conditionalOpcodes [opcode]
 			
 			local aExpression
 			local dExpression
@@ -929,34 +1072,34 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Unary testing operators
-		if opcode == "IST" then
+		if opcodeName == "IST" then
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			instruction:SetTag ("Lua", "if not " .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator) .. " then")
-		elseif opcode == "ISF" then
+		elseif opcodeName == "ISF" then
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			instruction:SetTag ("Lua", "if " .. load:GetExpression () .. " then")
 		end
 		
 		-- Unary operations
-		if opcode == "MOV" then
+		if opcodeName == "MOV" then
 			isAssignment = true
 			
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			assignmentExpression, assignmentExpressionPrecedence = load:GetExpression ()
 			store:SetExpression (assignmentExpression, assignmentExpressionPrecedence)
-		elseif opcode == "NOT" then
+		elseif opcodeName == "NOT" then
 			isAssignment = true
 			
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			assignmentExpression = "not " .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator)
 			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.LeftUnaryOperator)
-		elseif opcode == "UNM" then
+		elseif opcodeName == "UNM" then
 			isAssignment = true
 			
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
 			assignmentExpression = "-" .. load:GetBracketedExpression (GLib.Lua.Precedence.LeftUnaryOperator)
 			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.LeftUnaryOperator)
-		elseif opcode == "LEN" then
+		elseif opcodeName == "LEN" then
 			isAssignment = true
 			
 			load = GetNextLoad (loadCache, dVariable, instruction:GetIndex ())
@@ -965,9 +1108,9 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Binary operators
-		if binaryOpcodes [instruction:GetOpcode ()] then
-			local operator = binaryOpcodes [instruction:GetOpcode ()]
-			assignmentExpressionPrecedence = binaryOpcodePrecedences [instruction:GetOpcode ()]
+		if binaryOpcodes [opcode] then
+			local operator = binaryOpcodes [opcode]
+			assignmentExpressionPrecedence = binaryOpcodePrecedences [opcode]
 			
 			local bExpression
 			local cExpression
@@ -993,7 +1136,7 @@ function self:DecompilePass3 ()
 			isAssignment = true
 			assignmentExpression = bExpression .. " " .. operator .. " " .. cExpression
 			store:SetExpression (assignmentExpression, assignmentExpressionPrecedence)
-		elseif opcode == "CAT" then
+		elseif opcodeName == "CAT" then
 			isAssignment = true
 			
 			local first = true
@@ -1013,23 +1156,57 @@ function self:DecompilePass3 ()
 			store:SetExpression (assignmentExpression, GLib.Lua.Precedence.Lowest)
 		end
 		
-		if destinationVariable then
-			destinationVariable:ClearExpression ()
+		-- Returns
+		if opcodeName == "RET" then
+			local first = true
+			assignmentExpression = ""
+			for i = instruction:GetOperandA (), instruction:GetOperandA () + instruction:GetOperandD () - 2 do
+				if not first then
+					assignmentExpression = assignmentExpression .. ", "
+				end
+				first = false
+				
+				variable = self:GetFrameVariable (i + 1)
+				load = GetNextLoad (loadCache, variable, instruction:GetIndex ())
+				assignmentExpression = assignmentExpression .. load:GetExpression ()
+			end
+			instruction:SetTag ("Lua", "return " .. assignmentExpression)
+		elseif opcodeName == "RET0" then
+			instruction:SetTag ("Lua", "return")
+		elseif opcodeName == "RET1" then
+			load = GetNextLoad (loadCache, aVariable, instruction:GetIndex ())
+			assignmentExpression = load:GetExpression ()
+			instruction:SetTag ("Lua", "return " .. assignmentExpression)
+		end
+		
+		-- Jumps
+		if opcodeName == "JMP" then
+			if conditionalOpcodes [lastInstructionOpcode] or
+			   lastInstructionOpcodeName == "IST" or
+			   lastInstructionOpcodeName == "ISF" then
+				instruction:SetTag ("Lua", "")
+			end
 		end
 		
 		if isAssignment then
-			if destinationVariable then
-				destinationVariableName = destinationVariable:GetNameOrFallbackName ()
-				
-				firstAssignment = firstAssignment or destinationVariable:SetAssigned (instruction:GetIndex ())
-				destinationVariable:SetExpression (assignmentExpression, assignmentExpressionIndexable, assignmentExpressionRawValue)
-			end
 			store = store or instruction:GetStore (store)
 			if store and store:IsExpressionInlineable () then
 				instruction:SetTag ("Lua", "")
 			else
+				if destinationVariable then
+					firstAssignment = firstAssignment or destinationVariable:SetAssigned (instruction:GetIndex ())
+					
+					-- Give unnamed variables a suitable name on their first assignment
+					if firstAssignment and not destinationVariable:GetName () then
+						destinationVariable:SetName ("_" .. assignmentExpression:gsub ("[^a-zA-Z0-9_]+", "_"):sub (-16))
+					end
+					destinationVariableName = destinationVariable:GetNameOrFallbackName ()
+				end
 				instruction:SetTag ("Lua", (firstAssignment and "local " or "") .. destinationVariableName .. " = " .. assignmentExpression)
 			end
 		end
+		
+		lastInstructionOpcode = opcode
+		lastInstructionOpcodeName = opcodeName
 	end
 end
