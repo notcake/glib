@@ -49,6 +49,8 @@ function self:ctor (functionOrDump)
 		
 		functionDataLength = reader:ULEB128 ()
 	end
+	
+	self:LinkFunctions (#self.Functions - 1, self.Functions [#self.Functions])
 end
 
 function self:GetDump ()
@@ -86,18 +88,14 @@ end
 function self:ToString ()
 	if not self.String then
 		local str = GLib.StringBuilder ()
-		str:Append (self:GetSource ())
-		str:Append ("\n")
-		str:Append ("{")
-		str:Append ("\n")
-		
-		for functionBytecodeReader in self:GetFunctionEnumerator () do
-			str:Append ("\t")
-			str:Append (functionBytecodeReader:ToString ():gsub ("\n", "\n\t"))
+		if self:GetSource () then
+			str:Append ("-- " .. self:GetSource ())
 			str:Append ("\n")
 		end
+		if #self.Functions > 0 then
+			str:Append (self.Functions [#self.Functions]:ToString ())
+		end
 		
-		str:Append ("}")
 		self.String = str:ToString ()
 	end
 	
@@ -105,3 +103,20 @@ function self:ToString ()
 end
 
 self.__tostring = self.ToString
+
+-- Internal, do not call
+function self:LinkFunctions (lastUnallocatedFunction, functionBytecodeReader)
+	for i = 1, functionBytecodeReader:GetGarbageCollectedConstantCount () do
+		local garbageCollectedConstant = functionBytecodeReader:GetGarbageCollectedConstant (i)
+		if garbageCollectedConstant:GetType () == GLib.Lua.GarbageCollectedConstantType.Function then
+			local childFunctionBytecodeReader = self:GetFunction (lastUnallocatedFunction)
+			garbageCollectedConstant:SetFunction (childFunctionBytecodeReader)
+			lastUnallocatedFunction = lastUnallocatedFunction - 1
+			if childFunctionBytecodeReader then
+				lastUnallocatedFunction = self:LinkFunctions (lastUnallocatedFunction, childFunctionBytecodeReader)
+			end
+		end
+	end
+	
+	return lastUnallocatedFunction
+end

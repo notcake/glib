@@ -134,8 +134,8 @@ function self:SetAssigned (instructionId)
 	local isFirstAssignment = self:GetTag ("FirstAssignment") == nil
 	self:SetTag ("FirstAssignment", instructionId)
 	
-	if isFirstAssigned and self:IsParameter () then
-		isFirstAssigned = false
+	if isFirstAssignment and self:IsParameter () then
+		isFirstAssignment = false
 	end
 	return isFirstAssignment
 end

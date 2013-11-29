@@ -182,8 +182,6 @@ function self:ctor (bytecodeReader, functionDump)
 	
 	self.DebugResidualData = debugReader:Bytes (1024)
 	self.Rest = reader:Bytes (1024)
-	
-	self:Decompile ()
 end
 
 function self:GetBytecodeReader ()
@@ -324,8 +322,17 @@ function self:GetUpvalueName (upvalueId)
 	return self.UpvalueNames [upvalueId]
 end
 
+-- String
+function self:InvalidateString ()
+	self.String = nil
+end
+
 function self:ToString ()
 	if self.String then return self.String end
+	
+	if not self.Decompiled then
+		self:Decompile ()
+	end
 	
 	local str = GLib.StringBuilder ()
 	
@@ -427,6 +434,9 @@ self.__tostring = self.ToString
 
 -- Internal, do not call
 function self:Decompile ()
+	if self.Decompiled then return end
+	self.Decompile = true
+	
 	self:AnalyseJumps ()
 	self:GenerateIndentation ()
 	
@@ -532,14 +542,21 @@ function self:DecompilePass1 ()
 			destinationVariable = nil -- Don't add another store at the end of the loop
 		end
 		
-		-- Upvalue operations
+		-- Upvalue and function operations
 		if opcodeName == "UGET" then
 			assignmentExpression = self:GetUpvalueName (instruction:GetOperandD () + 1) or ("_up" .. tostring (instruction:GetOperandD ()))
+			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
+		elseif opcodeName == "FNEW" then
+			local constant = self:GetGarbageCollectedConstant (self:GetGarbageCollectedConstantCount () - instruction:GetOperandD ())
+			assignmentExpression = constant:GetLuaString ()
 			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
 		end
 		
 		-- Tables
-		if opcodeName == "TDUP" then
+		if opcodeName == "TNEW" then
+			assignmentExpression = "{}"
+			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
+		elseif opcodeName == "TDUP" then
 			local constant = self:GetGarbageCollectedConstant (self:GetGarbageCollectedConstantCount () - instruction:GetOperandD ())
 			assignmentExpression = constant:GetLuaString ()
 			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
@@ -848,15 +865,17 @@ function self:DecompilePass3 ()
 			instruction:SetTag ("Lua", lua)
 		end
 		
-		-- Upvalue operations
+		-- Upvalue and function operations
 		if opcodeName == "UGET" then
+			isAssignment = true
+		elseif opcodeName == "FNEW" then
 			isAssignment = true
 		end
 		
 		-- Tables
-		if opcodeName == "TDUP" then
-			isAssignment = true
-		elseif opcodeName == "GGET" then
+		if opcodeName == "TNEW" or
+		   opcodeName == "TDUP" or
+		   opcodeName == "GGET" then
 			isAssignment = true
 		elseif opcodeName == "GSET" then
 			isAssignment = true
