@@ -93,6 +93,20 @@ include ("protocol/endpoint.lua")
 include ("protocol/endpointmanager.lua")
 include ("protocol/session.lua")
 
+-- Math
+include ("math/matrix.lua")
+include ("math/vector.lua")
+include ("math/columnvector.lua")
+include ("math/rowvector.lua")
+
+-- Geometry
+GLib.Geometry = {}
+include ("geometry/parametricgeometry.lua")
+include ("geometry/iparametriccurve.lua")
+include ("geometry/iparametricsurface.lua")
+include ("geometry/cubicbezierspline.lua")
+include ("geometry/parametriccurverenderer.lua")
+
 -- Interfaces
 GLib.Interfaces = {}
 include ("interfaces/interfaces.lua")

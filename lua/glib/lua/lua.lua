@@ -1,3 +1,61 @@
+function GLib.Lua.CreateShadowGlobalTable ()
+	local globalShadowTable = GLib.Lua.CreateShadowTable (_G)
+	
+	globalShadowTable.timer.Adjust  = GLib.NullCallback
+	globalShadowTable.timer.Create  = GLib.NullCallback
+	globalShadowTable.timer.Destroy = GLib.NullCallback
+	globalShadowTable.timer.Pause   = GLib.NullCallback
+	globalShadowTable.timer.Stop    = GLib.NullCallback
+	globalShadowTable.timer.Simple  = GLib.NullCallback
+	globalShadowTable.timer.Toggle  = GLib.NullCallback
+	globalShadowTable.timer.UnPause = GLib.NullCallback
+	
+	globalShadowTable.hook.Add    = GLib.NullCallback
+	globalShadowTable.hook.GetTable = function ()
+		return GLib.Lua.CreateShadowTable (hook.GetTable ())
+	end
+	globalShadowTable.hook.Remove = GLib.NullCallback
+	
+	return globalShadowTable
+end
+
+function GLib.Lua.CreateShadowTable (t)
+	local shadowTable = {}
+	local metatable = {}
+	local nils = {}
+	
+	metatable.__index = function (self, key)
+		if rawget (self, key) ~= nil then
+			return rawget (self, key)
+		end
+		
+		if nils [key] then
+			return nil
+		end
+		
+		if t [key] ~= nil then
+			if type (t [key]) == "table" then
+				rawset (self, key, GLib.Lua.CreateShadowTable (t [key]))
+				return rawget (self, key)
+			end
+			return t [key]
+		end
+	end
+	
+	metatable.__newindex = function (self, key, value)
+		rawset (self, key, value)
+		nils [key] = value == nil
+	end
+	
+	setmetatable (shadowTable, metatable)
+	
+	return shadowTable
+end
+
+function GLib.Lua.MinifyLua (filePath)
+	
+end
+
 function GLib.Lua.GetTable (tableName)
 	local parts = string.Split (tableName, ".")
 	

@@ -297,6 +297,7 @@ function GLib.MakeConstructor (metatable, base, base2)
 	
 	if base then
 		local basetable = GLib.GetMetaTable (base)
+		metatable.__tostring = metatable.__tostring or basetable.__tostring
 		metatable.__base = basetable
 		setmetatable (metatable, basetable)
 		
@@ -311,7 +312,7 @@ function GLib.MakeConstructor (metatable, base, base2)
 		end
 	end
 	
-	return function (...)
+	local ictor = function (...)
 		local object = {}
 		setmetatable (object, metatable)
 		
@@ -343,6 +344,10 @@ function GLib.MakeConstructor (metatable, base, base2)
 		object:__ctor (...)
 		return object
 	end
+	
+	metatable.__ictor = ictor
+	
+	return ictor
 end
 
 function GLib.NullCallback ()
