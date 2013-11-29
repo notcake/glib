@@ -42,6 +42,8 @@ end
 
 function self:GetColumn (x, columnVector)
 	columnVector = columnVector or GLib.ColumnVector (self.Height)
+	columnVector.Width  = 1
+	columnVector.Height = self.Height
 	
 	for y = 0, self.Height - 1 do
 		columnVector [1 + y] = self [1 + y * self.Width + x - 1]
@@ -68,6 +70,8 @@ end
 
 function self:GetRow (y, rowVector)
 	rowVector = rowVector or GLib.RowVector (self.Width)
+	rowVector.Width  = self.Width
+	rowVector.Height = 1
 	
 	for x = 0, self.Width - 1 do
 		rowVector [1 + x] = self [1 + (y - 1) * self.Width + x]
