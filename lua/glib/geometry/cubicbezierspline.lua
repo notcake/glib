@@ -9,10 +9,6 @@ GLib.Geometry.CubicBezierMatrix = GLib.Matrix (4, 4,
 )
 
 function self:ctor (dimensions)
-	dimensions = dimensions or 3
-	
-	self.Dimensions = dimensions
-	
 	self.BezierMatrix = GLib.Geometry.CubicBezierMatrix
 end
 
