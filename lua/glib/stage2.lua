@@ -22,6 +22,14 @@ include ("lua/stackframe.lua")
 include ("lua/stacktrace.lua")
 include ("lua/stacktracecache.lua")
 
+include ("lua/garbagecollectedconstanttype.lua")
+include ("lua/garbagecollectedconstant.lua")
+include ("lua/functionconstant.lua")
+include ("lua/tableconstant.lua")
+include ("lua/stringconstant.lua")
+
+include ("lua/tablekeyvaluetype.lua")
+
 include ("lua/operandtype.lua")
 include ("lua/opcodeinfo.lua")
 include ("lua/opcodes.lua")

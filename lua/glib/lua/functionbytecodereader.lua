@@ -93,30 +93,35 @@ function self:ctor (bytecodeReader, functionDump)
 	
 	-- Garbage collected constants
 	for i = 1, self.GarbageCollectedConstantCount do
-		local constant = {}
-		self.GarbageCollectedConstants [i] = constant
-		
-		constant.Type = reader:ULEB128 ()
-		if constant.Type == 0 then
-			-- Child function
-		elseif constant.Type == 1 then
+		local constant = nil
+		local constantType = reader:ULEB128 ()
+		if constantType == GLib.Lua.GarbageCollectedConstantType.Function then
+			-- Function
+			constant = GLib.Lua.FunctionConstant ()
+		elseif constantType == GLib.Lua.GarbageCollectedConstantType.Table then
 			-- Table
-			GLib.Error ("Unhandled garbage collected constant type (table)")
-		elseif constant.Type == 2 then
+			constant = GLib.Lua.TableConstant ()
+		elseif constantType == GLib.Lua.GarbageCollectedConstantType.Int64 then
 			-- Int64
+			constant = GLib.Lua.GarbageCollectedConstant ()
+			constant:SetType (constantType)
 			GLib.Error ("Unhandled garbage collected constant type (int64)")
-		elseif constant.Type == 3 then
+		elseif constantType == GLib.Lua.GarbageCollectedConstantType.UInt64 then
 			-- UInt64
+			constant = GLib.Lua.GarbageCollectedConstant ()
+			constant:SetType (constantType)
 			GLib.Error ("Unhandled garbage collected constant type (uint64)")
-		elseif constant.Type == 4 then
+		elseif constantType == GLib.Lua.GarbageCollectedConstantType.Complex then
 			-- Complex
+			constant = GLib.Lua.GarbageCollectedConstant ()
+			constant:SetType (constantType)
 			GLib.Error ("Unhandled garbage collected constant type (complex)")
-		elseif constant.Type >= 5 then
-			local stringLength = constant.Type - 5
-			constant.Type = 4
-			constant.Length = stringLength
-			constant.Value = reader:Bytes (constant.Length)
+		elseif constantType >= GLib.Lua.GarbageCollectedConstantType.String then
+			constant = GLib.Lua.StringConstant ()
 		end
+		constant:SetIndex (i)
+		constant:Deserialize (constantType, reader)
+		self.GarbageCollectedConstants [i] = constant
 	end
 	
 	-- Numeric constants
@@ -187,14 +192,26 @@ end
 
 -- Constants
 -- Garbage Collected Constants
+function self:GetGarbageCollectedConstant (i)
+	return self.GarbageCollectedConstants [i]
+end
+
 function self:GetGarbageCollectedConstantCount ()
 	return self.GarbageCollectedConstantCount
+end
+
+function self:GetGarbageCollectedConstantEnumerator ()
+	local i = 0
+	return function ()
+		i = i + 1
+		return self.GarbageCollectedConstants [i]
+	end
 end
 
 function self:GetGarbageCollectedConstantValue (constantId)
 	local constant = self.GarbageCollectedConstants [constantId]
 	if not constant then return nil end
-	return constant.Value
+	return constant:GetValue ()
 end
 
 -- Numeric Constants
@@ -336,7 +353,9 @@ function self:ToString ()
 	local instruction = GLib.Lua.Instruction (self)
 	
 	local lastLine = 0
-	local lastIndentation = 0
+	local lastIndentationLevel = 0
+	local indentation = "\t"
+	local newlineAndIndentation = "\n\t"
 	for i = 1, self.InstructionCount do
 		instruction = self:GetInstruction (i, instruction)
 		
@@ -346,18 +365,22 @@ function self:ToString ()
 		end
 		
 		-- End of blocks
-		local indentation = instruction:GetTag ("Indentation")
-		if indentation < lastIndentation then
-			for i = lastIndentation - 1, indentation, -1 do
+		local indentationLevel = instruction:GetTag ("Indentation")
+		if indentationLevel < lastIndentationLevel then
+			for i = lastIndentationLevel - 1, indentationLevel, -1 do
 				str:Append (string.rep ("\t", 1 + i))
 				str:Append ("end\n")
 			end
 		end
-		lastIndentation = indentation
+		if lastIndentationLevel ~= indentationLevel then
+			lastIndentationLevel = indentationLevel
+			indentation = string.rep ("\t", 1 + lastIndentationLevel)
+			newlineAndIndentation = "\n" .. indentation
+		end
 		
 		-- Newlines
 		if lastLine and instruction:GetLine () and instruction:GetLine () - lastLine >= 2 then
-			str:Append (string.rep ("\t", 1 + lastIndentation))
+			str:Append (indentation)
 			str:Append ("\n")
 		end
 		lastLine = instruction:GetLine ()
@@ -365,8 +388,8 @@ function self:ToString ()
 		-- Instruction
 		if instruction:GetTag ("Lua") then
 			if instruction:GetTag ("Lua") ~= "" then
-				str:Append (string.rep ("\t", 1 + indentation))
-				str:Append (instruction:GetTag ("Lua"):gsub ("\n", "\n\t"))
+				str:Append (indentation)
+				str:Append (instruction:GetTag ("Lua"):gsub ("\n", newlineAndIndentation))
 				if instruction:GetTag ("Comment") then
 					str:Append ("\t// ")
 					str:Append (instruction:GetTag ("Comment"))
@@ -383,7 +406,7 @@ function self:ToString ()
 				-- str:Append ("\n")
 			end
 		else
-			str:Append (string.rep ("\t", 1 + indentation))
+			str:Append (indentation)
 			str:Append (instruction:ToString ())
 			if instruction:GetTag ("Comment") then
 				str:Append ("\t// ")
@@ -484,8 +507,9 @@ function self:DecompilePass1 ()
 		
 		-- Constant loads
 		if opcodeName == "KSTR" then
-			assignmentExpressionRawValue = instruction:GetOperandDValue ()
-			assignmentExpression = "\"" .. GLib.String.EscapeNonprintable (assignmentExpressionRawValue) .. "\""
+			local constant = self:GetGarbageCollectedConstant (self:GetGarbageCollectedConstantCount () - instruction:GetOperandD ())
+			assignmentExpressionRawValue = constant:GetValue ()
+			assignmentExpression = constant:GetLuaString ()
 			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
 		elseif opcodeName == "KSHORT" then
 			assignmentExpressionRawValue = instruction:GetOperandDValue ()
@@ -515,7 +539,11 @@ function self:DecompilePass1 ()
 		end
 		
 		-- Tables
-		if opcodeName == "GGET" then
+		if opcodeName == "TDUP" then
+			local constant = self:GetGarbageCollectedConstant (self:GetGarbageCollectedConstantCount () - instruction:GetOperandD ())
+			assignmentExpression = constant:GetLuaString ()
+			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
+		elseif opcodeName == "GGET" then
 			assignmentExpression = instruction:GetOperandDValue ()
 			assignmentExpressionPrecedence = GLib.Lua.Precedence.Atom
 		end
@@ -826,7 +854,9 @@ function self:DecompilePass3 ()
 		end
 		
 		-- Tables
-		if opcodeName == "GGET" then
+		if opcodeName == "TDUP" then
+			isAssignment = true
+		elseif opcodeName == "GGET" then
 			isAssignment = true
 		elseif opcodeName == "GSET" then
 			isAssignment = true

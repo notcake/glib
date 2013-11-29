@@ -132,3 +132,32 @@ function GLib.Lua.IsValidVariableName (name)
 	if not keywords [name] and string.match (name, "^[_a-zA-Z][_a-zA-Z0-9]*$") then return true end
 	return false
 end
+
+local function ToLuaString (value, stringBuilder)
+	local valueType = type (value)
+	
+	if valueType == "nil" or
+	   valueType == "boolean" or
+	   valueType == "number" then
+		return tostring (valueType)
+	end
+	
+	if valueType == "string" then
+		return "\"" .. GLib.String.EscapeNonprintable (value) .. "\""
+	end
+	
+	stringBuilder = stringBuilder or GLib.StringBuilder ()
+	
+	stringBuilder:Append (tostring (value))
+	
+	return stringBuilder
+end
+
+function GLib.Lua.ToLuaString (value)
+	local luaString = ToLuaString (value, stringBuilder)
+	if type (luaString) == "table" then
+		luaString = luaString:ToString ()
+	end
+	
+	return luaString
+end
