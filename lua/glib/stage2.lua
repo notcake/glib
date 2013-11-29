@@ -104,6 +104,8 @@ GLib.Geometry = {}
 include ("geometry/parametricgeometry.lua")
 include ("geometry/iparametriccurve.lua")
 include ("geometry/iparametricsurface.lua")
+include ("geometry/bezierspline.lua")
+include ("geometry/quadraticbezierspline.lua")
 include ("geometry/cubicbezierspline.lua")
 include ("geometry/parametriccurverenderer.lua")
 

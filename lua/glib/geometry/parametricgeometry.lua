@@ -1,5 +1,5 @@
 function GLib.Geometry.CreateParameterVector (degree, t, out)
-	if degree == 2 then return t end
+	if degree == 1 then return t end
 	
 	out = out or GLib.RowVector (degree + 1)
 	
@@ -13,7 +13,7 @@ function GLib.Geometry.CreateParameterVector (degree, t, out)
 end
 
 function GLib.Geometry.CreateParameterTangentVector (degree, t, out)
-	if degree == 2 then return 1 end
+	if degree == 1 then return 1 end
 	
 	out = out or GLib.RowVector (degree + 1)
 	
