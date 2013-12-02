@@ -310,6 +310,14 @@ function GLib.MakeConstructor (metatable, base, base2)
 			metatable.__base2 = base2table
 			metatable.ctor2 = base2table.ctor
 		end
+	else
+		metatable.GetHashCode = function (self)
+			if not self.__HashCode then
+				self.__HashCode = string.sub (tostring (self), -8)
+			end
+			
+			return self.__HashCode
+		end
 	end
 	
 	local ictor = function (...)
