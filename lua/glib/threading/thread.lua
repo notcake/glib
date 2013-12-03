@@ -209,6 +209,11 @@ function self:IsResolvableWaitable ()
 end
 
 function self:ResolveWait ()
+	if self:IsWaiting () then
+		-- FUCK.
+		GLib.Error ("Thread:ResolveWait : Not supported when the thread is already in a wait.")
+	end
+	
 	local canYieldTimeSlice = self:CanYieldTimeSlice ()
 	self:SetYieldTimeSliceAllowed (false)
 	self.ThreadRunner:RunThread (self)
