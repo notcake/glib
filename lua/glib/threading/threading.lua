@@ -41,28 +41,3 @@ end
 
 GLib.CheckYield = GLib.Threading.CheckYield
 GLib.GetCurrentThread = GLib.Threading.GetCurrentThread
-
-hook.Add ("Think", "GLib.Threading",
-	function ()
-		if not GLib.Threading then
-			hook.Remove ("Think", "GLib.Threading")
-			return
-		end
-		
-		GLib.Threading.LastThreadResumeTime = SysTime ()
-		
-		for thread, _ in pairs (GLib.Threading.Threads) do
-			if SysTime () - GLib.Threading.LastThreadResumeTime > 0.005 then
-				break
-			end
-			
-			if not thread:IsSuspended () and not thread:IsWaiting () then
-				local success, error = coroutine.resume (thread:GetCoroutine ())
-				if not success then
-					thread:Terminate ()
-					ErrorNoHalt (error)
-				end
-			end
-		end
-	end
-)
