@@ -483,13 +483,15 @@ function GLib.WeakValueTable ()
 	return tbl
 end
 
+-- GLib.Initialize uses this code
+include ("timers.lua")
+include ("eventprovider.lua")
 GLib.Initialize ("GLib", GLib)
 
+-- Now load the rest
 include ("string.lua")
-include ("timers.lua")
 
 include ("userid.lua")
-include ("eventprovider.lua")
 include ("playermonitor.lua")
 include ("stringbuilder.lua")
 include ("stringinbuffer.lua")
