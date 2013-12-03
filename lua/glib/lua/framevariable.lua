@@ -126,6 +126,8 @@ function self:GetTag (tagId)
 end
 
 function self:IsParameter ()
+	if self.Index == "..." then return false end
+	
 	return self.Index <= self.FunctionBytecodeReader:GetParameterCount ()
 end
 
