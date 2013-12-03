@@ -1,5 +1,5 @@
 local self = {}
-GLib.Threading.Thread = GLib.MakeConstructor (self)
+GLib.Threading.Thread = GLib.MakeConstructor (self, GLib.Threading.IWaitable)
 
 --[[
 	StateChanged (ThreadState state, bool suspended)
@@ -177,13 +177,13 @@ function self:WaitForMultipleObjects (...)
 	GLib.Error ("Thread:WaitForMultipleObjects : Not implemented.")
 end
 
-function self:WaitForSingleObject (object, timeout)
+function self:WaitForSingleObject (waitable, timeout)
 	if timeout ~= nil then
 		GLib.Error ("Thread:WaitForSingleObject : Timeouts are not implemented yet.")
 	end
 	
 	self:SetState (GLib.Threading.ThreadState.Waiting)
-	object:Wait (
+	waitable:Wait (
 		function ()
 			self:SetState (GLib.Threading.ThreadState.Running)
 		end
@@ -193,14 +193,9 @@ function self:WaitForSingleObject (object, timeout)
 		if GLib.Threading.CanYieldTimeSlice () then
 			self:Yield ()
 		else
-			-- The object better be another thread.
-			if object:Is (GLib.Threading.Thread) then
-				object:SetYieldTimeSliceAllowed (false)
-				object:GetThreadRunner ():RunThread (object)
-				object:SetYieldTimeSliceAllowed (true)
-				if not object:IsTerminated () then
-					GLib.Error ("Thread:WaitForSingleObject : Thread " .. object:GetName () .. " did not run until completion.")
-				end
+			-- The IWaitable better be resolvable.
+			if waitable:Is (GLib.Threading.Thread) then
+				waitable:ResolveWait ()
 			else
 				GLib.Error ("Thread:WaitForSingleObject : Thread " .. self:GetName () .. " cannot yield.")
 			end
@@ -208,22 +203,31 @@ function self:WaitForSingleObject (object, timeout)
 	end
 end
 
-function self:Wait (callback)
-	if self:IsTerminated () then
-		if callback then
-			callback (GLib.Threading.WaitEndReason.Success)
-		end
-		return
-	end
+-- IWaitable
+function self:IsResolvableWaitable ()
+	return true
+end
+
+function self:ResolveWait ()
+	local canYieldTimeSlice = self:CanYieldTimeSlice ()
+	self:SetYieldTimeSliceAllowed (false)
+	self.ThreadRunner:RunThread (self)
+	self:SetYieldTimeSliceAllowed (canYieldTimeSlice)
 	
-	if callback then
+	if not self:IsTerminated () then
+		GLib.Error ("Thread:WaitForSingleObject : Thread " .. self:GetName () .. " did not run until completion.")
+	end
+end
+
+function self:WaitCallback (callback)
+	if self:IsTerminated () then
+		callback (GLib.Threading.WaitEndReason.Success)
+	else
 		self:AddEventListener ("Terminated",
 			function ()
 				callback (GLib.Threading.WaitEndReason.Success)
 			end
 		)
-	else
-		GLib.Threading.CurrentThread:WaitForSingleObject (self)
 	end
 end
 

@@ -21,18 +21,16 @@ function self:ctor ()
 					break
 				end
 				
-				if not thread:IsSuspended () and not thread:IsWaiting () then
-					self:SetCurrentThread (thread)
-					
-					local success, error = coroutine.resume (thread:GetCoroutine ())
-					if not success then
-						thread:Terminate ()
-						ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
-					end
-					
-					if thread:IsTerminated () then
-						thread:DispatchEvent ("Terminated")
-					end
+				self:SetCurrentThread (thread)
+				
+				local success, error = coroutine.resume (thread:GetCoroutine ())
+				if not success then
+					thread:Terminate ()
+					ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
+				end
+				
+				if thread:IsTerminated () then
+					thread:DispatchEvent ("Terminated")
 				end
 			end
 			
@@ -87,9 +85,9 @@ function self:GetExecutionSliceEndTime ()
 end
 
 function self:RunThread (thread)
-	self.ExecutionSliceEndTime = SysTime () + 0.005
-	
-	if not thread:IsSuspended () and not thread:IsWaiting () then
+	if thread:IsRunnable () and not thread:IsMainThread () then
+		self.ExecutionSliceEndTime = SysTime () + 0.005
+		
 		self:PushCurrentThread (thread)
 		
 		local success, error = coroutine.resume (thread:GetCoroutine ())

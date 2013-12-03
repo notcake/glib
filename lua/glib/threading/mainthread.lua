@@ -34,6 +34,11 @@ function self:Wait (callback)
 	return
 end
 
+-- IWaitable
+function self:IsResolvableWaitable ()
+	return false
+end
+
 -- Cooperative threading
 function self:CanYield ()
 	return false

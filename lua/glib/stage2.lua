@@ -83,6 +83,8 @@ include ("containers/networkable/list.lua")
 
 -- Threading
 GLib.Threading = {}
+include ("threading/iwaitable.lua")
+
 include ("threading/threading.lua")
 include ("threading/threadstate.lua")
 include ("threading/thread.lua")
