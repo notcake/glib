@@ -21,7 +21,7 @@ function self:Wait (callback)
 	if callback then
 		self:WaitCallback (callback)
 	else
-		GLib.Threading.CurrentThread:WaitForSingleObject (self)
+		return GLib.Threading.CurrentThread:WaitForSingleObject (self)
 	end
 end
 
