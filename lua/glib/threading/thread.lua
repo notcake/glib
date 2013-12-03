@@ -53,17 +53,20 @@ function self:ResolveWait (timeout)
 	self.WaitResolutionAbortionTime = waitResolutionAbortionTime
 	
 	-- Ensure that this thread's state is set to Running.
+	local resolutionSucceeded = true
 	if self:IsSleeping () then
 		if self.SleepEndTime > self.WaitResolutionAbortionTime then
 			return false
 		end
-		self:ResolveSleep ()
+		resolutionSucceeded = self:ResolveSleep ()
 	elseif self:IsWaiting () then
-		local resolutionSucceeded = self:ResolveWaits (timeout)
-		if not resolutionSucceeded then
-			self.WaitResolutionAbortionTime = math.huge
-			return false
-		end
+		resolutionSucceeded = self:ResolveWaits (timeout)
+	end
+	
+	-- The sleep or wait didn't resolve fully, bail.
+	if not resolutionSucceeded then
+		self.WaitResolutionAbortionTime = math.huge
+		return false
 	end
 	
 	-- Unsuspend thread??
@@ -287,7 +290,12 @@ function self:Sleep (duration)
 				GLib.Error ("Thread:Sleep : Clamping sleep duration to 5 seconds.")
 				self.SleepEndTime = SysTime () + 5
 			end
-			self:ResolveSleep ()
+			
+			-- Attempt to carry out the sleep, but yield if we cannot complete it
+			-- (our state should still be Sleeping)
+			if not self:ResolveSleep () then
+				self:Yield ()
+			end
 		end
 	end
 end
@@ -331,7 +339,11 @@ function self:WaitForMultipleObjects (...)
 		if GLib.Threading.CanYieldTimeSlice () then
 			self:Yield ()
 		else
-			self:ResolveWaits (self.WaitResolutionAbortionTime - SysTime ())
+			-- Attempt to resolve the waits, but yield if we cannot complete it
+			-- (our state should still be Waiting)
+			if not self:ResolveWaits (self.WaitResolutionAbortionTime - SysTime ()) then
+				self:Yield ()
+			end
 		end
 	end
 	
@@ -409,8 +421,15 @@ end
 
 -- Wait resolution
 function self:ResolveSleep ()
-	while SysTime () < self.SleepEndTime do end
-	return true
+	local abortionTime = math.min (self.WaitResolutionAbortionTime, self.SleepEndTime)
+	local abortionTimeDueToSleepEnd = self.SleepEndTime <= self.WaitResolutionAbortionTime
+	while SysTime () < abortionTime do end
+	
+	if abortionTimeDueToSleepEnd then
+		self:SetState (GLib.Threading.ThreadState.Running)
+	end
+	
+	return abortionTimeDueToSleepEnd
 end
 
 function self:ResolveWaits ()
