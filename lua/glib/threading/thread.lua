@@ -209,6 +209,8 @@ function self:IsResolvableWaitable ()
 end
 
 function self:ResolveWait ()
+	if self:IsTerminated () then return end
+	
 	if self:IsWaiting () then
 		-- FUCK.
 		GLib.Error ("Thread:ResolveWait : Not supported when the thread is already in a wait.")
