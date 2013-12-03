@@ -215,12 +215,14 @@ function GLib.Initialize (systemName, systemTable)
 	end
 	
 	setmetatable (systemTable, getmetatable (systemTable) or {})
-	getmetatable (systemTable).__index = GLib
-	
-	for k, v in pairs (GLib) do
-		if type (v) == "table" then
-			systemTable [k] = {}
-			setmetatable (systemTable [k], { __index = v })
+	if systemTable ~= GLib then
+		getmetatable (systemTable).__index = GLib
+		
+		for k, v in pairs (GLib) do
+			if type (v) == "table" then
+				systemTable [k] = {}
+				setmetatable (systemTable [k], { __index = v })
+			end
 		end
 	end
 	
@@ -465,6 +467,8 @@ function GLib.WeakValueTable ()
 	setmetatable (tbl, { __mode = "v" })
 	return tbl
 end
+
+GLib.Initialize ("GLib", GLib)
 
 include ("string.lua")
 include ("timers.lua")
