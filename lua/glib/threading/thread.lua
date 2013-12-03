@@ -190,7 +190,7 @@ function self:WaitForSingleObject (object, timeout)
 			self:Yield ()
 		else
 			-- The object better be another thread.
-			if object.GetCoroutine then
+			if object:Is (GLib.Threading.Thread) then
 				object:SetYieldTimeSliceAllowed (false)
 				object:GetThreadRunner ():RunThread (object)
 				object:SetYieldTimeSliceAllowed (true)

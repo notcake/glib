@@ -297,6 +297,9 @@ end
 function GLib.MakeConstructor (metatable, base, base2)
 	metatable.__index = metatable
 	
+	-- Instance constructor, what this function returns
+	local ictor
+	
 	if base then
 		local basetable = GLib.GetMetaTable (base)
 		metatable.__tostring = metatable.__tostring or basetable.__tostring
@@ -313,16 +316,26 @@ function GLib.MakeConstructor (metatable, base, base2)
 			metatable.ctor2 = base2table.ctor
 		end
 	else
-		metatable.GetHashCode = function (self)
+		metatable.GetHashCode = metatable.GetHashCode or function (self)
 			if not self.__HashCode then
 				self.__HashCode = string.sub (tostring (self), -8)
 			end
 			
 			return self.__HashCode
 		end
+		
+		metatable.Is = metatable.Is or function (self, type)
+			local metatable = self
+			while metatable do
+				if metatable.__ictor == type then return true end
+				metatable = metatable.__base
+			end
+			
+			return false
+		end
 	end
 	
-	local ictor = function (...)
+	ictor = function (...)
 		local object = {}
 		setmetatable (object, metatable)
 		
