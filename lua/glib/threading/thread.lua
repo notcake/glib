@@ -277,8 +277,8 @@ function self:Terminate (doNotYield)
 end
 
 -- Sleeping
-function self:Sleep (duration)
-	self.SleepEndTime = SysTime () + duration
+function self:Sleep (durationInMilliseconds)
+	self.SleepEndTime = SysTime () + durationInMilliseconds * 0.001
 	self:SetState (GLib.Threading.ThreadState.Sleeping)
 	
 	-- Yield if we're the running thread
@@ -286,7 +286,7 @@ function self:Sleep (duration)
 		if GLib.Threading.CanYieldTimeSlice () then
 			self:Yield ()
 		else
-			if duration > 5 then
+			if durationInMilliseconds > 5000 then
 				GLib.Error ("Thread:Sleep : Clamping sleep duration to 5 seconds.")
 				self.SleepEndTime = SysTime () + 5
 			end
@@ -307,7 +307,7 @@ function self:WaitForMultipleObjects (...)
 	-- Timeout
 	local timeout = math.huge
 	if type (objectsAndTimeout [#objectsAndTimeout]) == "number" then
-		timeout = objectsAndTimeout [#objectsAndTimeout]
+		timeout = objectsAndTimeout [#objectsAndTimeout] * 0.001
 		objectsAndTimeout [#objectsAndTimeout] = nil
 	end
 	
@@ -350,8 +350,8 @@ function self:WaitForMultipleObjects (...)
 	return self.WaitEndReason
 end
 
-function self:WaitForSingleObject (waitable, timeout)
-	return self:WaitForMultipleObjects (waitable, timeout)
+function self:WaitForSingleObject (waitable, timeoutInMilliseconds)
+	return self:WaitForMultipleObjects (waitable, timeoutInMilliseconds)
 end
 
 -- Cooperative threading
