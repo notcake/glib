@@ -8,12 +8,13 @@ function self:IsResolvableWaitable ()
 	return false
 end
 
-function self:ResolveWait ()
+function self:ResolveWait (timeout)
 	if self:IsResolvableWait () then
 		GLib.Error ("IWaitable:ResolveWait : Not implemented.")
 	else
 		GLib.Error ("IWaitable:ResolveWait : This IWaitable is non-resolvable.")
 	end
+	return false
 end
 
 function self:Wait (callback)

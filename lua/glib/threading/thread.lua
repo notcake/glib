@@ -25,7 +25,81 @@ function self:ctor ()
 	self.StartTime = 0
 	self.EndTime   = 0
 	
+	-- Waiting
+	self.WaitObjects = {}
+	self.WaitAbortionTime = 0
+	self.WaitEndReason = GLib.Threading.WaitEndReason.Success
+	
+	-- Wait resolution
+	self.WaitResolutionAbortionTime = math.huge
+	
+	-- Sleeping
+	self.SleepEndTime = 0
+	
 	GLib.EventProvider (self)
+end
+
+-- IWaitable
+function self:IsResolvableWaitable ()
+	return true
+end
+
+function self:ResolveWait (timeout)
+	if self:IsTerminated () then return true end
+	
+	timeout = timeout or math.huge
+	
+	local waitResolutionAbortionTime = SysTime () + timeout
+	self.WaitResolutionAbortionTime = waitResolutionAbortionTime
+	
+	-- Ensure that this thread's state is set to Running.
+	if self:IsSleeping () then
+		if self.SleepEndTime > self.WaitResolutionAbortionTime then
+			return false
+		end
+		self:ResolveSleep ()
+	elseif self:IsWaiting () then
+		local resolutionSucceeded = self:ResolveWaits (timeout)
+		if not resolutionSucceeded then
+			self.WaitResolutionAbortionTime = math.huge
+			return false
+		end
+	end
+	
+	-- Unsuspend thread??
+	if self:IsSuspended () then
+		self:Resume ()
+	end
+	
+	local canYieldTimeSlice = self:CanYieldTimeSlice ()
+	self:SetYieldTimeSliceAllowed (false)
+	self.ThreadRunner:RunThread (self)
+	self:SetYieldTimeSliceAllowed (canYieldTimeSlice)
+	
+	if SysTime () > self.WaitResolutionAbortionTime then
+		self.WaitResolutionAbortionTime = math.huge
+		return false
+	end
+	
+	self.WaitResolutionAbortionTime = math.huge
+	if not self:IsTerminated () then
+		GLib.Error ("Thread:WaitForSingleObject : Thread " .. self:GetName () .. " did not run until completion.")
+		return false
+	end
+	
+	return true
+end
+
+function self:WaitCallback (callback)
+	if self:IsTerminated () then
+		callback (GLib.Threading.WaitEndReason.Success)
+	else
+		self:AddEventListener ("Terminated",
+			function ()
+				callback (GLib.Threading.WaitEndReason.Success)
+			end
+		)
+	end
 end
 
 -- Identity
@@ -102,6 +176,10 @@ function self:IsRunning ()
 	return GLib.Threading.CurrentThread == self
 end
 
+function self:IsSleeping ()
+	return self.State == GLib.Threading.ThreadState.Sleeping
+end
+
 function self:IsStarted ()
 	return self.State ~= GLib.Threading.ThreadState.Unstarted
 end
@@ -172,70 +250,73 @@ function self:Terminate (doNotYield)
 	return self
 end
 
--- Waits
-function self:WaitForMultipleObjects (...)
-	GLib.Error ("Thread:WaitForMultipleObjects : Not implemented.")
+-- Sleeping
+function self:Sleep (duration)
+	self.SleepEndTime = SysTime () + duration
+	self:SetState (GLib.Threading.ThreadState.Sleeping)
+	
+	-- Yield if we're the running thread
+	if self:IsRunning () then
+		if GLib.Threading.CanYieldTimeSlice () then
+			self:Yield ()
+		else
+			if duration > 5 then
+				GLib.Error ("Thread:Sleep : Clamping sleep duration to 5 seconds.")
+				self.SleepEndTime = SysTime () + 5
+			end
+			self:ResolveSleep ()
+		end
+	end
 end
 
-function self:WaitForSingleObject (waitable, timeout)
-	if timeout ~= nil then
-		GLib.Error ("Thread:WaitForSingleObject : Timeouts are not implemented yet.")
+-- Waiting
+function self:WaitForMultipleObjects (...)
+	local objectsAndTimeout = {...}
+	
+	-- Timeout
+	local timeout = math.huge
+	if type (objectsAndTimeout [#objectsAndTimeout]) == "number" then
+		timeout = objectsAndTimeout [#objectsAndTimeout]
+		objectsAndTimeout [#objectsAndTimeout] = nil
 	end
 	
+	self.WaitAbortionTime = SysTime () + timeout
+	
+	-- A wait for 0 objects is over immediately
+	if #objectsAndTimeout == 0 then return GLib.Threading.WaitEndReason.Success end
+	
+	self.WaitEndReason = GLib.Threading.WaitEndReason.Success
+	
 	self:SetState (GLib.Threading.ThreadState.Waiting)
-	waitable:Wait (
-		function ()
-			self:SetState (GLib.Threading.ThreadState.Running)
-		end
-	)
+	for _, waitable in ipairs (objectsAndTimeout) do
+		self.WaitObjects [waitable] = true
+		waitable:Wait (
+			function (waitEndReason)
+				-- Check that this object is still part of the wait
+				if not self.WaitObjects [waitable] then return end
+				
+				self.WaitObjects [waitable] = nil
+				if next (self.WaitObjects) == nil then
+					self:SetState (GLib.Threading.ThreadState.Running)
+				end
+			end
+		)
+	end
+	
 	
 	if self:IsRunning () and not self:IsRunnable () then
 		if GLib.Threading.CanYieldTimeSlice () then
 			self:Yield ()
 		else
-			-- The IWaitable better be resolvable.
-			if waitable:Is (GLib.Threading.Thread) then
-				waitable:ResolveWait ()
-			else
-				GLib.Error ("Thread:WaitForSingleObject : Thread " .. self:GetName () .. " cannot yield.")
-			end
+			self:ResolveWaits (self.WaitResolutionAbortionTime - SysTime ())
 		end
 	end
+	
+	return self.WaitEndReason
 end
 
--- IWaitable
-function self:IsResolvableWaitable ()
-	return true
-end
-
-function self:ResolveWait ()
-	if self:IsTerminated () then return end
-	
-	if self:IsWaiting () then
-		-- FUCK.
-		GLib.Error ("Thread:ResolveWait : Not supported when the thread is already in a wait.")
-	end
-	
-	local canYieldTimeSlice = self:CanYieldTimeSlice ()
-	self:SetYieldTimeSliceAllowed (false)
-	self.ThreadRunner:RunThread (self)
-	self:SetYieldTimeSliceAllowed (canYieldTimeSlice)
-	
-	if not self:IsTerminated () then
-		GLib.Error ("Thread:WaitForSingleObject : Thread " .. self:GetName () .. " did not run until completion.")
-	end
-end
-
-function self:WaitCallback (callback)
-	if self:IsTerminated () then
-		callback (GLib.Threading.WaitEndReason.Success)
-	else
-		self:AddEventListener ("Terminated",
-			function ()
-				callback (GLib.Threading.WaitEndReason.Success)
-			end
-		)
-	end
+function self:WaitForSingleObject (waitable, timeout)
+	return self:WaitForMultipleObjects (waitable, timeout)
 end
 
 -- Cooperative threading
@@ -249,9 +330,17 @@ end
 
 function self:CheckYield ()
 	if not self:IsRunning () then return false end
-	if not self:CanYieldTimeSlice () then return false end
 	
-	if SysTime () > self.ThreadRunner:GetExecutionSliceEndTime () then
+	local t = SysTime ()
+	
+	if t > self.WaitResolutionAbortionTime and
+	   self:CanYield () then
+		-- We're currently being resolved, but we've exceeded the timeout.
+		-- So we yield.
+		self:Yield ()
+		return true
+	elseif self:CanYieldTimeSlice () and
+	   t > self.ThreadRunner:GetExecutionSliceEndTime () then
 		self:Yield ()
 		return true
 	end
@@ -279,7 +368,64 @@ function self:Yield ()
 end
 
 -- Internal, do not call
+function self:AbortWait ()
+	if not self:IsWaiting () then return end
+	
+	for waitable, _ in pairs (self.WaitObjects) do
+		self.WaitObjects [waitable] = nil
+	end
+	
+	self.WaitEndReason = GLib.Threading.WaitEndReason.Timeout
+	self:SetState (GLib.Threading.ThreadState.Running)
+end
+
 function self:SetState (state)
 	self.State = state
 	self:DispatchEvent ("StateChanged", self.State, self.Suspended)
+end
+
+-- Wait resolution
+function self:ResolveSleep ()
+	while SysTime () < self.SleepEndTime do end
+	return true
+end
+
+function self:ResolveWaits ()
+	local resolutionSucceeded = true
+	
+	-- Also need to take into account WaitAbortionTime
+	-- self.WaitAbortionTime <= self.WaitResolutionAbortionTime
+	--     The resolution will never fail, but the wait will.
+	-- self.WaitAbortionTime > self.WaitResolutionAbortionTime
+	--     The resolution will fail before the wait aborts.
+	local abortionTime = math.min (self.WaitResolutionAbortionTime, self.WaitAbortionTime)
+	local abortionTimeDueToWaitTimeout = self.WaitAbortionTime <= self.WaitResolutionAbortionTime
+	
+	for waitable, _ in pairs (self.WaitObjects) do
+		if SysTime () > abortionTime then
+			-- Mark this thread's wait as aborted if we've overrun the wait timeout.
+			if abortionTimeDueToWaitTimeout then
+				self:AbortWait ()
+			end
+			resolutionSucceeded = false
+			break
+		end
+		
+		-- These IWaitables better be resolvable.
+		if waitable:IsResolvableWaitable () then
+			resolutionSucceeded = resolutionSucceeded and waitable:ResolveWait (abortionTime - SysTime ())
+		else
+			GLib.Error ("Thread:ResolveWaits : Thread " .. self:GetName () .. " cannot resolve its wait.")
+			resolutionSucceeded = false
+		end
+	end
+	
+	-- Mark this thread's wait as aborted if a resolution failed and we've overrun the wait timeout.
+	if not resolutionSucceeded and
+	   SysTime () > abortionTime and
+	   abortionTimeDueToWaitTimeout then
+		self:AbortWait ()
+	end
+	
+	return resolutionSucceeded or abortionTimeDueToWaitTimeout
 end

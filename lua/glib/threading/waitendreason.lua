@@ -1,6 +1,6 @@
 GLib.Threading.WaitEndReason = GLib.Enum (
 	{
-		Success,
-		Timeout
+		Success = 1,
+		Timeout = 2
 	}
 )

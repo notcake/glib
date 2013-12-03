@@ -25,6 +25,8 @@ function self:ctor ()
 				
 				local success, error = coroutine.resume (thread:GetCoroutine ())
 				if not success then
+					self:SetCurrentThread (GLib.Threading.MainThread)
+					
 					thread:Terminate ()
 					ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
 				end
