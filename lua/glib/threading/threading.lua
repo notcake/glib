@@ -39,5 +39,12 @@ function GLib.Threading.GetCurrentThread ()
 	return GLib.Threading.CurrentThread
 end
 
+function GLib.Threading.Sleep (durationInMilliseconds)
+	if not GLib.Threading.CurrentThread then return false end
+	
+	return GLib.Threading.CurrentThread:Sleep (durationInMilliseconds)
+end
+
 GLib.CheckYield = GLib.Threading.CheckYield
 GLib.GetCurrentThread = GLib.Threading.GetCurrentThread
+GLib.Sleep = GLib.Threading.Sleep
