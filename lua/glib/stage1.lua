@@ -328,6 +328,8 @@ function GLib.MakeConstructor (metatable, base, base2)
 			local metatable = self
 			while metatable do
 				if metatable.__ictor == type then return true end
+				if metatable.__base2 and self.Is (metatable.__base2, type) then return true end
+				
 				metatable = metatable.__base
 			end
 			
