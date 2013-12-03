@@ -153,6 +153,25 @@ function self:SetThreadRunner (threadRunner)
 	return self
 end
 
+-- ThreadRunner
+function self:CheckSleep ()
+	if not self:IsSleeping () then return end
+	
+	if SysTime () > self.SleepEndTime then
+		self.SleepEndTime = 0
+		self:SetState (GLib.Threading.ThreadState.Running)
+	end
+end
+
+function self:CheckWait ()
+	if not self:IsWaiting () then return end
+	
+	if SysTime () > self.WaitAbortionTime then
+		self.WaitAbortionTime = 0
+		self:AbortWait ()
+	end
+end
+
 -- Thread control
 function self:GetExecutionTime ()
 	if not self:IsStarted () then return 0 end

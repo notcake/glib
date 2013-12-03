@@ -4,6 +4,7 @@ GLib.Threading.ThreadRunner = GLib.MakeConstructor (self)
 function self:ctor ()
 	self.Threads = {}
 	self.RunnableThreads = {}
+	self.SleepingWaitingThreads = {}
 	
 	self.CurrentThreadStack = {}
 	self.CurrentThread = nil
@@ -15,6 +16,14 @@ function self:ctor ()
 	hook.Add ("Think", "GLib.Threading",
 		function ()
 			self.ExecutionSliceEndTime = SysTime () + 0.005
+			
+			for thread, _ in pairs (self.SleepingWaitingThreads) do
+				if thread:IsSleeping () then
+					thread:CheckSleep ()
+				else
+					thread:CheckWait ()
+				end
+			end
 			
 			for thread, _ in pairs (self.RunnableThreads) do
 				if SysTime () > self.ExecutionSliceEndTime then
@@ -64,7 +73,9 @@ function self:AddThread (thread)
 	self.Threads [thread] = thread
 	
 	if thread:IsRunnable () then
-		self.RunnableThreads [thread] = thread
+		self.RunnableThreads [thread] = true
+	elseif thread:IsSleeping () or thread:IsWaiting () then
+		self.SleepingWaitingThreads [thread] = true
 	end
 	
 	self:HookThread (thread)
@@ -73,6 +84,7 @@ end
 function self:RemoveThread (thread)
 	self.Threads [thread] = nil
 	self.RunnableThreads [thread] = nil
+	self.SleepingWaitingThreads [thread] = nil
 	
 	self:UnhookThread (thread)
 end
@@ -136,8 +148,12 @@ function self:HookThread (thread)
 		function (_, state, suspended)
 			if thread:IsRunnable () then
 				self.RunnableThreads [thread] = true
+				self.SleepingWaitingThreads [thread] = nil
 			else
 				self.RunnableThreads [thread] = nil
+				if thread:IsSleeping () or thread:IsWaiting () then
+					self.SleepingWaitingThreads [thread] = true
+				end
 			end
 			
 			if thread:IsTerminated () then
