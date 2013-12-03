@@ -85,22 +85,23 @@ function self:GetExecutionSliceEndTime ()
 end
 
 function self:RunThread (thread)
-	if thread:IsRunnable () and not thread:IsMainThread () then
-		self.ExecutionSliceEndTime = SysTime () + 0.005
-		
-		self:PushCurrentThread (thread)
-		
-		local success, error = coroutine.resume (thread:GetCoroutine ())
-		self:PopCurrentThread ()
-		
-		if not success then
-			thread:Terminate ()
-			ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
-		end
-		
-		if thread:IsTerminated () then
-			thread:DispatchEvent ("Terminated")
-		end
+	if not thread:IsRunnable () then return end
+	if thread:IsMainThread () then return end
+	
+	self.ExecutionSliceEndTime = SysTime () + 0.005
+	
+	self:PushCurrentThread (thread)
+	
+	local success, error = coroutine.resume (thread:GetCoroutine ())
+	self:PopCurrentThread ()
+	
+	if not success then
+		thread:Terminate ()
+		ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
+	end
+	
+	if thread:IsTerminated () then
+		thread:DispatchEvent ("Terminated")
 	end
 end
 
