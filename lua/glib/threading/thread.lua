@@ -240,6 +240,10 @@ end
 function self:Terminate (doNotYield)
 	if self.State == GLib.Threading.ThreadState.Terminated then return self end
 	
+	if self:IsWaiting () then
+		self:AbortWaits ()
+	end
+	
 	self.EndTime = SysTime ()
 	self:SetState (GLib.Threading.ThreadState.Terminated)
 	
