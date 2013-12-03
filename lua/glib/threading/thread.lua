@@ -174,10 +174,14 @@ end
 
 -- Waits
 function self:WaitForMultipleObjects (...)
-	GLib.Error ("Thread:WaitForSingleObject : Not implemented.")
+	GLib.Error ("Thread:WaitForMultipleObjects : Not implemented.")
 end
 
 function self:WaitForSingleObject (object, timeout)
+	if timeout ~= nil then
+		GLib.Error ("Thread:WaitForSingleObject : Timeouts are not implemented yet.")
+	end
+	
 	self:SetState (GLib.Threading.ThreadState.Waiting)
 	object:Wait (
 		function ()
