@@ -480,7 +480,7 @@ function self:GenerateIndentation ()
 		if self.DestinationForwardJumpCount [instructionId] then
 			indentation = indentation - self.DestinationForwardJumpCount [instructionId]
 		elseif self.DestinationBackwardJumpCount [instruction:GetIndex ()] then
-			indentation = indentation + self.DestinationForwardJumpCount [instructionId]
+			indentation = indentation + self.DestinationBackwardJumpCount [instructionId]
 		end
 		
 		instruction:SetTag ("Indentation", indentation)
