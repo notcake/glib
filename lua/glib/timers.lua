@@ -1,4 +1,5 @@
 local delayedCalls = {}
+GLib.SlowDelayedCalls = {}
 
 function GLib.CallDelayed (callback)
 	if not callback then return end
@@ -40,6 +41,7 @@ hook.Add ("Think", "GLib.DelayedCalls",
 		
 		if SysTime () - startTime > 0.2 and lastCalled then
 			MsgN ("GLib.DelayedCalls : " .. tostring (lastCalled) .. " took " .. ((SysTime () - startTime) * 1000) .. " ms.")
+			GLib.SlowDelayedCalls [#GLib.SlowDelayedCalls + 1] = lastCalled
 		end
 	end
 )
