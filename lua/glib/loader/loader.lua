@@ -141,7 +141,7 @@ function GLib.Loader.Include (path)
 		code, compiled = GLib.Loader.File.Read (path, "LUA")
 	end
 	if not code and not compiled then
-		ErrorNoHalt ("GLib.Loader.Include : " .. path .. ": File not found (Path was " .. pathStack [#pathStack] .. ", caller path was " .. callerDirectory .. ").\n")
+		GLib.Error ("GLib.Loader.Include : " .. path .. ": File not found (Path was " .. pathStack [#pathStack] .. ", caller path was " .. callerDirectory .. ").\n")
 	else
 		compiled = compiled or GLib.Loader.CompileString (code, "lua/" .. fullPath, false)
 		if type (compiled) == "function" then
