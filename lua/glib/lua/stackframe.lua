@@ -3,7 +3,11 @@ GLib.Lua.StackFrame = GLib.MakeConstructor (self)
 
 function self:ctor (frameInfo, index)
 	self.Index = index
+	
 	self.FrameInfo = frameInfo
+	
+	self.Locals   = {}
+	self.Upvalues = {}
 end
 
 function self:GetData ()

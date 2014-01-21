@@ -18,10 +18,22 @@ include ("lua/sessionvariables.lua")
 include ("lua/backup.lua")
 include ("lua/detours.lua")
 
+-- Lua Reflection
+include ("lua/function.lua")
+include ("lua/parameter.lua")
+include ("lua/parameterlist.lua")
+include ("lua/argumentlist.lua")
+
 include ("lua/stackframe.lua")
 include ("lua/stacktrace.lua")
 include ("lua/stacktracecache.lua")
+include ("lua/stackcaptureoptions.lua")
 
+include ("lua/variableframe.lua")
+include ("lua/localvariableframe.lua")
+include ("lua/upvalueframe.lua")
+
+-- Lua Bytecode
 include ("lua/garbagecollectedconstanttype.lua")
 include ("lua/garbagecollectedconstant.lua")
 include ("lua/functionconstant.lua")

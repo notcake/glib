@@ -3,6 +3,7 @@ GLib.Lua.StackTrace = GLib.MakeConstructor (self)
 
 function self:ctor (offset)
 	offset = offset or 0
+	offset = 4 + offset
 	
 	self.String = nil
 	self.Hash = nil
@@ -10,7 +11,7 @@ function self:ctor (offset)
 	self.Frames = {}
 	self.RawFrames = {}
 	
-	local i = 4 + offset
+	local i = offset
 	local done = false
 	while not done do
 		local stackFrame = debug.getinfo (i)
@@ -88,12 +89,12 @@ function self:ToString ()
 			src = src or "<unknown>"
 			
 			if name then
-				stringBuilder:Append (string.format ("%2d", i) .. ": " .. name .. " (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
+				stringBuilder:Append (string.format ("%2d", i - 1) .. ": " .. name .. " (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
 			else
 				if src and stackFrame.currentline then
-					stringBuilder:Append (string.format ("%2d", i) .. ": (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
+					stringBuilder:Append (string.format ("%2d", i - 1) .. ": (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
 				else
-					stringBuilder:Append (string.format ("%2d", i) .. ": <unknown>\n")
+					stringBuilder:Append (string.format ("%2d", i - 1) .. ": <unknown>\n")
 				end
 			end
 		end
