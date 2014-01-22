@@ -1,15 +1,19 @@
 local self = {}
-GLib.Containers.List = GLib.MakeConstructor (self)
+GLib.Containers.OrderedSet = GLib.MakeConstructor (self)
 
 function self:ctor ()
 	self.Count = 0
 	
 	self.Items = {}
+	self.ItemSet = {}
 end
 
 function self:Add (item)
+	if self:Contains (item) then return self end
+	
 	self.Count = self.Count + 1
 	self.Items [self.Count] = item
+	self.ItemSet [item] = true
 	
 	return self
 end
@@ -18,22 +22,11 @@ function self:Clear ()
 	self.Count = 0
 	
 	self.Items = {}
+	self.ItemSet = {}
 end
 
 function self:Contains (item)
-	return self:IndexOf (item) ~= nil
-end
-
-function self:Filter (filter)
-	local filteredList = GLib.Containers.List ()
-	
-	for i = 1, self.Count do
-		if filter (self.Items [i]) then
-			filteredList:Add (self.Items [i])
-		end
-	end
-	
-	return filteredList
+	return self.ItemSet [item] ~= nil
 end
 
 function self:Get (index)
@@ -60,12 +53,18 @@ function self:IndexOf (item)
 end
 
 function self:Insert (index, item)
+	if self:Contains (item) then return self end
+	
 	table.insert (self.Items, index, item)
 	self.Count = self.Count + 1
+	self.ItemSet [item] = true
+	
 	return self
 end
 
 function self:Remove (item)
+	if not self:Contains (item) then return end
+	
 	self:RemoveAt (self:IndexOf (item))
 end
 
@@ -74,6 +73,7 @@ function self:RemoveAt (index)
 	if index <= 0 then return end
 	if index > self.Count then return end
 	
+	self.ItemSet [self.Items [i]] = nil
 	table.remove (self.Items, i)
 	self.Count = self.Count - 1
 end
