@@ -2,19 +2,22 @@ local self = {}
 GLib.Containers.List = GLib.MakeConstructor (self)
 
 function self:ctor ()
-	self.Items = {}
 	self.Count = 0
+	
+	self.Items = {}
 end
 
 function self:Add (item)
 	self.Count = self.Count + 1
 	self.Items [self.Count] = item
+	
 	return self
 end
 
 function self:Clear ()
-	self.Items = {}
 	self.Count = 0
+	
+	self.Items = {}
 end
 
 function self:Contains (item)
