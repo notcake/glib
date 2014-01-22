@@ -464,7 +464,7 @@ elseif CLIENT then
 	
 	GLib.WaitForLocalPlayer (
 		function ()
-			timer.Simple (10,
+			timer.Simple (5,
 				function ()
 					RunConsoleCommand ("glib_request_pack")
 				end
