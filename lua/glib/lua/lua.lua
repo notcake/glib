@@ -1,3 +1,9 @@
+function GLib.Lua.AddressOf (object)
+	local addressString = string.format ("%p", object)
+	if addressString == "NULL" then return 0 end
+	return tonumber (addressString)
+end
+
 function GLib.Lua.CreateShadowGlobalTable ()
 	local globalShadowTable = GLib.Lua.CreateShadowTable (_G)
 	
