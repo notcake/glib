@@ -112,7 +112,7 @@ function self:ToString ()
 		variableFrame:Append (name)
 		variableFrame:Append (string.rep (" ", longestName - #name))
 		variableFrame:Append (" = ")
-		variableFrame:Append (tostring (value))
+		variableFrame:Append (GLib.Lua.ToLuaString (value))
 		variableFrame:Append ("\n")
 	end
 	variableFrame:Append ("}")

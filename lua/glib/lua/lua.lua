@@ -145,7 +145,7 @@ local function ToLuaString (value, stringBuilder)
 	if valueType == "nil" or
 	   valueType == "boolean" or
 	   valueType == "number" then
-		return tostring (valueType)
+		return tostring (value)
 	end
 	
 	if valueType == "string" then
