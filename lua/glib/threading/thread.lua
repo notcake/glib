@@ -399,7 +399,7 @@ function self:Yield ()
 		return
 	end
 	
-	coroutine.yield ()
+	return coroutine.yield ()
 end
 
 -- Internal, do not call
