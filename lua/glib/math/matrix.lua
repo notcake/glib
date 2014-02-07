@@ -279,7 +279,7 @@ function self:Subdeterminant (startX, startY, size)
 	local subdeterminant = 0
 	local nextY = (startY + 1) % self.Height
 	for i = 0, size - 1 do
-		subdeterminant = subdeterminant + self [1 + startY * self.Width + startX + i] * self:Subdeterminant ((startX + i + 1) % self.Width, nextY, size - 1)
+		subdeterminant = subdeterminant + self [1 + startY * self.Width + (startX + i) % self.Width] * self:Subdeterminant ((startX + i + 1) % self.Width, nextY, size - 1)
 	end
 	
 	return subdeterminant
