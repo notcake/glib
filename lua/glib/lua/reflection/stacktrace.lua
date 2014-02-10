@@ -1,23 +1,28 @@
 local self = {}
 GLib.Lua.StackTrace = GLib.MakeConstructor (self)
 
-function self:ctor (levelCount, offset)
+function self:ctor (levelCount, frameOffset, stackCaptureOptions)
 	levelCount = levelCount or math.huge
-	offset = offset or 0
-	offset = 4 + offset
+	frameOffset = frameOffset or 0
+	frameOffset = 4 + frameOffset
+	stackCaptureOptions = stackCaptureOptions or GLib.Lua.StackCaptureOptions.None
 	
 	self.String = nil
 	self.Hash = nil
 	
+	self.FirstFrameOffset = frameOffset
 	self.Frames = {}
 	self.RawFrames = {}
 	
-	local i = offset
+	local i = frameOffset
 	local done = false
 	
+	-- Capture stack frames
 	local capturedLevelCount = 0
 	while not done and
 	      capturedLevelCount ~= levelCount do
+		  
+		-- Capture a stack frame
 		local stackFrame = debug.getinfo (i)
 		self.RawFrames [#self.RawFrames + 1] = stackFrame
 		
@@ -26,6 +31,22 @@ function self:ctor (levelCount, offset)
 		
 		i = i + 1
 		capturedLevelCount = capturedLevelCount + 1
+	end
+	
+	if bit.band (stackCaptureOptions, GLib.Lua.StackCaptureOptions.Locals) ~= 0 then
+		for stackFrame in self:GetEnumerator () do
+			stackFrame:CaptureLocals (stackFrame:GetCaptureIndex ())
+		end
+	elseif bit.band (stackCaptureOptions, GLib.Lua.StackCaptureOptions.Arguments) ~= 0 then
+		for stackFrame in self:GetEnumerator () do
+			stackFrame:CaptureArguments (stackFrame:GetCaptureIndex ())
+		end
+	end
+	
+	if bit.band (stackCaptureOptions, GLib.Lua.StackCaptureOptions.Upvalues) ~= 0 then
+		for stackFrame in self:GetEnumerator () do
+			stackFrame:CaptureUpvalues ()
+		end
 	end
 end
 
@@ -55,7 +76,7 @@ function self:GetFrame (index)
 	if not self.RawFrames [index] then return nil end
 	
 	if not self.Frames [index] then
-		self.Frames [index] = GLib.Lua.StackFrame (self.RawFrames [index], index)
+		self.Frames [index] = GLib.Lua.StackFrame (self.RawFrames [index], self.FirstFrameOffset + index - 1, index)
 	end
 	
 	return self.Frames [index]
@@ -87,19 +108,24 @@ function self:ToString ()
 		local stringBuilder = GLib.StringBuilder ()
 		
 		for i = 1, #self.RawFrames do
-			local stackFrame = self.RawFrames [i]
-			
-			local name = stackFrame.name
-			local src  = stackFrame.short_src
-			src = src or "<unknown>"
-			
-			if name then
-				stringBuilder:Append (string.format ("%2d", i - 1) .. ": " .. name .. " (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
+			if self.Frames [i] then
+				stringBuilder:Append (self.Frames [i]:ToString ())
+				stringBuilder:Append ("\n")
 			else
-				if src and stackFrame.currentline then
-					stringBuilder:Append (string.format ("%2d", i - 1) .. ": (" .. src .. ": " .. tostring (stackFrame.currentline) .. ")\n")
+				local stackFrame = self.RawFrames [i]
+				
+				local name = stackFrame.name
+				local src  = stackFrame.short_src
+				src = src or "<unknown>"
+				
+				if name then
+					stringBuilder:Append (string.format ("%2d", i - 1) .. ": " .. name .. " [" .. src .. ": " .. tostring (stackFrame.currentline) .. "]\n")
 				else
-					stringBuilder:Append (string.format ("%2d", i - 1) .. ": <unknown>\n")
+					if src and stackFrame.currentline then
+						stringBuilder:Append (string.format ("%2d", i - 1) .. ": [" .. src .. ": " .. tostring (stackFrame.currentline) .. "]\n")
+					else
+						stringBuilder:Append (string.format ("%2d", i - 1) .. ": <unknown>\n")
+					end
 				end
 			end
 		end

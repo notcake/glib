@@ -37,7 +37,7 @@ function self:SetName (name)
 end
 
 function self:SetVariadic (isVariadic)
-	self.IsVariadic = isVariadic
+	self.Variadic = isVariadic
 	return self
 end
 

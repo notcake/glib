@@ -58,8 +58,8 @@ function GLib.Lua.CreateShadowTable (t)
 	return shadowTable
 end
 
-function GLib.Lua.MinifyLua (filePath)
-	
+function GLib.Lua.GetFunctionName (func)
+	return GLib.Lua.NameCache:GetFunctionName (func)
 end
 
 function GLib.Lua.GetTable (tableName)
@@ -82,6 +82,10 @@ function GLib.Lua.GetTable (tableName)
 	end
 	
 	return t
+end
+
+function GLib.Lua.GetTableName (table)
+	return GLib.Lua.NameCache:GetTableName (table)
 end
 
 function GLib.Lua.GetTableValue (valueName)
@@ -139,28 +143,93 @@ function GLib.Lua.IsValidVariableName (name)
 	return false
 end
 
-local function ToLuaString (value, stringBuilder)
+local ToCompactLuaString
+local ToLuaString
+
+local TypeFormatters =
+{
+	["nil"] = tostring,
+	["boolean"] = tostring,
+	["number"] = function (value)
+		if value == math.huge then return "math.huge"
+		elseif value == -math.huge then return "-math.huge" end
+		return tostring (value)
+	end,
+	["string"] = function (value)
+		return "\"" .. GLib.String.EscapeNonprintable (value) .. "\""
+	end,
+	["table"] = function (value)
+		local name = GLib.Lua.GetFunctionName (value)
+		return name or string.format ("{ table: %p }", value)
+	end,
+	["Panel"] = function (value)
+		return string.format ("{ Panel: %s %p }", value.ClassName or "", value)
+	end,
+	["Entity"] = function (value)
+		if not value:IsValid () then return "NULL" end
+		
+		-- Serverside entity
+		local entityIndex = value:EntIndex ()
+		if entityIndex >= 0 then
+			local entityInfo = value:GetClass ()
+			return "Entity (" .. entityIndex .. ") --[[ " .. entityInfo .. " ]]"
+		end
+		
+		-- Clientside model
+		local model = value:GetModel ()
+		return "ClientsideModel (" .. ToCompactLuaString (model) .. ")"
+	end,
+	["function"] = function (value)
+		local name = GLib.Lua.GetFunctionName (value)
+		return name or GLib.Lua.FunctionCache:GetFunction (value):GetPrototype ()
+	end
+}
+
+TypeFormatters ["Player"] = TypeFormatters ["Entity"]
+TypeFormatters ["Weapon"] = TypeFormatters ["Entity"]
+TypeFormatters ["NPC"]    = TypeFormatters ["Entity"]
+
+function ToCompactLuaString (value, stringBuilder)
+	local typeFormatter = TypeFormatters [type (value)] or tostring
+	return typeFormatter (value)
+end
+
+function ToLuaString (value, stringBuilder)
 	local valueType = type (value)
 	
-	if valueType == "nil" or
-	   valueType == "boolean" or
-	   valueType == "number" then
-		return tostring (value)
+	local name = GLib.Lua.GetFunctionName (value)
+	if name then return name end
+	
+	if valueType == "table" then
+		stringBuilder = stringBuilder or GLib.StringBuilder ()
+		if valueType == "table" then
+			stringBuilder:Append ("{")
+			stringBuilder:Append (" table ")
+			stringBuilder:Append ("}")
+		else
+			stringBuilder:Append (tostring (value))
+		end
+		return stringBuilder
 	end
 	
-	if valueType == "string" then
-		return "\"" .. GLib.String.EscapeNonprintable (value) .. "\""
-	end
-	
-	stringBuilder = stringBuilder or GLib.StringBuilder ()
-	
-	stringBuilder:Append (tostring (value))
-	
-	return stringBuilder
+	return ToCompactLuaString (value, stringBuilder)
 end
 
 function GLib.Lua.ToLuaString (value)
 	local luaString = ToLuaString (value, stringBuilder)
+	
+	-- Collapse any StringBuilder objects
+	if type (luaString) == "table" then
+		luaString = luaString:ToString ()
+	end
+	
+	return luaString
+end
+
+function GLib.Lua.ToCompactLuaString (value)
+	local luaString = ToCompactLuaString (value, stringBuilder)
+	
+	-- Collapse any StringBuilder objects
 	if type (luaString) == "table" then
 		luaString = luaString:ToString ()
 	end

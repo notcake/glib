@@ -317,10 +317,10 @@ function GLib.PrintStackTrace ()
 	ErrorNoHalt (GLib.StackTrace (nil, 2))
 end
 
-function GLib.StackTrace (levels, offset)
+function GLib.StackTrace (levels, frameOffset)
 	local stringBuilder = GLib.StringBuilder ()
 	
-	local offset = offset or 1
+	local frameOffset = frameOffset or 1
 	local exit = false
 	local i = 0
 	local shown = 0
@@ -332,7 +332,7 @@ function GLib.StackTrace (levels, offset)
 			local name = t.name
 			local src = t.short_src
 			src = src or "<unknown>"
-			if i >= offset then
+			if i >= frameOffset then
 				shown = shown + 1
 				if name then
 					stringBuilder:Append (string.format ("%2d", i) .. ": " .. name .. " (" .. src .. ": " .. tostring (t.currentline) .. ")\n")

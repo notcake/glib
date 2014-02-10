@@ -11,6 +11,17 @@ include ("glue.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
 
+-- Threading
+GLib.Threading = {}
+include ("threading/iwaitable.lua")
+include ("threading/waitendreason.lua")
+
+include ("threading/threading.lua")
+include ("threading/threadstate.lua")
+include ("threading/thread.lua")
+include ("threading/mainthread.lua")
+include ("threading/threadrunner.lua")
+
 -- Lua
 GLib.Lua = {}
 include ("lua/lua.lua")
@@ -18,8 +29,11 @@ include ("lua/sessionvariables.lua")
 include ("lua/backup.lua")
 include ("lua/detours.lua")
 
+include ("lua/namecache.lua")
+
 -- Lua Reflection
 include ("lua/reflection/function.lua")
+include ("lua/reflection/functioncache.lua")
 include ("lua/reflection/parameter.lua")
 include ("lua/reflection/parameterlist.lua")
 include ("lua/reflection/argumentlist.lua")
@@ -33,8 +47,10 @@ include ("lua/reflection/variableframe.lua")
 include ("lua/reflection/localvariableframe.lua")
 include ("lua/reflection/upvalueframe.lua")
 
-function GLib.StackTrace (levels, offset)
-	return GLib.Lua.StackTrace (levels, offset):ToString ()
+function GLib.StackTrace (levels, frameOffset)
+	frameOffset = frameOffset or 0
+	frameOffset = frameOffset + 1
+	return GLib.Lua.StackTrace (levels, frameOffset, GLib.Lua.StackCaptureOptions.Arguments):ToString ()
 end
 
 -- Lua Bytecode Decompiler
@@ -99,17 +115,6 @@ include ("containers/tree.lua")
 
 -- Networking Containers
 include ("containers/networkable/list.lua")
-
--- Threading
-GLib.Threading = {}
-include ("threading/iwaitable.lua")
-include ("threading/waitendreason.lua")
-
-include ("threading/threading.lua")
-include ("threading/threadstate.lua")
-include ("threading/thread.lua")
-include ("threading/mainthread.lua")
-include ("threading/threadrunner.lua")
 
 -- Networking
 include ("net/net.lua")
