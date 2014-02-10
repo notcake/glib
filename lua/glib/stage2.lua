@@ -33,6 +33,10 @@ include ("lua/reflection/variableframe.lua")
 include ("lua/reflection/localvariableframe.lua")
 include ("lua/reflection/upvalueframe.lua")
 
+function GLib.StackTrace (levels, offset)
+	return GLib.Lua.StackTrace (levels, offset):ToString ()
+end
+
 -- Lua Bytecode Decompiler
 include ("lua/decompiler/garbagecollectedconstanttype.lua")
 include ("lua/decompiler/garbagecollectedconstant.lua")
@@ -74,7 +78,9 @@ include ("serialization/serializableregistry.lua")
 include ("serialization/serialization.lua")
 
 -- Networking
+GLib.Networking = {}
 include ("networking/networkable.lua")
+include ("networking/networkablestate.lua")
 include ("networking/networkablecontainer.lua")
 include ("networking/networkablehost.lua")
 include ("networking/subscriberset.lua")

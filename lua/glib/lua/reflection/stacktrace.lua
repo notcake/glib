@@ -1,7 +1,8 @@
 local self = {}
 GLib.Lua.StackTrace = GLib.MakeConstructor (self)
 
-function self:ctor (offset)
+function self:ctor (levelCount, offset)
+	levelCount = levelCount or math.huge
 	offset = offset or 0
 	offset = 4 + offset
 	
@@ -13,7 +14,10 @@ function self:ctor (offset)
 	
 	local i = offset
 	local done = false
-	while not done do
+	
+	local capturedLevelCount = 0
+	while not done and
+	      capturedLevelCount ~= levelCount do
 		local stackFrame = debug.getinfo (i)
 		self.RawFrames [#self.RawFrames + 1] = stackFrame
 		
@@ -21,6 +25,7 @@ function self:ctor (offset)
 		if i > 100 then done = true end
 		
 		i = i + 1
+		capturedLevelCount = capturedLevelCount + 1
 	end
 end
 

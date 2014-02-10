@@ -196,11 +196,6 @@ function GLib.FormatFileSize (size)
 	return tostring (math.floor (size * 100 + 0.5) / 100) .. " " .. sizeUnits [unitIndex]
 end
 
-function GLib.GetMetaTable (constructor)
-	local name, basetable = debug.getupvalue (constructor, 1)
-	return basetable
-end
-
 function GLib.GetStackDepth ()
 	local i = 0
 	while debug.getinfo (i) do
@@ -220,8 +215,17 @@ function GLib.Initialize (systemName, systemTable)
 		
 		for k, v in pairs (GLib) do
 			if type (v) == "table" then
+				-- Object static tables
+				local metatable = debug.getmetatable (v)
+				local ictorInvoker = metatable and metatable.__call or nil
+				
 				systemTable [k] = {}
-				setmetatable (systemTable [k], { __index = v })
+				setmetatable (systemTable [k],
+					{
+						__index = v,
+						__call = ictorInvoker
+					}
+				)
 			end
 		end
 	end
@@ -283,96 +287,6 @@ function GLib.InvertTable (tbl)
 	for i = 1, #keys do
 		tbl [tbl [keys [i]]] = keys [i]
 	end
-end
-
---[[
-	GLib.MakeConstructor (metatable, base, base2)
-		Returns: () -> Object
-		
-		Produces a constructor for the object defined by metatable.
-		base may be nil or the constructor of a base class.
-		base2 may be nil or the constructor of another base class.
-		The second base class must not be a class with inheritance.
-]]
-function GLib.MakeConstructor (metatable, base, base2)
-	metatable.__index = metatable
-	
-	-- Instance constructor, what this function returns
-	local ictor
-	
-	if base then
-		local basetable = GLib.GetMetaTable (base)
-		metatable.__tostring = metatable.__tostring or basetable.__tostring
-		metatable.__base = basetable
-		setmetatable (metatable, basetable)
-		
-		if base2 then
-			local base2table = base2
-			if type (base2) == "function" then base2table = GLib.GetMetaTable (base2) end
-			for k, v in pairs (base2table) do
-				if k:sub (1, 2) ~= "__" then metatable [k] = v end
-			end
-			metatable.__base2 = base2table
-			metatable.ctor2 = base2table.ctor
-		end
-	else
-		metatable.GetHashCode = metatable.GetHashCode or function (self)
-			if not self.__HashCode then
-				self.__HashCode = string.sub (tostring (self), -8)
-			end
-			
-			return self.__HashCode
-		end
-		
-		metatable.Is = metatable.Is or function (self, type)
-			local metatable = self
-			while metatable do
-				if metatable.__ictor == type then return true end
-				if metatable.__base2 and self.Is (metatable.__base2, type) then return true end
-				
-				metatable = metatable.__base
-			end
-			
-			return false
-		end
-	end
-	
-	ictor = function (...)
-		local object = {}
-		setmetatable (object, metatable)
-		
-		-- Create constructor and destructor
-		if not rawget (metatable, "__ctor") or not rawget (metatable, "__dtor") then
-			local base = metatable
-			local ctors = {}
-			local dtors = {}
-			while base ~= nil do
-				ctors [#ctors + 1] = rawget (base, "ctor")
-				ctors [#ctors + 1] = rawget (base, "ctor2")
-				dtors [#dtors + 1] = rawget (base, "dtor")
-				base = base.__base
-			end
-			
-			function metatable:__ctor (...)
-				for i = #ctors, 1, -1 do
-					ctors [i] (self, ...)
-				end
-			end
-			function metatable:__dtor (...)
-				for i = 1, #dtors do
-					dtors [i] (self, ...)
-				end
-			end
-		end
-		
-		object.dtor = object.__dtor
-		object:__ctor (...)
-		return object
-	end
-	
-	metatable.__ictor = ictor
-	
-	return ictor
 end
 
 function GLib.NullCallback ()
@@ -484,6 +398,7 @@ function GLib.WeakValueTable ()
 end
 
 -- GLib.Initialize uses this code
+include ("oop.lua")
 include ("timers.lua")
 include ("eventprovider.lua")
 GLib.Initialize ("GLib", GLib)
@@ -516,6 +431,7 @@ include ("loader/commands.lua")
 GLib.AddCSLuaFile ("glib/glib.lua")
 GLib.AddCSLuaFile ("glib/stage1.lua")
 GLib.AddCSLuaFile ("glib/string.lua")
+GLib.AddCSLuaFile ("glib/oop.lua")
 GLib.AddCSLuaFile ("glib/timers.lua")
 GLib.AddCSLuaFile ("glib/userid.lua")
 GLib.AddCSLuaFile ("glib/eventprovider.lua")

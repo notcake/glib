@@ -1,5 +1,5 @@
 local self = {}
-GLib.NetworkableHost = GLib.MakeConstructor (self)
+GLib.Networking.NetworkableHost = GLib.MakeConstructor (self)
 
 function self:ctor ()
 	self.Networkables = {}

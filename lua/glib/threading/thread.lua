@@ -241,7 +241,7 @@ function self:Start (f, ...)
 	self.Coroutine = coroutine.create (
 		function ()
 			self.StartTime = SysTime ()
-			f ()
+			xpcall (f, GLib.Error)
 			self:Terminate (true)
 		end
 	)

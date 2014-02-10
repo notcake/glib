@@ -17,7 +17,7 @@ end
 
 function self:CreateStackTrace (offset)
 	offset = offset or 0
-	local stackTrace = GLib.Lua.StackTrace (offset + 1)
+	local stackTrace = GLib.Lua.StackTrace (nil, offset + 1)
 	stackTrace = self:AddStackTrace (stackTrace)
 	return stackTrace
 end
