@@ -4,7 +4,7 @@ GLib.Lua.ParameterList = GLib.MakeConstructor (self)
 function self:ctor (func)
 	if type (func) == "table" then
 		self.InfoTable = func:GetInfoTable ()
-		func = func:GetFunction ()
+		func = func:GetRawFunction ()
 	end
 	
 	self.Function = func

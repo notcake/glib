@@ -6,6 +6,10 @@ function GLib.Lua.Function.ctor (func)
 end
 
 function GLib.Lua.Function.FromFunction (func)
+	if type (func) == "table" then
+		func = func:GetRawFunction ()
+	end
+	
 	return GLib.Lua.Function.__ictor (func)
 end
 
@@ -34,6 +38,10 @@ function self:GetParameterList ()
 	end
 	
 	return self.ParameterList
+end
+
+function self:GetRawFunction ()
+	return self.Function
 end
 
 function self:IsNative ()

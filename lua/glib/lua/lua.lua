@@ -153,6 +153,13 @@ local TypeFormatters =
 	["number"] = function (value)
 		if value == math.huge then return "math.huge"
 		elseif value == -math.huge then return "-math.huge" end
+		
+		if value >= 65536 and
+		   value < 4294967296 and
+		   math.floor (value) == value then
+			return string.format ("0x%08x", value)
+		end
+		
 		return tostring (value)
 	end,
 	["string"] = function (value)

@@ -56,6 +56,10 @@ function self:GetLocals ()
 	return self.Locals
 end
 
+function self:GetRawFunction ()
+	return self.FrameInfo.func
+end
+
 function self:GetUpvalues ()
 	return self.Upvalues
 end

@@ -64,6 +64,7 @@ local tableNameBlacklist =
 	["chatsounds.SortedList"] = true,
 	["chatsounds.SortedList2"] = true,
 	["chatsounds.SortedListKeys"] = true,
+	["GAuth.Groups"] = true,
 	["GLib.Loader.PackFileManager.MergedPackFileSystem.Root"] = true,
 	["GLib.Lua.FunctionCache"] = true,
 	["GCompute.GlobalNamespace"] = true,
@@ -72,6 +73,8 @@ local tableNameBlacklist =
 	["GCompute.LanguageDetector.Extensions"] = true,
 	["GCompute.Languages.Languages.GLua.EditorHelper.RootNamespace"] = true,
 	["GCompute.TypeSystem"] = true,
+	["pac.ActiveParts"] = true,
+	["pace.example_outfits"] = true,
 	["VFS.RealRoot"] = true,
 	["VFS.Root"] = true
 }
@@ -88,6 +91,8 @@ function self:ProcessTable (table, tableName, dot)
 	local state = self:GetState ()
 	local nameCache = state.NameCache
 	local queuedTables = state.QueuedTables
+	
+	print (tableName)
 	
 	for k, v in pairs (table) do
 		GLib.CheckYield ()
@@ -106,7 +111,7 @@ function self:ProcessTable (table, tableName, dot)
 					memberName = tableName .. " [" .. GLib.Lua.ToLuaString (k) .. "]"
 				elseif keyType == "table" then
 					-- ¯\_(ツ)_/¯
-					memberName = tableName .. " [" .. self:GetTableName (k) .. "]"
+					memberName = tableName .. " [" .. GLib.Lua.ToCompactLuaString (k) .. "]"
 				elseif keyType == "number" then
 					memberName = tableName .. " [" .. GLib.Lua.ToLuaString (k) .. "]"
 				else

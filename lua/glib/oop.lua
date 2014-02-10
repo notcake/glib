@@ -74,7 +74,7 @@ end
 
 function GLib.IsStaticTable (t)
 	if not t then return false end
-	return t.__static == true
+	return rawget (t, "__static") == true
 end
 
 local function Object_GetHashCode (self)

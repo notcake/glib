@@ -3,7 +3,7 @@ GLib.Lua.UpvalueFrame = GLib.MakeConstructor (self, GLib.Lua.VariableFrame)
 
 function self:ctor (func)
 	if type (func) == "table" then
-		func = func:GetFunction ()
+		func = func:GetRawFunction ()
 	end
 	
 	local i = 1
