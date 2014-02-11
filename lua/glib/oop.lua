@@ -79,7 +79,7 @@ end
 
 local function Object_GetHashCode (self)
 	if not self.__HashCode then
-		self.__HashCode = string.sub (string.format ("%p", self), 2)
+		self.__HashCode = string.sub (string.format ("%p", self), 3)
 	end
 	
 	return self.__HashCode
