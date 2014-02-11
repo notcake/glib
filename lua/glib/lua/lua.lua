@@ -218,22 +218,7 @@ function ToLuaString (value, stringBuilder)
 	local name = GLib.Lua.GetObjectName (value)
 	if name then return name end
 	
-	if valueType == "table" then
-		local metatable = debug.getmetatable (value)
-		if metatable then
-			valueType = GLib.Lua.GetTableName (metatable) or valueType
-		end
-		
-		stringBuilder = stringBuilder or GLib.StringBuilder ()
-		if valueType == "table" then
-			stringBuilder:Append ("{ ")
-			stringBuilder:Append (valueType)
-			stringBuilder:Append (" }")
-		else
-			stringBuilder:Append (tostring (value))
-		end
-		return stringBuilder
-	end
+	-- TODO: Handle tables and functions
 	
 	return ToCompactLuaString (value, stringBuilder)
 end
