@@ -269,7 +269,6 @@ function GLib.IncludeDirectory (folder, recursive)
 		for _, file in ipairs (files) do
 			if string.lower (string.sub (file, -4)) == ".lua" and
 			   not included [string.lower (file)] then
-				print ("INCLUDE " .. folder .. "/" .. file)
 				GLib.Loader.Include (folder .. "/" .. file)
 				included [string.lower (file)] = true
 			end
