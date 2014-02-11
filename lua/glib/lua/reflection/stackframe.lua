@@ -36,6 +36,10 @@ function self:GetCaptureIndex ()
 	return self.CaptureIndex
 end
 
+function self:GetCurrentLine ()
+	return self.FrameInfo.currentline
+end
+
 function self:GetData ()
 	return self.FrameInfo
 end
