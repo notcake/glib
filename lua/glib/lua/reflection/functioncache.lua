@@ -2,20 +2,26 @@ local self = {}
 GLib.Lua.FunctionCache = GLib.MakeConstructor (self)
 
 function self:ctor ()
-	self.Cache = GLib.WeakTable ()
+	-- Avoid having the cache directly accessible from _G
+	local cache = GLib.WeakTable ()
+	self.GetCache = function ()
+		return cache
+	end
 end
 
 function self:ContainsFunction (func)
-	return self.Cache [func] ~= nil
+	return self:GetCache () [func] ~= nil
 end
 
 function self:GetFunction (func)
-	if self.Cache [func] then
-		return self.Cache [func]
+	local cache = self:GetCache ()
+	
+	if cache [func] then
+		return cache [func]
 	end
 	
 	local functionInfo = GLib.Lua.Function.FromFunction (func)
-	self.Cache [func] = functionInfo
+	cache [func] = functionInfo
 	
 	return functionInfo
 end
