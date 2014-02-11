@@ -20,6 +20,10 @@ function self:ctor (func)
 	self.ParameterList = nil
 end
 
+function self:GetFilePath ()
+	return self.InfoTable.short_src
+end
+
 function self:GetFunction ()
 	return self.Function
 end

@@ -92,8 +92,6 @@ function self:ProcessTable (table, tableName, dot)
 	local nameCache = state.NameCache
 	local queuedTables = state.QueuedTables
 	
-	print (tableName)
-	
 	for k, v in pairs (table) do
 		GLib.CheckYield ()
 		
