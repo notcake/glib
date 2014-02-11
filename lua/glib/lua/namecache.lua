@@ -115,14 +115,12 @@ function self:ProcessTable (table, tableName, dot)
 			
 			if valueType == "function" or
 			   valueType == "table" then
-				if keyType == "string" and
+				if keyType ~= "string" or
 				   not GLib.Lua.IsValidVariableName (k) then
-					memberName = tableName .. " [" .. GLib.Lua.ToLuaString (k) .. "]"
-				elseif keyType == "table" then
-					-- ¯\_(ツ)_/¯
+					if keyType == "table" then
+						-- ¯\_(ツ)_/¯
+					end
 					memberName = tableName .. " [" .. GLib.Lua.ToCompactLuaString (k) .. "]"
-				elseif keyType == "number" then
-					memberName = tableName .. " [" .. GLib.Lua.ToLuaString (k) .. "]"
 				else
 					memberName = tableName ~= "" and (tableName .. dot .. tostring (k)) or tostring (k)
 				end
@@ -138,6 +136,14 @@ function self:ProcessTable (table, tableName, dot)
 					-- Check if this is a GLib class
 					if GLib.IsStaticTable (v) then
 						self:QueueIndex (GLib.GetMetaTable (v), memberName, ":")
+					else
+						-- Do the __index metatable if it exists
+						local metatable = debug.getmetatable (v)
+						local __index = metatable and metatable.__index or nil
+						if __index and
+						   not queuedTables [__index] then
+							self:QueueIndex (__index, memberName, ":")
+						end
 					end
 				end
 			end
