@@ -62,6 +62,10 @@ function GLib.Lua.GetFunctionName (func)
 	return GLib.Lua.NameCache:GetFunctionName (func)
 end
 
+function GLib.Lua.GetObjectName (object)
+	return GLib.Lua.NameCache:GetObjectName (object)
+end
+
 function GLib.Lua.GetTable (tableName)
 	local parts = string.Split (tableName, ".")
 	
@@ -166,8 +170,15 @@ local TypeFormatters =
 		return "\"" .. GLib.String.EscapeNonprintable (value) .. "\""
 	end,
 	["table"] = function (value)
-		local name = GLib.Lua.GetFunctionName (value)
-		return name or string.format ("{ table: %p }", value)
+		local name = GLib.Lua.GetTableName (value)
+		if name then return name end
+		
+		local valueType = type (value)
+		local metatable = debug.getmetatable (value)
+		if metatable then
+			valueType = GLib.Lua.GetTableName (metatable) or valueType
+		end
+		return string.format ("{ %s: %p }", valueType, value)
 	end,
 	["Panel"] = function (value)
 		return string.format ("{ Panel: %s %p }", value.ClassName or "", value)
@@ -204,15 +215,20 @@ end
 function ToLuaString (value, stringBuilder)
 	local valueType = type (value)
 	
-	local name = GLib.Lua.GetFunctionName (value)
+	local name = GLib.Lua.GetObjectName (value)
 	if name then return name end
 	
 	if valueType == "table" then
+		local metatable = debug.getmetatable (value)
+		if metatable then
+			valueType = GLib.Lua.GetTableName (metatable) or valueType
+		end
+		
 		stringBuilder = stringBuilder or GLib.StringBuilder ()
 		if valueType == "table" then
-			stringBuilder:Append ("{")
-			stringBuilder:Append (" table ")
-			stringBuilder:Append ("}")
+			stringBuilder:Append ("{ ")
+			stringBuilder:Append (valueType)
+			stringBuilder:Append (" }")
 		else
 			stringBuilder:Append (tostring (value))
 		end

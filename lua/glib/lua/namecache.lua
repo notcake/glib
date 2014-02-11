@@ -135,7 +135,11 @@ function self:ProcessTable (table, tableName, dot)
 					
 					-- Check if this is a GLib class
 					if GLib.IsStaticTable (v) then
-						self:QueueIndex (GLib.GetMetaTable (v), memberName, ":")
+						local metatable = GLib.GetMetaTable (v)
+						if type (metatable) == "table" then
+							nameCache [metatable] = nameCache [metatable] or memberName
+							self:QueueIndex (GLib.GetMetaTable (v), memberName, ":")
+						end
 					else
 						-- Do the __index metatable if it exists
 						local metatable = debug.getmetatable (v)
