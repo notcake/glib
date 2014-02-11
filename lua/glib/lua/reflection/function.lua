@@ -20,6 +20,19 @@ function self:ctor (func)
 	self.ParameterList = nil
 end
 
+-- Definition
+function self:GetStartLine ()
+	return self.InfoTable.linedefined
+end
+
+function self:GetEndLine ()
+	return self.InfoTable.lastlinedefined
+end
+
+function self:GetLineRange ()
+	return self:GetStartLine (), self:GetEndLine ()
+end
+
 function self:GetFilePath ()
 	return self.InfoTable.short_src
 end

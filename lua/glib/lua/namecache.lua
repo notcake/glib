@@ -23,10 +23,21 @@ function self:ctor ()
 	self:Index (_G, "")
 	self:Index (debug.getregistry (), "_R")
 	
+	if CLIENT then
+		local _, vguiControlTable = debug.getupvalue(vgui.Register, 1)
+		self:Index (vguiControlTable, "")
+	end
+	
 	hook.Add ("GLibSystemLoaded", "GLib.Lua.NameCache",
 		function (systemName)
 			print ("GLib.Lua.NameCache : Queued " .. systemName .. " for indexing.")
 			self:Index (_G [systemName], systemName)
+			
+			if CLIENT then
+				local _, vguiControlTable = debug.getupvalue(vgui.Register, 1)
+				self:GetState ().QueuedTables [vguiControlTable] = nil
+				self:Index (vguiControlTable, "")
+			end
 		end
 	)
 end
