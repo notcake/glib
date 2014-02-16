@@ -35,7 +35,8 @@ if CLIENT then
 			local addonName = table.concat (args, " ")
 			local addonLuaPath = "addons/" .. addonName .. "/lua"
 			if string.sub (addonName, 1, 3) == "../" then
-				addonLuaPath = string.sub (addonName, 4) .. "/lua"
+				addonName = string.sub (addonName, 4)
+				addonLuaPath = addonName .. "/lua"
 			end
 			
 			if not file.IsDir (addonLuaPath, "GAME") then
