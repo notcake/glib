@@ -217,6 +217,7 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			ENT.Base = "base_anim"
 			ENT.ClassName = className
 			
+			-- Run file
 			if packFileSystem:Exists ("entities/" .. className .. "/" .. prefix .. "init.lua") then
 				GLib.Loader.Include ("entities/" .. className .. "/" .. prefix .. "init.lua")
 			elseif packFileSystem:Exists ("entities/" .. className .. "/shared.lua") then
@@ -224,6 +225,8 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			end
 			
 			scripted_ents.Register (ENT, ENT.ClassName, true)
+			
+			-- Update existing entities
 			for _, ent in ipairs (ents.FindByClass (ENT.ClassName)) do
 				table.Merge (ent:GetTable (), ENT)
 			end
@@ -240,6 +243,7 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			SWEP.Secondary = {}
 			SWEP.ClassName = className
 			
+			-- Run file
 			if packFileSystem:Exists ("weapons/" .. className .. "/" .. prefix .. "init.lua") then
 				GLib.Loader.Include ("weapons/" .. className .. "/" .. prefix .. "init.lua")
 			elseif packFileSystem:Exists ("weapons/" .. className .. "/shared.lua") then
@@ -247,6 +251,8 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			end
 			
 			weapons.Register (SWEP, SWEP.ClassName, true)
+			
+			-- Update existing entities
 			for _, ent in ipairs (ents.FindByClass (SWEP.ClassName)) do
 				table.Merge (ent:GetTable (), SWEP)
 			end
