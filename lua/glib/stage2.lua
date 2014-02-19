@@ -22,6 +22,14 @@ include ("threading/thread.lua")
 include ("threading/mainthread.lua")
 include ("threading/threadrunner.lua")
 
+-- Serialization
+GLib.Serialization = {}
+include ("serialization/iserializable.lua")
+include ("serialization/serializationinfo.lua")
+include ("serialization/customserializationinfo.lua")
+include ("serialization/serializableregistry.lua")
+include ("serialization/serialization.lua")
+
 -- Lua
 GLib.Lua = {}
 include ("lua/lua.lua")
@@ -84,14 +92,6 @@ include ("unicode/transliteration.lua")
 -- Formatting
 include ("formatting/date.lua")
 include ("formatting/tableformatter.lua")
-
--- Serialization
-GLib.Serialization = {}
-include ("serialization/iserializable.lua")
-include ("serialization/serializationinfo.lua")
-include ("serialization/customserializationinfo.lua")
-include ("serialization/serializableregistry.lua")
-include ("serialization/serialization.lua")
 
 -- Networking
 GLib.Networking = {}

@@ -1,31 +1,74 @@
 local self = {}
 GLib.Lua.ParameterList = GLib.MakeConstructor (self)
+GLib.RegisterSerializable ("GLib.Lua.ParameterList", GLib.Lua.ParameterList)
 
-function self:ctor (func)
-	if type (func) == "table" then
-		self.InfoTable = func:GetInfoTable ()
-		func = func:GetRawFunction ()
+function GLib.Lua.ParameterList.ctor (func)
+	if func then
+		return GLib.Lua.ParameterList.FromFunction (func)
 	end
 	
-	self.Function = func
-	self.InfoTable = self.InfoTable or debug.getinfo (self.Function)
+	return GLib.Lua.ParameterList.__ictor ()
+end
+
+function GLib.Lua.ParameterList.FromFunction (func)
+	local infoTable = nil
 	
+	if type (func) == "table" then
+		infoTable = func:GetInfoTable ()
+		func = func:GetRawFunction ()
+	else
+		infoTable = debug.getinfo (func)
+	end
+	
+	local parameterList = GLib.Lua.ParameterList.__ictor ()
+	if not func then return parameterList end
+	
+	-- Compute info
+	for i = 1, infoTable.nparams do
+		parameterList:AddParameter (debug.getlocal (func, i))
+	end
+	
+	if infoTable.isvararg then
+		parameterList:AddVariadicParameter ()
+	end
+	
+	return parameterList
+end
+
+function self:ctor ()
 	self.FixedParameterCount = 0
 	self.Parameters = {}
 	
-	self.VariadicValid = true
 	self.Variadic = false
+end
+
+-- ISerializable
+function self:Deserialize (inBuffer)
+	local parameterCount = inBuffer:UInt32 ()
 	
-	-- Compute info
-	for i = 1, self.InfoTable.nparams do
-		self:AddParameter (debug.getlocal (self.Function, i))
-	end
-	
-	if self.InfoTable.isvararg then
-		self:AddVariadicParameter ()
+	for i = 1, parameterCount do
+		local parameter = GLib.Lua.Parameter (self)
+		parameter:Deserialize (inBuffer)
+		
+		if parameter:IsVariadic () then
+			self.Variadic = true
+		else
+			self.FixedParameterCount = self.FixedParameterCount + 1
+		end
+		
+		self.Parameters [#self.Parameters + 1] = parameter
 	end
 end
 
+function self:Serialize (outBuffer)
+	outBuffer:UInt32 (#self.Parameters)
+	
+	for i = 1, #self.Parameters do
+		self.Parameters [i]:Serialize (outBuffer)
+	end
+end
+
+-- ParameterList
 function self:AddParameter (name)
 	local parameter = GLib.Lua.Parameter (self, name)
 	parameter:SetFrameIndex (#self.Parameters)

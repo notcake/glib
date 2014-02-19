@@ -190,6 +190,11 @@ local TypeFormatters =
 		local entityIndex = value:EntIndex ()
 		if entityIndex >= 0 then
 			local entityInfo = value:GetClass ()
+			
+			if value:IsPlayer () then
+				entityInfo = value:SteamID () .. ", " .. value:GetName ()
+			end
+			
 			return "Entity (" .. entityIndex .. ") --[[ " .. entityInfo .. " ]]"
 		end
 		

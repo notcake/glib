@@ -62,6 +62,9 @@
 function GLib.GetMetaTable (typeConstructor)
 	if GLib.IsStaticTable (typeConstructor) then
 		typeConstructor = typeConstructor.__ictor
+	elseif type (typeConstructor) == "table" and
+	       type (typeConstructor.__ictor) == "function" then
+		typeConstructor = typeConstructor.__ictor
 	end
 	
 	if type (typeConstructor) ~= "function" then

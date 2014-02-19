@@ -1,5 +1,6 @@
 local self = {}
 GLib.Lua.Function = GLib.MakeConstructor (self)
+GLib.RegisterSerializable ("GLib.Lua.Function", GLib.Lua.Function)
 
 function GLib.Lua.Function.ctor (func)
 	return GLib.Lua.FunctionCache:GetFunction (func)
@@ -15,9 +16,16 @@ end
 
 function self:ctor (func)
 	self.Function = func
-	self.InfoTable = debug.getinfo (func)
+	self.InfoTable = func and debug.getinfo (func) or nil
 	
 	self.ParameterList = nil
+end
+
+-- ISerializable
+function self:Deserialize (inBuffer)
+end
+
+function self:Serialize (outBuffer)
 end
 
 -- Definition
