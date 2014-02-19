@@ -3,7 +3,11 @@ GLib.Lua.Function = GLib.MakeConstructor (self)
 GLib.RegisterSerializable ("GLib.Lua.Function", GLib.Lua.Function)
 
 function GLib.Lua.Function.ctor (func)
-	return GLib.Lua.FunctionCache:GetFunction (func)
+	if func then
+		return GLib.Lua.FunctionCache:GetFunction (func)
+	end
+	
+	return GLib.Lua.Function.__ictor ()
 end
 
 function GLib.Lua.Function.FromFunction (func)
@@ -19,30 +23,50 @@ function self:ctor (func)
 	self.InfoTable = func and debug.getinfo (func) or nil
 	
 	self.ParameterList = nil
+	
+	-- Definition
+	self.FilePath = self.InfoTable and self.InfoTable.short_src
+	
+	self.StartLine = self.InfoTable and self.InfoTable.linedefined
+	self.EndLine = self.InfoTable and self.InfoTable.lastlinedefined
+	
+	self.Native = self.InfoTable and self.InfoTable.what == "C"
 end
 
 -- ISerializable
 function self:Deserialize (inBuffer)
+	self:GetParameterList ():Deserialize (inBuffer)
+	
+	self.FilePath = inBuffer:String ()
+	self.StartLine = inBuffer:UInt32 ()
+	self.EndLine = inBuffer:UInt32 ()
+	self.Native = inBuffer:Boolean ()
 end
 
 function self:Serialize (outBuffer)
+	self:GetParameterList ():Serialize (outBuffer)
+	
+	outBuffer:String (self.FilePath)
+	outBuffer:UInt32 (self.StartLine)
+	outBuffer:UInt32 (self.EndLine)
+	outBuffer:Boolean (self.Native)
 end
 
 -- Definition
 function self:GetStartLine ()
-	return self.InfoTable.linedefined
+	return self.StartLine
 end
 
 function self:GetEndLine ()
-	return self.InfoTable.lastlinedefined
+	return self.EndLine
 end
 
 function self:GetLineRange ()
-	return self:GetStartLine (), self:GetEndLine ()
+	return self.StartLine, self.EndLine
 end
 
 function self:GetFilePath ()
-	return self.InfoTable.short_src
+	return self.FilePath
 end
 
 function self:GetFunction ()
@@ -70,7 +94,7 @@ function self:GetRawFunction ()
 end
 
 function self:IsNative ()
-	return self.InfoTable.what == "C"
+	return self.Native
 end
 
 function self:ToString ()

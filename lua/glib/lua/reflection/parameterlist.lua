@@ -16,14 +16,14 @@ function GLib.Lua.ParameterList.FromFunction (func)
 	if type (func) == "table" then
 		infoTable = func:GetInfoTable ()
 		func = func:GetRawFunction ()
-	else
-		infoTable = debug.getinfo (func)
 	end
 	
 	local parameterList = GLib.Lua.ParameterList.__ictor ()
 	if not func then return parameterList end
 	
 	-- Compute info
+	infoTable = infoTable or debug.getinfo (func)
+	
 	for i = 1, infoTable.nparams do
 		parameterList:AddParameter (debug.getlocal (func, i))
 	end
