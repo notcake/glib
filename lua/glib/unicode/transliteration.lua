@@ -1,12 +1,14 @@
 -- This file is computer-generated.
 local t = GLib.Unicode.GetTransliterationTable ()
 
+t ["!"] = { "i" }
 t ["$"] = { "S" }
 t ["0"] = { "O" }
 t ["1"] = { "I", "l" }
 t ["3"] = { "E" }
 t ["4"] = { "A" }
 t ["5"] = { "S" }
+t ["7"] = { "t" }
 t ["@"] = { "a" }
 t ["¡"] = { "!", "i" }
 t ["¢"] = { "c" }
