@@ -70,6 +70,7 @@ end
 
 local tableNameBlacklist =
 {
+	["chathud.lines"] = true,
 	["chatsounds.ac.words"] = true,
 	["chatsounds.List"] = true,
 	["chatsounds.SortedList"] = true,
@@ -87,6 +88,7 @@ local tableNameBlacklist =
 	["pac.ActiveParts"] = true,
 	["pac.OwnedParts"] = true,
 	["pac.UniqueIDParts"] = true,
+	["pac.webaudio.streams"] = true,
 	["pace.example_outfits"] = true,
 	["VFS.RealRoot"] = true,
 	["VFS.Root"] = true
