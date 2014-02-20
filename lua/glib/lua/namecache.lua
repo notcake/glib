@@ -85,6 +85,7 @@ local tableNameBlacklist =
 	["GCompute.Languages.Languages.GLua.EditorHelper.RootNamespace"] = true,
 	["GCompute.TypeSystem"] = true,
 	["pac.ActiveParts"] = true,
+	["pac.OwnedParts"] = true,
 	["pac.UniqueIDParts"] = true,
 	["pace.example_outfits"] = true,
 	["VFS.RealRoot"] = true,
