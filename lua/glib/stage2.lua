@@ -153,3 +153,10 @@ include ("interfaces/interfaces.lua")
 
 -- Addons
 include ("addons.lua")
+
+GLib.CallDelayed (
+	function ()
+		hook.Call ("GLibSystemLoaded", GAMEMODE or GM, "GLibStage2")
+		hook.Call ("GLibStage2Loaded", GAMEMODE or GM)
+	end
+)
