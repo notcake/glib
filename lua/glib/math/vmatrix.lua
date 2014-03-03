@@ -13,4 +13,4 @@ function self:ToString ()
 	return self:ToMatrix ():ToString ()
 end
 
-self.ToString = self.__tostring
+self.__tostring = self.ToString
