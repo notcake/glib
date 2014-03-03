@@ -3,7 +3,81 @@ GLib.Matrix = GLib.MakeConstructor (self)
 
 local emptyTable = {}
 
-function GLib.IdentityMatrix (size)
+function GLib.Matrix.RotationFromAngle (angle)
+	-- Roll, then pitch, then yaw
+	
+	-- Roll
+	-- Anticlockwise about the x axis, looking from position x towards the origin
+	-- Clockwise about the x axis, looking out from the origin
+	-- Rotates the camera clockwise about its axis
+	local r = math.rad (angle.r)
+	local cosr = math.cos (r)
+	local sinr = math.sin (r)
+	
+	-- R = [1,     0,      0;
+    --      0, cos r, -sin r;
+    --      0, sin r,  cos r]
+	
+	-- Pitch
+	-- Anticlockwise about the y axis, looking from positive y towards the origin
+	-- Tilts the camera down
+	local p = math.rad (angle.p)
+	local cosp = math.cos (p)
+	local sinp = math.sin (p)
+	
+	-- P = [ cos p, 0, sin p;
+	--           0, 1,     0;
+	--      -sin p, 0, cos p]
+	
+	-- Yaw
+	-- Anticlockwise about the z axis, looking from above (positive z towards down towards the origin)
+	-- Turns the camera left
+	local y = math.rad (angle.y)
+	local cosy = math.cos (y)
+	local siny = math.sin (y)
+	
+	-- Y = [cos y, -sin y, 0;
+	--      sin y,  cos y, 0;
+	--          0,      0, 1]
+	
+	-- A = [ cos p * cos y, sin p * sin r * cos y - cos r * sin y, cos r * sin p * cos y + sin r * sin y;
+	--       cos p * sin y, sin p * sin r * sin y + cos r * cos y, cos r * sin p * sin y - sin r * cos y;
+	--              -sin p,                         cos p * sin r,                         cos p * cos r]
+	
+	return GLib.Matrix (3, 3,
+		 cosp * cosy, sinp * sinr * cosy - cosr * siny, cosr * sinp * cosy + sinr * siny,
+		 cosp * siny, sinp * sinr * siny + cosr * cosy, cosr * sinp * siny - sinr * cosy,
+		       -sinp,                      cosp * sinr,                      cosp * cosr
+	)
+end
+
+function GLib.Matrix.FromVMatrix (vmatrix)
+	local matrix = GLib.Matrix (4, 4)
+	
+	local translation = vmatrix:GetTranslation ()
+	matrix:SetColumn (4, translation)
+	
+	-- Matrix:Translate seems to do a post multiply by a translation matrix,
+	-- instead of a premultiply, which is what we want here
+	local untranslationMatrix = Matrix ()
+	untranslationMatrix:Translate (-translation)
+	vmatrix = untranslationMatrix * vmatrix
+	
+	local x = Matrix() x:Translate(Vector(1, 0, 0)) x:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the x and w coordinates of the translation
+	local y = Matrix() y:Translate(Vector(0, 1, 0)) y:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the y and w coordinates of the translation
+	local z = Matrix() z:Translate(Vector(0, 0, 1)) z:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the z and w coordinates of the translation
+	
+	matrix:SetColumn (1, (vmatrix * x):GetTranslation())
+	matrix:SetColumn (2, (vmatrix * y):GetTranslation())
+	matrix:SetColumn (3, (vmatrix * z):GetTranslation())
+	
+	-- Last row
+	matrix:SetRow (4, 0, 0, 0, 1)
+	
+	return matrix
+end
+
+function GLib.Matrix.Identity (size)
 	local matrix = GLib.Matrix (size, size)
 	for i = 0, size - 1 do
 		matrix [1 + i * matrix.Width + i] = 1
@@ -199,11 +273,45 @@ function self:MatrixMultiply (b, out)
 end
 
 function self:Multiply (b, out)
-	if type (b) == "number" then
+	if isnumber (b) then
 		return self:ScalarMultiply (b, out)
 	else
 		return self:MatrixMultiply (b, out)
 	end
+end
+
+function self:Negate (out)
+	out = out or GLib.Matrix (self.Height, self.Width)
+	
+	for y = 0, self.Height - 1 do
+		for x = 0, self.Width - 1 do
+			out [1 + y * out.Width + x] = -self [1 + y * self.Width + x]
+		end
+	end
+	
+	return out
+end
+
+function self:OrthonormalToVMatrix ()
+	-- This better be orthonormal
+	
+	-- A = [ cos p * cos y, sin p * sin r * cos y - cos r * sin y, cos r * sin p * cos y + sin r * sin y;
+	--       cos p * sin y, sin p * sin r * sin y + cos r * cos y, cos r * sin p * sin y - sin r * cos y;
+	--              -sin p,                         cos p * sin r,                         cos p * cos r]
+	
+	local rotation, reflectX = self:ToAngle ()
+	
+	local matrix = Matrix ()
+	matrix:Rotate (rotation)
+	
+	if reflectX then
+		local reflectionMatrix = Matrix ()
+		reflectionMatrix:Scale (Vector (-1, 0, 0))
+		
+		matrix = matrix * reflectionMatrix
+	end
+	
+	return matrix
 end
 
 function self:ScalarMultiply (b, out)
@@ -218,9 +326,28 @@ function self:ScalarMultiply (b, out)
 	return out
 end
 
-function self:SetColumn (x, columnVector)
+function self:ScaleToVMatrix ()
+	-- This better be a scaling matrix
+	
+	if self.Width ~= 3 and self.Width ~= 4 then
+		GLib.Error ("Matrix:ScaleToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	elseif self.Height ~= 3 and self.Height ~= 4 then
+		GLib.Error ("Matrix:ScaleToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	end
+	
+	local matrix = Matrix ()
+	matrix:Scale (Vector (self (1, 1), self (2, 2), self (3, 3)))
+	
+	return matrix
+end
+
+function self:SetColumn (x, columnVector, ...)
+	if isnumber (columnVector) then
+		columnVector = { columnVector, ... }
+	end
+	
 	for y = 0, self.Height - 1 do
-		self [1 + y * self.Width + x - 1] = columnVector [1 + x]
+		self [1 + y * self.Width + x - 1] = columnVector [1 + y] or 0
 	end
 	
 	return self
@@ -236,9 +363,26 @@ function self:SetDiagonal (vector)
 	return self
 end
 
-function self:SetRow (y, rowVector)
+function self:SetRow (y, rowVector, ...)
+	if isnumber (rowVector) then
+		rowVector = { rowVector, ... }
+	end
+	
 	for x = 0, self.Width - 1 do
-		self [1 + (y - 1) * self.Width + x] = rowVector [1 + x]
+		self [1 + (y - 1) * self.Width + x] = rowVector [1 + x] or 0
+	end
+	
+	return self
+end
+
+function self:SetSubmatrix (startY, startX, matrix)
+	startY = startY - 1
+	startX = startX - 1
+	
+	for y = 0, matrix.Height - 1 do
+		for x = 0, matrix.Width - 1 do
+			self [1 + (startY + y) * self.Width + (startX + x)] = matrix [1 + y * matrix.Width + x]
+		end
 	end
 	
 	return self
@@ -301,6 +445,24 @@ function self:Submatrix (startX, startY, w, h, out)
 	return out
 end
 
+function self:Subtract (b, out)
+	if self.Width  ~= b.Width or
+	   self.Height ~= b.Height then
+		GLib.Error ("Matrix:Subtract : Left matrix has dimensions " .. self.Width .. "x" .. self.Height .. " and right matrix has incompatible dimensions " .. b.Width .. "x" .. b.Height .. ".")
+		return nil
+	end
+	
+	out = out or GLib.Matrix (self.Width, self.Height)
+	out.Width  = self.Width
+	out.Height = self.Height
+	
+	for i = 1, self.Width * self.Height do
+		out [i] = self [i] - b [i]
+	end
+	
+	return out
+end
+
 function self:Transpose (out)
 	if self:IsSquare () and self == out then
 		return self:SquareTranspose (out)
@@ -317,6 +479,69 @@ function self:Transpose (out)
 	end
 	
 	return out
+end
+
+function self:ToAngle ()
+	-- This better be a rotation matrix.
+	
+	-- A = [ cos p * cos y, sin p * sin r * cos y - cos r * sin y, cos r * sin p * cos y + sin r * sin y;
+	--       cos p * sin y, sin p * sin r * sin y + cos r * cos y, cos r * sin p * sin y - sin r * cos y;
+	--              -sin p,                         cos p * sin r,                         cos p * cos r]
+	
+	if self.Width ~= 3 and self.Width ~= 4 then
+		GLib.Error ("Matrix:ToAngle : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	elseif self.Height ~= 3 and self.Height ~= 4 then
+		GLib.Error ("Matrix:ToAngle : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	end
+	
+	local determinant = self:Determinant ()
+	
+	local p = -math.asin (self (3, 1))
+	if determinant < 0 then p = -p end
+	
+	local cosp = math.cos (p)
+	
+	-- If cos p == 0 then... #yolo.
+	local y = math.atan2 (self (2, 1), self (1, 1))
+	local r = math.atan2 (self (3, 2), self (3, 3))
+	
+	return Angle (math.deg (p), math.deg (y), math.deg (r)), determinant < 0
+end
+
+function self:ToVMatrix ()
+	-- This better be a 3d affine transformation matrix
+	if self.Width ~= 3 and self.Width ~= 4 then
+		GLib.Error ("Matrix:ToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	elseif self.Height ~= 3 and self.Height ~= 4 then
+		GLib.Error ("Matrix:ToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
+	end
+	
+	if self.Height == 4 then
+		if self (4, 1) ~= 0 or
+		   self (4, 2) ~= 0 or
+		   self (4, 3) ~= 0 then
+			GLib.Error ("Matrix:ToVMatrix : This matrix is not a 3d affine transformation!")
+		end
+		if self.Width == 4 then
+			if self (4, 4) ~= 1 then
+				GLib.Error ("Matrix:ToVMatrix : This matrix is not a 3d affine transformation!")
+			end
+		end
+	end
+	
+	GLib.Error ("Matrix:ToVMatrix : Not implemented.")
+	
+	local transpose = self:Transpose ()
+	
+	local AAt = self * transpose
+	local AtA = transpose * self
+	
+	local vmatrix = Matrix ()
+	
+	if self.Width == 4 then
+		vmatrix:SetTranslation (Vector (self (1, 4), self (2, 4), self (3, 4)))
+	end
+	return vmatrix
 end
 
 function self:ToString ()
@@ -343,7 +568,9 @@ function self:ToString ()
 				matrix:Append ("    ")
 			end
 			
-			matrix:Append (self [1 + y * self.Width + x] > 0 and " " or "-")
+			local element = self [1 + y * self.Width + x]
+			local negative = element < 0 or 1 / element < 0
+			matrix:Append (negative and "-" or " ")
 			
 			local elementString = elements [1 + y * self.Width + x]
 			matrix:Append (string.rep (" ", columnWidths [x] - #elementString))
@@ -355,6 +582,23 @@ function self:ToString ()
 	return matrix:ToString ()
 end
 
-self.__add      = self.Add
-self.__mul      = self.Multiply
+function self:__call (y, x, v)
+	local index = 1 + (y - 1) * self.Width + (x - 1)
+	if v then
+		self [index] = v
+	else
+		return self [index]
+	end
+end
+
+self.__add = self.Add
+self.__sub = self.Subtract
+
+self.__mul = function (a, b)
+	if isnumber (a) then return b:Multiply (a) end
+	return a:Multiply (b)
+end
+
+self.__unm = self.Negate
+
 self.__tostring = self.ToString

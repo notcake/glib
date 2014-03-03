@@ -132,10 +132,15 @@ include ("protocol/endpointmanager.lua")
 include ("protocol/session.lua")
 
 -- Math
+include ("math/complex.lua")
+include ("math/polynomial.lua")
+
 include ("math/matrix.lua")
 include ("math/vector.lua")
 include ("math/columnvector.lua")
 include ("math/rowvector.lua")
+
+include ("math/vmatrix.lua")
 
 -- Geometry
 GLib.Geometry = {}
