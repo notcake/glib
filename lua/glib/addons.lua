@@ -1,5 +1,6 @@
 GLib.AddCSLuaPackSystem ("GLibAddons")
-GLib.AddCSLuaPackFolderRecursive ("glib_addons")
+GLib.AddCSLuaPackFolder ("glib_addons")
+GLib.AddCSLuaPackFolderRecursive ("glib_addons/client")
 
 GLib.IncludeDirectory ("glib_addons")
 GLib.IncludeDirectory ("glib_addons/" .. (SERVER and "server" or "client"))
