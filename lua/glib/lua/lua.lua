@@ -118,6 +118,10 @@ function GLib.Lua.GetTableValue (valueName)
 	return t [valueName], t, tableName, valueName
 end
 
+function GLib.Lua.IsNativeFunction (f)
+	return debug.getinfo (f).what == "C"
+end
+
 local keywords =
 {
 	["if"]       = true,
@@ -221,9 +225,38 @@ function ToLuaString (value, stringBuilder)
 	local valueType = type (value)
 	
 	local name = GLib.Lua.GetObjectName (value)
-	if name then return name end
 	
 	-- TODO: Handle tables and functions
+	if type (value) == "function" then
+		local functionInfo = GLib.Lua.Function (value)
+		if functionInfo:IsNative () then
+			if name then return name end
+		else
+			local sourceFile = functionInfo:GetFilePath ()
+			local data = file.Read (sourceFile, "GAME")
+			data = data or file.Read (sourceFile, "LUA")
+			data = data or file.Read (sourceFile, SERVER and "LSV" or "LCL")
+			
+			if data then
+				local startLine = functionInfo:GetStartLine ()
+				local endLine   = functionInfo:GetEndLine ()
+				
+				local lines = string.Split (data, "\n")
+				if endLine <= #lines then
+					local code = {}
+					for i = startLine, endLine do
+						code [#code + 1] = lines [i]
+					end
+					code = table.concat (code, "\n")
+					return code
+				end
+			end
+			
+			return GLib.Lua.BytecodeReader (value):ToString ()
+		end
+	else
+		if name then return name end
+	end
 	
 	return ToCompactLuaString (value, stringBuilder)
 end

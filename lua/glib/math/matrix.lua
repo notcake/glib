@@ -576,7 +576,7 @@ function self:ToString ()
 			matrix:Append (string.rep (" ", columnWidths [x] - #elementString))
 			matrix:Append (elementString)
 		end
-		matrix:Append (" ]")
+		matrix:Append ("  ]")
 	end
 	
 	return matrix:ToString ()

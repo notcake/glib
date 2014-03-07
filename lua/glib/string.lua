@@ -70,6 +70,7 @@ function GLib.String.EscapeNonprintable (str)
 	end
 	str = str:gsub (".",
 		function (c)
+			if c == "\\" then return "\\\\" end
 			c = string.byte (c)
 			if c < string.byte (" ") then return string.format ("\\x%02x", c) end
 			if c >= 127 then return string.format ("\\x%02x", c) end
