@@ -156,6 +156,49 @@ include ("geometry/parametriccurverenderer.lua")
 GLib.Interfaces = {}
 include ("interfaces/interfaces.lua")
 
+-- Rendering
+GLib.Rendering = {}
+include ("rendering/igraphicsdevice.lua")
+include ("rendering/igraphicsview.lua")
+include ("rendering/irendercontext.lua")
+include ("rendering/ibaserendercontext2d.lua")
+include ("rendering/irendercontext2d.lua")
+include ("rendering/irendercontext2d2.lua")
+include ("rendering/irendercontext3d.lua")
+include ("rendering/matrixpushoperation.lua")
+
+-- Buffers
+GLib.Rendering.Buffers = {}
+include ("rendering/buffers/bufferelementsemantic.lua")
+include ("rendering/buffers/bufferelementtype.lua")
+include ("rendering/buffers/bufferelementtypes.lua")
+include ("rendering/buffers/bufferelement.lua")
+include ("rendering/buffers/bufferlayout.lua")
+include ("rendering/buffers/bufferflags.lua")
+
+include ("rendering/buffers/igraphicsbuffer.lua")
+include ("rendering/buffers/iindexbuffer.lua")
+include ("rendering/buffers/ivertexbuffer.lua")
+
+-- Matrices
+GLib.Rendering.Matrices = {}
+include ("rendering/matrices/imatrixstack.lua")
+include ("rendering/matrices/matrixstack.lua")
+include ("rendering/matrices/projections.lua")
+
+-- Meshes
+GLib.Rendering.Meshes = {}
+include ("rendering/meshes/meshflags.lua")
+include ("rendering/meshes/primitivetopology.lua")
+include ("rendering/meshes/rendergroup.lua")
+include ("rendering/meshes/imesh.lua")
+include ("rendering/meshes/mesh.lua")
+
+-- Textures
+GLib.Rendering.Textures = {}
+include ("rendering/textures/pixelformat.lua")
+include ("rendering/textures/itexture2d.lua")
+
 -- Addons
 include ("addons.lua")
 
