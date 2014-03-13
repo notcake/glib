@@ -260,6 +260,12 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			SWEP = _SWEP
 		end
 		
+		-- Events
+		for i = 1, packFileSystem:GetSystemTableCount () do
+			local systemTableName = packFileSystem:GetSystemTableName (i)
+			GLib:DispatchEvent ("PackFileLoaded", systemTableName)
+		end
+		
 		callback (true)
 	else
 		callback (false)
