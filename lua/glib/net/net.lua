@@ -1,5 +1,4 @@
 GLib.Net = {}
-GLib.Net.PlayerMonitor = GLib.PlayerMonitor ("GLib.Net")
 GLib.Net.ChannelHandlers = {}
 GLib.Net.ChannelQueues = {} -- used on client only to queue up packets to be sent to the server
 GLib.Net.OpenChannels = {}
@@ -13,7 +12,7 @@ local function PlayerFromId (userId)
 	end
 	
 	if userId == "Everyone" then return player.GetAll () end
-	local ply = GLib.Net.PlayerMonitor:GetUserEntity (userId)
+	local ply = GLib.PlayerMonitor:GetUserEntity (userId)
 	if not ply then
 		ErrorNoHalt ("GLib: PlayerFromId (" .. tostring (userId) .. ") failed to find player!\n")
 	end
@@ -67,7 +66,7 @@ function GLib.Net.RegisterChannel (channelName, handler)
 	GLib.Net.ChannelHandlers [channelName] = handler
 
 	if SERVER then
-		for _, ply in GLib.Net.PlayerMonitor:GetPlayerEnumerator () do
+		for _, ply in GLib.PlayerMonitor:GetPlayerEnumerator () do
 			umsg.Start ("glib_channel_open", ply)
 				umsg.String (channelName)
 			umsg.End ()
@@ -101,7 +100,7 @@ function GLib.Net.UnregisterChannel (channelName)
 	GLib.Net.ChannelHandlers [channelName] = nil
 	
 	if SERVER then
-		for _, ply in GLib.Net.PlayerMonitor:GetPlayerEnumerator () do
+		for _, ply in GLib.PlayerMonitor:GetPlayerEnumerator () do
 			umsg.Start ("glib_channel_closed", ply)
 				umsg.String (channelName)
 			umsg.End ()
@@ -112,7 +111,7 @@ function GLib.Net.UnregisterChannel (channelName)
 end
 
 if SERVER then
-	GLib.Net.PlayerMonitor:AddEventListener ("PlayerConnected",
+	GLib.PlayerMonitor:AddEventListener ("PlayerConnected",
 		function (_, ply, userId)
 			for channelName, _ in pairs (GLib.Net.OpenChannels) do
 				umsg.Start ("glib_channel_open", ply)
