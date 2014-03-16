@@ -29,12 +29,12 @@ function self:ctor ()
 	
 	hook.Add ("Think", "GLib.PlayerMonitor.ProcessQueue",
 		function ()
-			-- Check for new players
+			-- Check for new players.
+			-- This really is needed (did tests).
 			for _, ply in ipairs (player.GetAll ()) do
 				if not self.EntriesByUserId [ply:UserID ()] and
 				   not self.QueuedPlayers [ply] and
 				   GLib.GetPlayerId (ply) then
-					GLib.Error ("PlayerMonitor : OnEntityCreated / PlayerInitialSpawn didn't catch " .. tostring (ply) .. ".")
 					self.QueuedPlayers [ply] = true
 				end
 			end
@@ -77,7 +77,7 @@ function self:ctor ()
 			if not entry then return end
 			
 			-- Remove entry
-			self.EntriesByUserId [userId] = entry
+			self.EntriesByUserId [userId] = nil
 			self.EntriesBySteamId [entry:GetSteamId ()] [entry] = nil
 			
 			if not next (self.EntriesBySteamId [entry:GetSteamId ()]) then
