@@ -93,6 +93,14 @@ include ("unicode/transliteration.lua")
 include ("formatting/date.lua")
 include ("formatting/tableformatter.lua")
 
+-- Servers
+include ("servers/iserver.lua")
+include ("servers/iuserlist.lua")
+include ("servers/iplayermonitor.lua")
+include ("servers/playermonitorproxy.lua")
+include ("garrysmod/servers/playermonitorentry.lua")
+include ("garrysmod/servers/playermonitor.lua")
+
 -- Networking
 GLib.Networking = {}
 include ("networking/networkable.lua")
