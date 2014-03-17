@@ -51,11 +51,13 @@ function GLib.Matrix.RotationFromAngle (angle)
 	)
 end
 
-function GLib.Matrix.FromVMatrix (vmatrix)
-	local matrix = GLib.Matrix (4, 4)
+function GLib.Matrix.FromVMatrix (vmatrix, out)
+	out = out or GLib.Matrix (4, 4)
+	out.Width  = 4
+	out.Height = 4
 	
 	local translation = vmatrix:GetTranslation ()
-	matrix:SetColumn (4, translation)
+	out:SetColumn (4, translation)
 	
 	-- Matrix:Translate seems to do a post multiply by a translation matrix,
 	-- instead of a premultiply, which is what we want here
@@ -67,14 +69,14 @@ function GLib.Matrix.FromVMatrix (vmatrix)
 	local y = Matrix() y:Translate(Vector(0, 1, 0)) y:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the y and w coordinates of the translation
 	local z = Matrix() z:Translate(Vector(0, 0, 1)) z:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the z and w coordinates of the translation
 	
-	matrix:SetColumn (1, (vmatrix * x):GetTranslation())
-	matrix:SetColumn (2, (vmatrix * y):GetTranslation())
-	matrix:SetColumn (3, (vmatrix * z):GetTranslation())
+	out:SetColumn (1, (vmatrix * x):GetTranslation())
+	out:SetColumn (2, (vmatrix * y):GetTranslation())
+	out:SetColumn (3, (vmatrix * z):GetTranslation())
 	
 	-- Last row
-	matrix:SetRow (4, 0, 0, 0, 1)
+	out:SetRow (4, 0, 0, 0, 1)
 	
-	return matrix
+	return out
 end
 
 function GLib.Matrix.Identity (size)

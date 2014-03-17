@@ -5,8 +5,8 @@ function GLib.VMatrix.FromMatrix (matrix)
 	return matrix:ToVMatrix ()
 end
 
-function self:ToMatrix ()
-	return GLib.Matrix.FromVMatrix (self)
+function self:ToMatrix (out)
+	return GLib.Matrix.FromVMatrix (self, out)
 end
 
 function self:ToString ()
@@ -14,3 +14,25 @@ function self:ToString ()
 end
 
 self.__tostring = self.ToString
+
+local self = debug.getregistry ().Vector
+
+function self:ToColumnVector (out)
+	out = out or GLib.ColumnVector (3)
+	
+	out [1] = self.x
+	out [2] = self.y
+	out [3] = self.z
+	
+	return out
+end
+
+function self:ToRowVector (out)
+	out = out or GLib.RowVector (3)
+	
+	out [1] = self.x
+	out [2] = self.y
+	out [3] = self.z
+	
+	return out
+end
