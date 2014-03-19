@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.UsermessageInBuffer = GLib.MakeConstructor (self)
+GLib.Net.Layer1.UsermessageInBuffer = GLib.MakeConstructor (self)
 
 function self:ctor (umsg)
 	self.Usermessage = umsg

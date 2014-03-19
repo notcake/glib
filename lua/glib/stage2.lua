@@ -125,13 +125,37 @@ include ("containers/tree.lua")
 include ("containers/networkable/list.lua")
 
 -- Networking
+GLib.Net = {}
 include ("net/net.lua")
 include ("net/datatype.lua")
 include ("net/outbuffer.lua")
-include ("net/netdispatcher.lua")
-include ("net/usermessagedispatcher.lua")
-include ("net/netinbuffer.lua")
-include ("net/usermessageinbuffer.lua")
+include ("garrysmod/net/net.lua")
+
+-- Physical layer
+GLib.Net.Layer1 = {}
+include ("net/layer1/channel.lua")
+include ("garrysmod/net/layer1/usermessagechannel.lua")
+include ("garrysmod/net/layer1/usermessagedispatcher.lua")
+include ("garrysmod/net/layer1/usermessageinbuffer.lua")
+include ("garrysmod/net/layer1/netchannel.lua")
+include ("garrysmod/net/layer1/netdispatcher.lua")
+include ("garrysmod/net/layer1/netinbuffer.lua")
+
+-- Unlimited packet lengths and queueing for closed channels
+GLib.Net.Layer2 = {}
+include ("net/layer2/channel.lua")
+include ("net/layer2/splitpacketchannel.lua")
+include ("net/layer2/inboundsplitpacket.lua")
+include ("net/layer2/outboundsplitpacket.lua")
+include ("garrysmod/net/layer2/channel.lua")
+include ("garrysmod/net/layer2/layer2.lua")
+include ("garrysmod/net/layer2/channelstatenetworker.lua")
+
+-- Network layer
+GLib.Net.Layer3 = {}
+
+-- Session layer
+GLib.Net.Layer5 = {}
 
 include ("protocol/protocol.lua")
 include ("protocol/channel.lua")

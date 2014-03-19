@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.NetInBuffer = GLib.MakeConstructor (self)
+GLib.Net.Layer1.NetInBuffer = GLib.MakeConstructor (self)
 
 function self:ctor ()
 end

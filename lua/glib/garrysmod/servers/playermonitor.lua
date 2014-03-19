@@ -27,44 +27,9 @@ function self:ctor ()
 		end
 	)
 	
-	hook.Add ("Think", "GLib.PlayerMonitor.ProcessQueue",
+	hook.Add ("Tick", "GLib.PlayerMonitor.ProcessQueue",
 		function ()
-			-- Check for new players.
-			-- This really is needed (did tests).
-			for _, ply in ipairs (player.GetAll ()) do
-				if not self.EntriesByUserId [ply:UserID ()] and
-				   not self.QueuedPlayers [ply] and
-				   GLib.GetPlayerId (ply) then
-					self.QueuedPlayers [ply] = true
-				end
-			end
-			
-			-- Process new players
-			for ply, _ in pairs (self.QueuedPlayers) do
-				local userId = GLib.GetPlayerId (ply)
-				if not ply:IsValid () then
-					self.QueuedPlayers [ply] = nil
-					GLib.Error ("PlayerMonitor : No idea what just happened (" .. tostring (ply) .. ").")
-				elseif userId and 
-				       userId ~= "STEAM_ID_PENDING" then
-					self.QueuedPlayers [ply] = nil
-					
-					-- Add entry
-					local entry = GLib.PlayerMonitorEntry (ply)
-					self.EntriesBySteamId [userId] = self.EntriesBySteamId [userId] or {}
-					self.EntriesBySteamId [userId] [entry] = true
-					self.EntriesByUserId [entry:GetUserId ()] = entry
-					self.NameCache [userId] = ply:Name ()
-					
-					-- Dispatch events
-					local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
-					self:DispatchEvent ("PlayerConnected", ply, userId, isLocalPlayer)
-					
-					if isLocalPlayer then
-						self:DispatchEvent ("LocalPlayerConnected", ply, userId)
-					end
-				end
-			end
+			self:ProcessQueue ()
 		end
 	)
 	
@@ -93,11 +58,12 @@ function self:ctor ()
 	for _, ply in ipairs (player.GetAll ()) do
 		self.QueuedPlayers [ply] = true
 	end
+	self:ProcessQueue ()
 end
 
 function self:dtor ()
 	hook.Remove (CLIENT and "OnEntityCreated" or "PlayerInitialSpawn", "GLib.PlayerMonitor.PlayerConnected")
-	hook.Remove ("Think", "GLib.PlayerMonitor.ProcessQueue")
+	hook.Remove ("Tick", "GLib.PlayerMonitor.ProcessQueue")
 	hook.Remove ("player_disconnect", "GLib.PlayerMonitor.PlayerDisconnected")
 end
 
@@ -115,7 +81,13 @@ function self:GetPlayerEnumerator ()
 end
 
 function self:GetUserEntity (userId)
-	if not self.EntriesBySteamId [userId] then return nil end
+	if not self.EntriesBySteamId [userId] then
+		-- Check the queue
+		for ply, _ in pairs (self.QueuedPlayers) do
+			if GLib.GetPlayerId (ply) == userId then return ply end
+		end
+		return nil
+	end
 	
 	for entry, _ in pairs (self.EntriesBySteamId [userId]) do
 		return entry:GetPlayer ()
@@ -125,7 +97,13 @@ function self:GetUserEntity (userId)
 end
 
 function self:GetUserEntities (userId)
-	if not self.EntriesBySteamId [userId] then return nil end
+	if not self.EntriesBySteamId [userId] then
+		-- Check the queue
+		for ply, _ in pairs (self.QueuedPlayers) do
+			if GLib.GetPlayerId (ply) == userId then return ply end
+		end
+		return nil
+	end
 	
 	local entities = {}
 	for entry, _ in pairs (self.EntriesBySteamId [userId]) do
@@ -154,6 +132,46 @@ function self:GetUserName (userId)
 	end
 	
 	return self.NameCache [userId] or userId
+end
+
+-- Internal, do not call
+function self:ProcessQueue ()
+	-- Check for new players.
+	-- This really is needed (did tests).
+	for _, ply in ipairs (player.GetAll ()) do
+		if not self.EntriesByUserId [ply:UserID ()] and
+		   not self.QueuedPlayers [ply] and
+		   GLib.GetPlayerId (ply) then
+			self.QueuedPlayers [ply] = true
+		end
+	end
+	
+	-- Process new players
+	for ply, _ in pairs (self.QueuedPlayers) do
+		local userId = GLib.GetPlayerId (ply)
+		if not ply:IsValid () then
+			self.QueuedPlayers [ply] = nil
+			GLib.Error ("PlayerMonitor : No idea what just happened (" .. tostring (ply) .. ").")
+		elseif userId and
+			   userId ~= "STEAM_ID_PENDING" then
+			self.QueuedPlayers [ply] = nil
+			
+			-- Add entry
+			local entry = GLib.PlayerMonitorEntry (ply)
+			self.EntriesBySteamId [userId] = self.EntriesBySteamId [userId] or {}
+			self.EntriesBySteamId [userId] [entry] = true
+			self.EntriesByUserId [entry:GetUserId ()] = entry
+			self.NameCache [userId] = ply:Name ()
+			
+			-- Dispatch events
+			local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
+			self:DispatchEvent ("PlayerConnected", ply, userId, isLocalPlayer)
+			
+			if isLocalPlayer then
+				self:DispatchEvent ("LocalPlayerConnected", ply, userId)
+			end
+		end
+	end
 end
 
 function self:__call (...)
