@@ -145,6 +145,7 @@ include ("garrysmod/net/layer1/netinbuffer.lua")
 GLib.Net.Layer2 = {}
 include ("net/layer2/channel.lua")
 include ("net/layer2/splitpacketchannel.lua")
+include ("net/layer2/splitpackettype.lua")
 include ("net/layer2/inboundsplitpacket.lua")
 include ("net/layer2/outboundsplitpacket.lua")
 include ("garrysmod/net/layer2/channel.lua")
@@ -156,6 +157,9 @@ GLib.Net.Layer3 = {}
 
 -- Session layer
 GLib.Net.Layer5 = {}
+include ("net/layer5/connectionchannel.lua")
+include ("net/layer5/connection.lua")
+include ("net/layer5/connectionclosereason.lua")
 
 include ("protocol/protocol.lua")
 include ("protocol/channel.lua")

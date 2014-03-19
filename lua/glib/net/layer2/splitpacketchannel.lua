@@ -16,7 +16,7 @@ function self:ctor (channelName, handler, channel)
 			local packetId   = inBuffer:UInt32 ()
 			
 			local inboundSplitPacket = nil
-			if packetType == 1 then
+			if packetType == GLib.Net.Layer2.SplitPacketType.Start then
 				-- New split packet
 				inboundSplitPacket = GLib.Net.Layer2.InboundSplitPacket (packetId)
 				
@@ -24,7 +24,7 @@ function self:ctor (channelName, handler, channel)
 				self.InboundPackets [sourceId] [packetId] = inboundSplitPacket
 				
 				inboundSplitPacket:DeserializeFirstChunk (inBuffer)
-			elseif packetType == 2 then
+			elseif packetType == GLib.Net.Layer2.SplitPacketType.Continuation then
 				-- Continuation of split packet
 				if not self.InboundPackets [sourceId] then return end
 				
@@ -89,12 +89,12 @@ function self:HookSystems ()
 					local outBuffer = GLib.Net.OutBuffer ()
 					if not outboundSplitPacket:IsStarted () then
 						-- New split packet
-						outBuffer:UInt8 (1)
+						outBuffer:UInt8 (GLib.Net.Layer2.SplitPacketType.Start)
 						outBuffer:UInt32 (outboundSplitPacket:GetId ())
 						outboundTransfer:SerializeFirstChunk (outBuffer)
 					else
 						-- Continuation of split packet
-						outBuffer:UInt8 (2)
+						outBuffer:UInt8 (GLib.Net.Layer2.SplitPacketType.Continuation)
 						outBuffer:UInt32 (outboundSplitPacket:GetId ())
 						outboundTransfer:SerializeNextChunk (outBuffer)
 					end

@@ -20,8 +20,7 @@ end
 function GLib.Net.Layer2.RegisterChannel (channelName, handler)
 	if type (channelName) == "string" then
 		local channel = GLib.Net.Layer2.Channel (channelName, handler)
-		GLib.Net.Layer2.RegisterChannel (channel)
-		return
+		return GLib.Net.Layer2.RegisterChannel (channel)
 	end
 	
 	local channel = channelName
@@ -38,6 +37,8 @@ function GLib.Net.Layer2.RegisterChannel (channelName, handler)
 	end
 	
 	GLib.Net.Layer2:DispatchEvent ("ChannelRegistered", channel)
+	
+	return channel
 end
 
 function GLib.Net.Layer2.UnregisterChannel (channelName)

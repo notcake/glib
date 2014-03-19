@@ -14,12 +14,10 @@ function self:ctor ()
 	
 	self.ChannelsOpenChannel = GLib.Net.Layer2.Channel ("glib_channels_open",
 		function (sourceId, inBuffer)
-			print ("HAI")
 			if sourceId ~= GLib.GetServerId () then return end
 			
 			local channelName = inBuffer:String ()
 			while channelName ~= "" do
-				print (channelName)
 				local channel = GLib.Net.Layer2.Channels [channelName] or GLib.Net.Layer2.Channel (channelName)
 				channel:SetOpen (true)
 				
