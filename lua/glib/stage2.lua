@@ -128,6 +128,7 @@ include ("containers/networkable/list.lua")
 GLib.Net = {}
 include ("net/net.lua")
 include ("net/datatype.lua")
+include ("net/inbuffer.lua")
 include ("net/outbuffer.lua")
 include ("garrysmod/net/net.lua")
 
@@ -137,6 +138,7 @@ include ("net/layer1/channel.lua")
 include ("garrysmod/net/layer1/usermessagechannel.lua")
 include ("garrysmod/net/layer1/usermessagedispatcher.lua")
 include ("garrysmod/net/layer1/usermessageinbuffer.lua")
+include ("garrysmod/net/layer1/pinnedusermessageinbuffer.lua")
 include ("garrysmod/net/layer1/netchannel.lua")
 include ("garrysmod/net/layer1/netdispatcher.lua")
 include ("garrysmod/net/layer1/netinbuffer.lua")
@@ -159,7 +161,9 @@ GLib.Net.Layer3 = {}
 GLib.Net.Layer5 = {}
 include ("net/layer5/connectionchannel.lua")
 include ("net/layer5/connection.lua")
-include ("net/layer5/connectionclosereason.lua")
+include ("net/layer5/connectionclosurereason.lua")
+include ("net/layer5/connectionpackettype.lua")
+include ("net/layer5/connectionstate.lua")
 
 include ("protocol/protocol.lua")
 include ("protocol/channel.lua")

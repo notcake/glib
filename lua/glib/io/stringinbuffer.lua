@@ -11,7 +11,7 @@ function self:GetBytesRemaining ()
 	return math.max (0, #self.Data - self.Position + 1)
 end
 
-function self:GetSeekPos ()
+function self:GetPosition ()
 	return self.Position
 end
 
@@ -105,7 +105,7 @@ function self:Int32 ()
 end
 
 function self:Int64 ()
-	local low = self:UInt32 ()
+	local low  = self:UInt32 ()
 	local high = self:Int32 ()
 	return high * 4294967296 + low
 end
@@ -116,7 +116,7 @@ function self:Float ()
 end
 
 function self:Double ()
-	local low = self:UInt32 ()
+	local low  = self:UInt32 ()
 	local high = self:UInt32 ()
 	return GLib.BitConverter.UInt32sToDouble (low, high)
 end
