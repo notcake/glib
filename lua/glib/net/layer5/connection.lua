@@ -144,7 +144,7 @@ function self:GenerateNextPacket (outBuffer)
 			outBuffer:UInt8 (GLib.Net.Layer5.ConnectionPacketType.Data)
 		end
 		outBuffer:LongString (self.OutboundQueue [1]:GetString ())
-	elseif self:IsClosing ()
+	elseif self:IsClosing () then
 		outBuffer:UInt8 (GLib.Net.Layer5.ConnectionPacketType.Close)
 		
 		-- Close the connection
@@ -167,6 +167,8 @@ function self:ProcessInboundPacket (inBuffer)
 	while self.InboundPackets [self.NextInboundPacketId] do
 		self:ProcessPacket (self.InboundPackets [self.NextInboundPacketId])
 		self.InboundPackets [self.NextInboundPacketId] = nil
+		
+		self.NextInboundPacketId = self.NextInboundPacketId + 1
 	end
 end
 

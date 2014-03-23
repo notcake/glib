@@ -4,7 +4,10 @@ GLib.Net.Layer1.UsermessageInBuffer = GLib.MakeConstructor (self, GLib.Net.InBuf
 function self:ctor (umsg)
 	self.Usermessage = umsg
 	
+	-- Work out what our position really is
 	self.Position = 1
+	self.Usermessage:Reset ()
+	self:StringZ () -- The usermessage name
 end
 
 function self:GetBytesRemaining ()
@@ -19,19 +22,32 @@ function self:IsEndOfStream ()
 	return false
 end
 
+function self:Pin ()
+	return GLib.Net.Layer1.PinnedUsermessageInBuffer (self)
+end
+
 function self:UInt8 ()
 	self.Position = self.Position + 1
-	return self.Usermessage:ReadChar () + 128
+	
+	local n = self.Usermessage:ReadChar ()
+	if n < 0 then n = n + 0x0100 end
+	return n
 end
 
 function self:UInt16 ()
 	self.Position = self.Position + 2
-	return self.Usermessage:ReadShort () + 32768
+	
+	local n = self.Usermessage:ReadShort ()
+	if n < 0 then n = n + 0x00010000 end
+	return n
 end
 
 function self:UInt32 ()
 	self.Position = self.Position + 4
-	return self.Usermessage:ReadLong () + 2147483648
+	
+	local n = self.Usermessage:ReadLong ()
+	if n < 0 then n = n + 4294967296 end
+	return n
 end
 
 function self:Int8 ()
@@ -54,37 +70,24 @@ function self:Float ()
 	return self.Usermessage:ReadFloat ()
 end
 
-function self:Double ()
-	self.Position = self.Position + 8
-	return self.Usermessage:ReadFloat ()
-end
-
-function self:Vector ()
-	self.Position = self.Position + 12
-	return self.Usermessage:ReadVector ()
-end
-
-function self:Char ()
-	self.Position = self.Position + 1
-	return string.char (self:UInt8 ())
-end
-
-function self:Bytes (length)
-	self.Position = self.Position + length
-	
-	local data = ""
-	for i = 1, length do
-		data = data .. self:Char ()
-	end
-	return data
-end
-
 function self:String ()
-	local length = self:UInt8 ()
-	return self:Bytes (length)
+	return self:StringN8 ()
 end
 
-function self:Boolean ()
-	self.Position = self.Position + 1
-	return self.Usermessage:ReadChar () ~= 0
+function self:ToStringInBuffer ()
+	local outBuffer = GLib.StringOutBuffer ()
+	
+	-- Copy buffer
+	self.Usermessage:Reset ()
+	for i = 1, 256 do
+		outBuffer:Int8 (self.Usermessage:ReadChar ())
+	end
+	
+	-- Reset position
+	self.Usermessage:Reset ()
+	for i = 1, self.Position - 1 do
+		self.Usermessage:ReadChar ()
+	end
+	
+	return GLib.StringInBuffer (outBuffer:GetString ())
 end

@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer1.NetDispatcher = GLib.MakeConstructor (self)
+GLib.Net.Layer1.NetDispatcher = GLib.MakeConstructor (self, GLib.OutBuffer)
 
 function self:ctor ()
 end
@@ -28,13 +28,8 @@ function self:UInt16 (n)
 end
 
 function self:UInt32 (n)
-	if n >= 2147483648 then n = n - 4294967296 end
+	if n >= 2147483648 then n = n - 4294967296 end -- Garry is special.
 	net.WriteInt (n, 32)
-end
-
-function self:UInt64 (n)
-	net.WriteUInt (n % 4294967296, 32)
-	net.WriteUInt (math.floor (n / 4294967296), 32)
 end
 
 function self:Int8 (n)
@@ -49,11 +44,6 @@ function self:Int32 (n)
 	net.WriteInt (n, 32)
 end
 
-function self:Int64 (n)
-	net.WriteUInt (n % 4294967296, 32)
-	net.WriteInt (math.floor (n / 4294967296), 32)
-end
-
 function self:Float (f)
 	net.WriteFloat (f)
 end
@@ -66,24 +56,14 @@ function self:Vector (v)
 	net.WriteVector (v)
 end
 
-function self:Char (char)
-	self:UInt8 (string.byte (char))
-end
-
 function self:Bytes (data, length)
 	length = length or #data
+	length = math.min (length, #data)
 	net.WriteData (data, length)
 end
 
 function self:String (data)
-	self:UInt16 (data:len ())
-	for i = 1, data:len () do
-		self:Char (data:sub (i, i))
-	end
-end
-
-function self:Boolean (b)
-	net.WriteBit (b)
+	self:StringN16 (data)
 end
 
 GLib.Net.Layer1.NetDispatcher = GLib.Net.Layer1.NetDispatcher ()

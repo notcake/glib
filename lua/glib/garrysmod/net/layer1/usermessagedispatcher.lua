@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer1.UsermessageDispatcher = GLib.MakeConstructor (self)
+GLib.Net.Layer1.UsermessageDispatcher = GLib.MakeConstructor (self, GLib.OutBuffer)
 
 function self:ctor ()
 end
@@ -16,20 +16,18 @@ function self:Dispatch (ply, channelName, packet)
 end
 
 function self:UInt8 (n)
-	umsg.Char (n - 128)
+	if n >= 0x80 then n = n - 0x0100 end
+	umsg.Char (n)
 end
 
 function self:UInt16 (n)
-	umsg.Short (n - 32768)
+	if n >= 0x8000 then n = n - 0x00010000 end
+	umsg.Short (n)
 end
 
 function self:UInt32 (n)
-	umsg.Long (n - 2147483648)
-end
-
-function self:UInt64 (n)
-	umsg.Long ((n % 4294967296) - 2147483648)
-	umsg.Long (math.floor (n / 4294967296) - 2147483648)
+	if n >= 0x80000000 then n = n - 4294967296 end
+	umsg.Long (n)
 end
 
 function self:Int8 (n)
@@ -44,43 +42,15 @@ function self:Int32 (n)
 	umsg.Long (n)
 end
 
-function self:Int64 (n)
-	umsg.Long ((n % 4294967296) - 2147483648)
-	umsg.Long (math.floor (n / 4294967296))
-end
-
 function self:Float (f)
 	umsg.Float (f)
 end
 
-function self:Double (f)
-	umsg.Float (f)
-end
-
-function self:Vector (v)
-	umsg.Vector (v)
-end
-
-function self:Char (char)
-	self:UInt8 (string.byte (char))
-end
-
-function self:Bytes (data, length)
-	length = length or #data
-	for i = 1, length do
-		self:Char (string.sub (data, i, i))
-	end
-end
+-- We don't use umsg.Vector because that doesn't actually send the vector as 3 floats
 
 function self:String (data)
 	-- umsg.String can mix up uppercase / lowercase characters.
-	
-	self:UInt8 (#data)
-	self:Bytes (data, #data)
-end
-
-function self:Boolean (b)
-	umsg.Char (b and 1 or 0)
+	self:StringN8 (data)
 end
 
 GLib.Net.Layer1.UsermessageDispatcher = GLib.Net.Layer1.UsermessageDispatcher ()

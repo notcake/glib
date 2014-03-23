@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.OutBuffer = GLib.MakeConstructor (self)
+GLib.Net.OutBuffer = GLib.MakeConstructor (self, GLib.OutBuffer)
 
 function self:ctor ()
 	self.Data = {}

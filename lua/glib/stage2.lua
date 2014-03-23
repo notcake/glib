@@ -11,6 +11,12 @@ include ("glue.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
 
+-- IO
+include ("io/inbuffer.lua")
+include ("io/outbuffer.lua")
+include ("io/stringinbuffer.lua")
+include ("io/stringoutbuffer.lua")
+
 -- Threading
 GLib.Threading = {}
 include ("threading/iwaitable.lua")

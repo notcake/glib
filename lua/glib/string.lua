@@ -29,7 +29,7 @@ function GLib.String.DumpHex (str)
 			local char = string.byte (line, j)
 			left  = left .. string.format ("%02x ", char)
 			
-			if char >= 32 and char <= 127 then
+			if char >= 32 and char < 127 then
 				right = right .. string.sub (line, j, j)
 			else
 				right = right .. "."
