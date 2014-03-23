@@ -20,6 +20,12 @@ function self:IsEndOfStream ()
 	return false
 end
 
+function self:Pin ()
+	local position = self:GetPosition ()
+	local data = self:Bytes (self:GetBytesRemaining ())
+	return GLib.Net.Layer1.PinnedNetInBuffer (self, position, data)
+end
+
 function self:UInt8 ()
 	self.Position = self.Position + 1
 	return net.ReadUInt (8)
@@ -62,16 +68,10 @@ function self:Double ()
 	return net.ReadDouble ()
 end
 
-function self:Vector ()
-	self.Position = self.Position + 12
-	return net.ReadVector ()
-end
-
 function self:Bytes (length)
 	self.Position = self.Position + length
 	
 	if length == 0 then return "" end -- Garry is special.
-	local data = net.ReadData (length)
 	local data = net.ReadData (length)
 	return data
 end

@@ -52,10 +52,6 @@ function self:Double (f)
 	net.WriteDouble (f)
 end
 
-function self:Vector (v)
-	net.WriteVector (v)
-end
-
 function self:Bytes (data, length)
 	length = length or #data
 	length = math.min (length, #data)

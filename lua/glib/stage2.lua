@@ -148,6 +148,7 @@ include ("garrysmod/net/layer1/pinnedusermessageinbuffer.lua")
 include ("garrysmod/net/layer1/netchannel.lua")
 include ("garrysmod/net/layer1/netdispatcher.lua")
 include ("garrysmod/net/layer1/netinbuffer.lua")
+include ("garrysmod/net/layer1/pinnednetinbuffer.lua")
 
 -- Unlimited packet lengths and queueing for closed channels
 GLib.Net.Layer2 = {}
