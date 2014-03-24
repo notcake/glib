@@ -29,6 +29,11 @@ function GLib.Net.Layer3.GetChannel (channelName)
 	return GLib.Net.Layer3.Channels [channelName]
 end
 
+function GLib.Net.Layer3.RegisterLayer2Channel (channelName, handler, innerChannel)
+	local channel = GLib.Net.Layer3.Layer2Channel (channelName, handler, innerChannel)
+	return GLib.Net.Layer3.RegisterChannel (channel)
+end
+
 function GLib.Net.Layer3.RegisterChannel (channel, ...)
 	if type (channel) == "string" then
 		return GLib.Net.Layer3.RegisterChannelByName (channel, ...)

@@ -34,9 +34,6 @@ function GLib.Net.Layer5.Listen (channelName, handler, innerChannel)
 end
 
 function GLib.Net.Layer5.RegisterConnectionChannel (channelName, handler, innerChannel)
-	innerChannel = innerChannel or GLib.Net.Layer3.GetChannel (channelName)
-	innerChannel = innerChannel or GLib.Net.Layer3.RegisterChannel (channelName)
-	
 	local channel = GLib.Net.Layer5.ConnectionChannel (channelName, handler, innerChannel)
 	return GLib.Net.Layer5.RegisterChannel (channel)
 end

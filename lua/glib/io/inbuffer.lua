@@ -152,6 +152,11 @@ function self:StringZ ()
 	local data = ""
 	local c = self:UInt8 ()
 	while c and c ~= 0 do
+		if #data > 65536 then
+			GLib.Error ("InBuffer:StringZ : String is too long, infinite loop?")
+			break
+		end
+		
 		data = data .. string.char (c)
 		c = self:UInt8 ()
 	end

@@ -1,16 +1,16 @@
 local self = {}
-GLib.Net.Layer5.Layer3Channel = GLib.MakeConstructor (self, GLib.Net.Layer5.Channel)
+GLib.Net.Layer3.Layer2Channel = GLib.MakeConstructor (self, GLib.Net.Layer3.Channel)
 
-function GLib.Net.Layer5.Layer3Channel.ctor (channelName, handler, channel)
+function GLib.Net.Layer3.Layer2Channel.ctor (channelName, handler, channel)
 	if type (channelName) ~= "string" then
 		channel     = channelName
 		channelName = channel:GetName ()
 	end
 	
-	channel = channel or GLib.Net.Layer3.GetChannel (channelName)
-	channel = channel or GLib.Net.Layer3.RegisterChannel (channelName)
+	channel = channel or GLib.Net.Layer2.GetChannel (channelName)
+	channel = channel or GLib.Net.Layer2.RegisterChannel (channelName)
 	
-	return GLib.Net.Layer5.Layer3Channel.__ictor (channelName, handler, channel)
+	return GLib.Net.Layer3.Layer2Channel.__ictor (channelName, handler, channel)
 end
 
 function self:ctor (channelName, handler, channel)

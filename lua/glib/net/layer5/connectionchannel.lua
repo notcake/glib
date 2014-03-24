@@ -15,6 +15,18 @@ GLib.Net.Layer5.ConnectionChannel = GLib.MakeConstructor (self, GLib.Net.Layer5.
 			Fired when a connection's timeout period has changed.
 ]]
 
+function GLib.Net.Layer5.ConnectionChannel.ctor (channelName, handler, channel)
+	if type (channelName) ~= "string" then
+		channel     = channelName
+		channelName = channel:GetName ()
+	end
+	
+	channel = channel or GLib.Net.Layer3.GetChannel (channelName)
+	channel = channel or GLib.Net.Layer3.RegisterChannel (channelName)
+	
+	return GLib.Net.Layer5.ConnectionChannel.__ictor (channelName, handler, channel)
+end
+
 function self:ctor (channelName, handler, channel)
 	self.Channel = channel
 	
@@ -42,6 +54,8 @@ function self:ctor (channelName, handler, channel)
 			connection:ProcessInboundPacket (inBuffer)
 		end
 	)
+	
+	GLib.EventProvider (self)
 	
 	GLib.Net.Layer5.RegisterChannel (self)
 end
@@ -147,12 +161,12 @@ end
 function self:HookConnection (connection)
 	if not connection then return end
 	
-	connection:AddEventListener ("ActivityStateChanged", self:GetHashCode (),
+	connection:AddEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, hasUndispatchedPackets)
 			self:DispatchEvent ("ConnectionActivityStateChanged", connection, hasUndispatchedPackets)
 		end
 	)
-	connection:AddEventListener ("Closed", self:GetHashCode (),
+	connection:AddEventListener ("Closed", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, closureReason)
 			self:DispatchEvent ("ConnectionClosed", connection, closureReason)
 			
@@ -164,12 +178,12 @@ function self:HookConnection (connection)
 			end
 		end
 	)
-	connection:AddEventListener ("Opened", self:GetHashCode (),
+	connection:AddEventListener ("Opened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_)
 			self:DispatchEvent ("ConnectionOpened", connection)
 		end
 	)
-	connection:AddEventListener ("TimeoutChanged", self:GetHashCode (),
+	connection:AddEventListener ("TimeoutChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, timeout)
 			self:DispatchEvent ("ConnectionTimeoutChanged", connection, timeout)
 		end
@@ -179,8 +193,8 @@ end
 function self:UnhookConnection (connection)
 	if not connection then return end
 	
-	connection:RemoveEventListener ("ActivityStateChanged", self:GetHashCode ())
-	connection:RemoveEventListener ("Closed",               self:GetHashCode ())
-	connection:RemoveEventListener ("Opened",               self:GetHashCode ())
-	connection:RemoveEventListener ("TimeoutChanged",       self:GetHashCode ())
+	connection:RemoveEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	connection:RemoveEventListener ("Closed",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	connection:RemoveEventListener ("Opened",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	connection:RemoveEventListener ("TimeoutChanged",       "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 end

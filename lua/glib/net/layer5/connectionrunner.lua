@@ -8,13 +8,13 @@ function self:ctor ()
 	self.ActiveConnections  = GLib.WeakKeyTable () -- Connections with undispatched packets.
 	self.TimeoutConnections = GLib.WeakKeyTable () -- Connections with timeouts.
 	
-	GLib.Net.Layer5:AddEventListener ("ChannelRegistered", self:GetHashCode (),
+	GLib.Net.Layer5:AddEventListener ("ChannelRegistered", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, channel)
 			self:RegisterChannel (channel)
 		end
 	)
 	
-	GLib.Net.Layer5:AddEventListener ("ChannelUnregistered", self:GetHashCode (),
+	GLib.Net.Layer5:AddEventListener ("ChannelUnregistered", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, channel)
 			self:UnregisterChannel (channel)
 		end
@@ -38,8 +38,8 @@ function self:ctor ()
 end
 
 function self:dtor ()
-	GLib.Net.Layer5:RemoveEventListener ("ChannelRegistered",   self:GetHashCode ())
-	GLib.Net.Layer5:RemoveEventListener ("ChannelUnregistered", self:GetHashCode ())
+	GLib.Net.Layer5:RemoveEventListener ("ChannelRegistered",   "ConnectionRunner." .. self:GetHashCode ())
+	GLib.Net.Layer5:RemoveEventListener ("ChannelUnregistered", "ConnectionRunner." .. self:GetHashCode ())
 	
 	hook.Remove ("Tick", "GLib.Net.Layer5.ConnectionRunner")
 end
@@ -64,7 +64,7 @@ end
 function self:HookChannel (channel)
 	if not channel then return end
 	
-	channel:AddEventListener ("ConnectionCreated", self:GetHashCode (),
+	channel:AddEventListener ("ConnectionCreated", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, connection)
 			self:HookConnection (connection)
 			
@@ -80,19 +80,19 @@ end
 function self:UnhookChannel (channel)
 	if not channel then return end
 	
-	channel:RemoveEventListener ("ConnectionCreated", self:GetHashCode ())
+	channel:RemoveEventListener ("ConnectionCreated", "ConnectionRunner." .. self:GetHashCode ())
 end
 
 function self:HookConnection (connection)
 	if not connection then return end
 	
-	connection:AddEventListener ("ActivityStateChanged", self:GetHashCode (),
+	connection:AddEventListener ("ActivityStateChanged", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, hasUndispatchedPackets)
 			self:UpdateConnectionState (connection)
 		end
 	)
 	
-	connection:AddEventListener ("Closed", self:GetHashCode (),
+	connection:AddEventListener ("Closed", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, closureReason)
 			self:UnhookConnection (connection)
 			
@@ -106,7 +106,7 @@ function self:HookConnection (connection)
 		end
 	)
 	
-	connection:AddEventListener ("TimeoutChanged", self:GetHashCode (),
+	connection:AddEventListener ("TimeoutChanged", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, hasUndispatchedPackets)
 			self:UpdateConnectionState (connection)
 		end
@@ -116,9 +116,9 @@ end
 function self:UnhookConnection (connection)
 	if not connection then return end
 	
-	connection:RemoveEventListener ("ActivityStateChanged", self:GetHashCode ())
-	connection:RemoveEventListener ("Closed",               self:GetHashCode ())
-	connection:RemoveEventListener ("TimeoutChanged",       self:GetHashCode ())
+	connection:RemoveEventListener ("ActivityStateChanged", "ConnectionRunner." .. self:GetHashCode ())
+	connection:RemoveEventListener ("Closed",               "ConnectionRunner." .. self:GetHashCode ())
+	connection:RemoveEventListener ("TimeoutChanged",       "ConnectionRunner." .. self:GetHashCode ())
 end
 
 function self:UpdateConnectionState (connection)

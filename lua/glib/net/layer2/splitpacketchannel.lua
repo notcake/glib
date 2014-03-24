@@ -80,6 +80,10 @@ function self:GetChannel ()
 	return self.Channel
 end
 
+function self:GetMTU ()
+	return math.huge
+end
+
 -- Internal, do not call
 function self:HookSystems ()
 	timer.Create ("GLib.SplitPacketChannel." .. self:GetName (), 0.5, 0,

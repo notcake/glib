@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer2.Channel = GLib.MakeConstructor (self)
+GLib.Net.Layer3.Channel = GLib.MakeConstructor (self)
 
 function self:ctor (channelName, handler)
 	self.Name    = channelName
@@ -9,7 +9,7 @@ function self:ctor (channelName, handler)
 end
 
 function self:DispatchPacket (destinationId, packet)
-	GLib.Error ("Layer2.Channel:DispatchPacket : Not implemented.")
+	GLib.Error ("Layer3.Channel:DispatchPacket : Not implemented.")
 end
 
 function self:GetHandler ()
@@ -17,7 +17,7 @@ function self:GetHandler ()
 end
 
 function self:GetMTU ()
-	GLib.Error ("Layer2.Channel:GetMTU : Not implemented.")
+	GLib.Error ("Layer3.Channel:GetMTU : Not implemented.")
 end
 
 function self:GetName ()

@@ -198,7 +198,7 @@ function self:SetTimeoutTime (timeoutTime)
 end
 
 function self:UpdateTimeout ()
-	self.TimeoutTIme = SysTime () + self.Timeout
+	self.TimeoutTime = SysTime () + self.Timeout
 end
 
 -- Internal, do not call
@@ -284,8 +284,6 @@ function self:ProcessPacket (packetId, inBuffer)
 	
 	if bit.band (packetType, GLib.Net.Layer5.ConnectionPacketType.Open) ~= 0 then
 		if self:IsOpening () then
-			self.State = self.State = GLib.Net.Layer5.ConnectionState.Open
-			
 			self:GetOpenHandler () (self:GetRemoteId (), inBuffer, self)
 			
 			-- Open the connection

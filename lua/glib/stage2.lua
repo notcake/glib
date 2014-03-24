@@ -163,6 +163,8 @@ include ("garrysmod/net/layer2/channelstatenetworker.lua")
 
 -- Network layer
 GLib.Net.Layer3 = {}
+include ("net/layer3/channel.lua")
+include ("net/layer3/layer2channel.lua")
 include ("net/layer3/layer3.lua")
 
 -- Session layer
@@ -174,8 +176,9 @@ include ("net/layer5/connectionclosurereason.lua")
 include ("net/layer5/connectionendpoint.lua")
 include ("net/layer5/connectionpackettype.lua")
 include ("net/layer5/connectionstate.lua")
-include ("net/layer5/connectionrunner.lua")
+include ("net/layer5/layer3channel.lua")
 include ("net/layer5/layer5.lua")
+include ("net/layer5/connectionrunner.lua") -- Requires layer 5 to be initialized.
 
 include ("protocol/protocol.lua")
 include ("protocol/channel.lua")

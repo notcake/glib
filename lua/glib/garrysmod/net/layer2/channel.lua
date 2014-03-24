@@ -47,6 +47,10 @@ function self:GetHandler ()
 	return self.Handler
 end
 
+function self:GetMTU ()
+	return self.SplitPacketChannel:GetMTU ()
+end
+
 function self:IsOpen (destinationId)
 	return self.Open
 end
