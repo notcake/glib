@@ -64,6 +64,8 @@ function self:SetOpen (open)
 		for _, packet in ipairs (self.Queue) do
 			self:DispatchPacket (packet.DestinationId, packet)
 		end
+		
+		self.Queue = {}
 	end
 	
 	return self

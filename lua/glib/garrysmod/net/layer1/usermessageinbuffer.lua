@@ -74,6 +74,10 @@ function self:String ()
 	return self:StringN8 ()
 end
 
+function self:LongString ()
+	return self:StringN32 ()
+end
+
 function self:ToStringInBuffer ()
 	local outBuffer = GLib.StringOutBuffer ()
 	

@@ -62,4 +62,8 @@ function self:String (data)
 	self:StringN16 (data)
 end
 
+function self:LongString (data)
+	self:StringN32 (data)
+end
+
 GLib.Net.Layer1.NetDispatcher = GLib.Net.Layer1.NetDispatcher ()

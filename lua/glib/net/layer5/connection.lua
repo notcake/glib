@@ -84,7 +84,6 @@ function self:Close (reason)
 	
 	local hasUndispatchedPackets = self:HasUndispatchedPackets ()
 	if reason == GLib.Net.Layer5.ConnectionClosureReason.LocalClosure then
-		
 		self.State = GLib.Net.Layer5.ConnectionState.Closing
 	else
 		-- Close the connection immediately

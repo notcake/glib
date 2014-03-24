@@ -85,21 +85,26 @@ function self:HookSystems ()
 	timer.Create ("GLib.SplitPacketChannel." .. self:GetName (), 0.5, 0,
 		function ()
 			for userId, outboundSplitPackets in pairs (self.OutboundPackets) do
+				local packetCount = 0
+				
 				for packetId, outboundSplitPacket in pairs (outboundSplitPackets) do
+					if packetCount >= 4 then break end -- Maximum of 4 packets per user at one time.
+					packetCount = packetCount + 1
+					
 					local outBuffer = GLib.Net.OutBuffer ()
 					if not outboundSplitPacket:IsStarted () then
 						-- New split packet
 						outBuffer:UInt8 (GLib.Net.Layer2.SplitPacketType.Start)
 						outBuffer:UInt32 (outboundSplitPacket:GetId ())
-						outboundTransfer:SerializeFirstChunk (outBuffer)
+						outboundSplitPacket:SerializeFirstChunk (outBuffer)
 					else
 						-- Continuation of split packet
 						outBuffer:UInt8 (GLib.Net.Layer2.SplitPacketType.Continuation)
 						outBuffer:UInt32 (outboundSplitPacket:GetId ())
-						outboundTransfer:SerializeNextChunk (outBuffer)
+						outboundSplitPacket:SerializeNextChunk (outBuffer)
 					end
 					
-					self.Channel:DispatchPacket (userId, packet)
+					self.Channel:DispatchPacket (userId, outBuffer)
 					
 					-- Clean up if we're done
 					if outboundSplitPacket:IsFinished () then

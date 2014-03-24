@@ -53,4 +53,8 @@ function self:String (data)
 	self:StringN8 (data)
 end
 
+function self:LongString (data)
+	self:StringN32 (data)
+end
+
 GLib.Net.Layer1.UsermessageDispatcher = GLib.Net.Layer1.UsermessageDispatcher ()

@@ -41,6 +41,11 @@ function GLib.Net.Layer5.RegisterConnectionChannel (channelName, handler, innerC
 	return GLib.Net.Layer5.RegisterChannel (channel)
 end
 
+function GLib.Net.Layer5.RegisterLayer3Channel (channelName, handler, innerChannel)
+	local channel = GLib.Net.Layer5.Layer3Channel (channelName, handler, innerChannel)
+	return GLib.Net.Layer5.RegisterChannel (channel)
+end
+
 function GLib.Net.Layer5.RegisterChannel (channel)
 	local channelName = channel:GetName ()
 	
