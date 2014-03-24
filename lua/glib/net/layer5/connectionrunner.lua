@@ -8,6 +8,10 @@ function self:ctor ()
 	self.ActiveConnections  = GLib.WeakKeyTable () -- Connections with undispatched packets.
 	self.TimeoutConnections = GLib.WeakKeyTable () -- Connections with timeouts.
 	
+	for _, channel in pairs (GLib.Net.Layer5.Channels) do
+		self:RegisterChannel (channel)
+	end
+	
 	GLib.Net.Layer5:AddEventListener ("ChannelRegistered", "ConnectionRunner." .. self:GetHashCode (),
 		function (_, channel)
 			self:RegisterChannel (channel)

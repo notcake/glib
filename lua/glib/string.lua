@@ -20,7 +20,7 @@ function GLib.String.DumpHex (str)
 	local lines = {}
 	local i = 1
 	
-	while i < #str do
+	while i <= #str do
 		local line = string.sub (str, i, i + charsPerLine - 1)
 		local left = ""
 		local right = ""

@@ -204,7 +204,7 @@ function self:SetTimeoutTime (timeoutTime)
 end
 
 function self:UpdateTimeout ()
-	self.TimeoutTime = SysTime () + self.Timeout
+	self:SetTimeoutTime (SysTime () + self.Timeout)
 end
 
 -- Internal, do not call
@@ -235,7 +235,7 @@ function self:GenerateNextPacket (outBuffer)
 	outBuffer:UInt8 (packetType)
 	
 	if #self.OutboundQueue > 0 then
-		outBuffer:LongString (self.OutboundQueue [1]:GetString ())
+		outBuffer:Bytes (self.OutboundQueue [1]:GetString ())
 		table.remove (self.OutboundQueue, 1)
 	end
 	
@@ -290,11 +290,11 @@ function self:ProcessPacket (packetId, inBuffer)
 	
 	if bit.band (packetType, GLib.Net.Layer5.ConnectionPacketType.Open) ~= 0 then
 		if self:IsOpening () then
-			self:GetOpenHandler () (self:GetRemoteId (), inBuffer, self)
-			
 			-- Open the connection
 			self.State = GLib.Net.Layer5.ConnectionState.Open
 			self:DispatchEvent ("Opened")
+			
+			self:GetOpenHandler () (self:GetRemoteId (), inBuffer, self)
 		else
 			-- Nope.avi
 			self:Close ()
