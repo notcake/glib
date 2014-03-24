@@ -164,7 +164,13 @@ function self:Write (packet)
 	if self:IsClosing () then return end
 	if self:IsClosed  () then return end
 	
+	local hasUndispatchedPackets = self:HasUndispatchedPackets ()
+	
 	self.OutboundQueue [#self.OutboundQueue + 1] = packet
+	
+	if self:HasUndispatchedPackets () ~= hasUndispatchedPackets then
+		self:DispatchEvent ("ActivityStateChanged", self:HasUndispatchedPackets ())
+	end
 	
 	-- Update timeout
 	self:UpdateTimeout ()
@@ -203,7 +209,7 @@ end
 
 -- Internal, do not call
 function self:GenerateNextPacket (outBuffer)
-	if not self:HasUndispatchedPacket () then
+	if not self:HasUndispatchedPackets () then
 		-- WTF, caller. You had one job.
 		GLib.Error ("Connection:GenerateNextPacket : YOU HAD ONE JOB.")
 		return
@@ -244,7 +250,7 @@ function self:GenerateNextPacket (outBuffer)
 		self:DispatchEvent ("Closed", GLib.Net.Layer5.ConnectionClosureReason.LocalClosure)
 	end
 	
-	if not self:HasUndispatchedPacket () then
+	if not self:HasUndispatchedPackets () then
 		self:DispatchEvent ("ActivityStateChanged", self:HasUndispatchedPackets ())
 	end
 	
