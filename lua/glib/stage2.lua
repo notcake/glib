@@ -157,20 +157,25 @@ include ("net/layer2/splitpacketchannel.lua")
 include ("net/layer2/splitpackettype.lua")
 include ("net/layer2/inboundsplitpacket.lua")
 include ("net/layer2/outboundsplitpacket.lua")
+include ("net/layer2/layer2.lua")
 include ("garrysmod/net/layer2/channel.lua")
-include ("garrysmod/net/layer2/layer2.lua")
 include ("garrysmod/net/layer2/channelstatenetworker.lua")
 
 -- Network layer
 GLib.Net.Layer3 = {}
+include ("net/layer3/layer3.lua")
 
 -- Session layer
 GLib.Net.Layer5 = {}
+include ("net/layer5/channel.lua")
 include ("net/layer5/connectionchannel.lua")
 include ("net/layer5/connection.lua")
 include ("net/layer5/connectionclosurereason.lua")
+include ("net/layer5/connectionendpoint.lua")
 include ("net/layer5/connectionpackettype.lua")
 include ("net/layer5/connectionstate.lua")
+include ("net/layer5/connectionrunner.lua")
+include ("net/layer5/layer5.lua")
 
 include ("protocol/protocol.lua")
 include ("protocol/channel.lua")

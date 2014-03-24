@@ -5,25 +5,35 @@ function GLib_Net_Layer2_GetChannels ()
 	return channels
 end
 
+--[[
+	Events:
+		ChannelRegistered (Channel channel)
+			Fired when a channel has been registered.
+		ChannelUnregistered (Channel channel)
+			Fired when a channel has been unregistered.
+]]
+
 GLib.EventProvider (GLib.Net.Layer2)
 
 function GLib.Net.Layer2.DispatchPacket (destinationId, channelName, packet)
-	if not GLib.Net.Layer2.Channels [channelName] then
+	local channel = GLib.Net.Layer2.GetChannel (channelName)
+	if not channel then
 		GLib.Error ("GLib.Net.Layer2.DispatchPacket : Channel " .. channelName .. " doesn't exist.")
 		return
 	end
 	
-	local channel = GLib.Net.Layer2.Channels [channelName]
-	channel:DispatchPacket (destinationId, packet)
+	return channel:DispatchPacket (destinationId, packet)
 end
 
-function GLib.Net.Layer2.RegisterChannel (channelName, handler)
-	if type (channelName) == "string" then
-		local channel = GLib.Net.Layer2.Channel (channelName, handler)
-		return GLib.Net.Layer2.RegisterChannel (channel)
+function GLib.Net.Layer2.GetChannel (channelName)
+	return GLib.Net.Layer2.Channels [channelName]
+end
+
+function GLib.Net.Layer2.RegisterChannel (channel, ...)
+	if type (channel) == "string" then
+		return GLib.Net.Layer2.RegisterChannelByName (channel, ...)
 	end
 	
-	local channel = channelName
 	local channelName = channel:GetName ()
 	
 	if GLib.Net.Layer2.Channels [channelName] then
@@ -41,12 +51,26 @@ function GLib.Net.Layer2.RegisterChannel (channelName, handler)
 	return channel
 end
 
-function GLib.Net.Layer2.UnregisterChannel (channelName)
-	if type (channelName) ~= "string" then
-		GLib.Net.Layer2.UnregisterChannel (channelName:GetName ())
-		return
+function GLib.Net.Layer2.RegisterChannelByName (channelName, handler)
+	local channel = GLib.Net.Layer2.GetChannel (channelName)
+	if channel then
+		channel:SetHandler (handler)
+		return channel
 	end
 	
+	channel = GLib.Net.Layer2.Channel (channelName, handler)
+	return GLib.Net.Layer2.RegisterChannel (channel)
+end
+
+function GLib.Net.Layer2.UnregisterChannel (channelOrChannelName)
+	if type (channelOrChannelName) ~= "string" then
+		channelOrChannelName = channelOrChannelName:GetName ()
+	end
+	
+	return GLib.Net.Layer2.UnregisterChannelByName (channelOrChannelName)
+end
+
+function GLib.Net.Layer2.UnregisterChannelByName (channelName)
 	if not GLib.Net.Layer2.Channels [channelName] then return end
 	
 	local channel = GLib.Net.Layer2.Channels [channelName]
