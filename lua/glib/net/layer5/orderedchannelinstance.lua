@@ -39,10 +39,11 @@ function self:HandlePacket (inBuffer)
 	
 	-- Initialize if we haven't already
 	if not self.NextInboundPacketId then
-		self.NextInboundPacketId = (packetId - 128) % 4294967296
+		self.NextInboundPacketId = packetId
 	end
 	
-	if (self.NextInboundPacketId - packetId) % 4294967296 < 128 then
+	if self.NextInboundPacketId ~= packetId and
+	   (self.NextInboundPacketId - packetId) % 4294967296 < 128 then
 		-- Drop packet, we received it too late
 		return
 	end
