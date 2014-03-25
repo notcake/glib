@@ -21,8 +21,6 @@ function self:ctor (channelName, handler, innerChannel)
 end
 
 function self:dtor ()
-	self.InnerChannel:dtor ()
-	
 	GLib.Net.Layer5.UnregisterChannel (self)
 end
 

@@ -57,8 +57,6 @@ end
 
 function self:dtor ()
 	self:UnhookSystems ()
-	
-	self.InnerChannel:dtor ()
 end
 
 function self:DispatchPacket (destinationId, packet)

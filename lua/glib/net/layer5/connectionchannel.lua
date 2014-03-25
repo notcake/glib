@@ -63,8 +63,6 @@ function self:dtor ()
 		connection:Close ()
 	end
 	
-	self.InnerChannel:dtor ()
-	
 	GLib.Net.Layer5.UnregisterChannel (self)
 end
 
