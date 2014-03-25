@@ -202,6 +202,11 @@ function self:HookSingleEndpointConnectionChannel (singleEndpointConnectionChann
 			self:DispatchEvent ("ConnectionClosed", connection, closureReason)
 		end
 	)
+	singleEndpointConnectionChannel:AddEventListener ("ConnectionCreated", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+		function (_, connection)
+			self:DispatchEvent ("ConnectionCreated", connection)
+		end
+	)
 	singleEndpointConnectionChannel:AddEventListener ("ConnectionOpened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, connection)
 			self:DispatchEvent ("ConnectionOpened", connection)
@@ -219,6 +224,7 @@ function self:UnhookSingleEndpointConnectionChannel (singleEndpointConnectionCha
 	
 	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionClosed",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionCreated",              "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionOpened",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionTimeoutChanged",       "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 end

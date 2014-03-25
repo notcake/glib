@@ -68,7 +68,7 @@ end
 
 -- Packets
 function self:CloseConnections (closureReason)
-	for connection, _ in pairs (self.Connections) do
+	for _, connection in pairs (self.Connections) do
 		connection:Close (closureReason)
 	end
 end
