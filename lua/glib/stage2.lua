@@ -187,6 +187,7 @@ include ("net/layer3/layer3.lua")
 GLib.Net.Layer5 = {}
 include ("net/layer5/channel.lua")
 include ("net/layer5/connectionchannel.lua")
+include ("net/layer5/singleendpointconnectionchannel.lua")
 include ("net/layer5/connection.lua")
 include ("net/layer5/connectionclosurereason.lua")
 include ("net/layer5/connectionendpoint.lua")

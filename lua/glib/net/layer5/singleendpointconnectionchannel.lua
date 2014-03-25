@@ -142,12 +142,10 @@ function self:SetPacketHandler (packetHandler)
 end
 
 -- Internal, do not call
-function self:GenerateConnectionId (destinationId)
+function self:GenerateConnectionId ()
 	local connectionId = math.random (0, 0xFFFFFFFF)
 	
-	if not self.Connections [destinationId] then return connectionId end
-	
-	while self.Connections [destinationId] [connectionId] do
+	while self.Connections [connectionId] do
 		connectionId = (connectionId + 1) % 4294967296
 	end
 	
@@ -156,8 +154,7 @@ end
 
 function self:RegisterConnection (connection)
 	-- Add connection to list
-	self.Connections [connection:GetRemoteId ()] = self.Connections [connection:GetRemoteId ()] or {}
-	self.Connections [connection:GetRemoteId ()] [connection:GetId ()] = connection
+	self.Connections [connection:GetId ()] = connection
 	
 	-- Hook events
 	self:HookConnection (connection)

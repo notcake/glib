@@ -51,6 +51,7 @@ function self:ctor (channelName, handler, innerChannel)
 			if not self.SingleEndpointChannels [userId] then return end
 			
 			self.SingleEndpointChannels [userId]:CloseConnections (GLib.Net.Layer5.ConnectionClosureReason.CarrierLost)
+			self:UnhookSingleEndpointConnectionChannel (self.SingleEndpointChannels [userId])
 			self.SingleEndpointChannels [userId]:dtor ()
 			self.SingleEndpointChannels [userId] = nil
 		end
