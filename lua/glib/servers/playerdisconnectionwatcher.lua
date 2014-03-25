@@ -24,7 +24,7 @@ function self:ctor ()
 end
 
 function self:dtor ()
-	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "GLib.PlayerDisconnectionWatcher",)
+	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "GLib.PlayerDisconnectionWatcher")
 end
 
 function self:GetDisconnectionEvent (userId)

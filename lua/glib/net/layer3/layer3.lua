@@ -74,9 +74,8 @@ function GLib.Net.Layer3.UnregisterChannelByName (channelName)
 	if not GLib.Net.Layer3.Channels [channelName] then return end
 	
 	local channel = GLib.Net.Layer3.Channels [channelName]
-	channel:dtor ()
-	
 	GLib.Net.Layer3.Channels [channelName] = nil
+	channel:dtor ()
 	
 	GLib.Net.Layer3:DispatchEvent ("ChannelUnregistered", channel)
 end
