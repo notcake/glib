@@ -39,6 +39,9 @@ end
 
 function self:dtor ()
 	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "OrderedChannel." .. self:GetName ())
+	
+	self.InnerChannel:dtor ()
+	
 	GLib.Net.Layer5.UnregisterChannel (self)
 end
 

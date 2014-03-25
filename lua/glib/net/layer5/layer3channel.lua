@@ -16,6 +16,14 @@ end
 function self:ctor (channelName, handler, innerChannel)
 	self.InnerChannel = innerChannel
 	self.InnerChannel:SetHandler (handler)
+	
+	GLib.Net.Layer5.RegisterChannel (self)
+end
+
+function self:dtor ()
+	self.InnerChannel:dtor ()
+	
+	GLib.Net.Layer5.UnregisterChannel (self)
 end
 
 function self:DispatchPacket (destinationId, packet)
