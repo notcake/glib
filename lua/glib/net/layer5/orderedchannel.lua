@@ -50,7 +50,7 @@ function self:DispatchPacket (destinationId, packet)
 	return self.Instances [destinationId]:DispatchPacket (packet)
 end
 
-function self:GetChannel ()
+function self:GetInnerChannel ()
 	return self.InnerChannel
 end
 
