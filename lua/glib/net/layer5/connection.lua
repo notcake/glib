@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer5.Connection = GLib.MakeConstructor (self)
+GLib.Net.Layer5.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChannel)
 
 --[[
 	Events:
@@ -19,10 +19,6 @@ function self:ctor (channel, id, remoteId)
 	self.Id       = id
 	self.RemoteId = remoteId
 	
-	-- Handlers
-	self.OpenHandler   = self.Channel:GetOpenHandler   () or GLib.NullCallback
-	self.PacketHandler = self.Channel:GetPacketHandler () or GLib.NullCallback
-	
 	-- State
 	self.State         = GLib.Net.Layer5.ConnectionState.Opening
 	self.Initiator     = nil
@@ -36,6 +32,10 @@ function self:ctor (channel, id, remoteId)
 	
 	self.InboundPackets = {}
 	self.OutboundQueue  = {}
+	
+	-- Handlers
+	self.OpenHandler   = self.Channel:GetOpenHandler   () or GLib.NullCallback
+	self.PacketHandler = self.Channel:GetPacketHandler () or GLib.NullCallback
 	
 	-- Timeouts
 	self.Timeout     = 10
@@ -55,25 +55,6 @@ end
 
 function self:GetRemoteId ()
 	return self.RemoteId
-end
-
--- Handlers
-function self:GetOpenHandler ()
-	return self.OpenHandler
-end
-
-function self:GetPacketHandler ()
-	return self.PacketHandler
-end
-
-function self:SetOpenHandler (openHandler)
-	self.OpenHandler = openHandler
-	return self
-end
-
-function self:SetPacketHandler (packetHandler)
-	self.PacketHandler = packetHandler
-	return self
 end
 
 -- State
@@ -156,6 +137,10 @@ function self:DispatchPacket (packet)
 	self:Write (packet)
 end
 
+function self:GetMTU ()
+	return self.Channel:GetMTU ()
+end
+
 function self:HasUndispatchedPackets ()
 	return #self.OutboundQueue > 0 or self:IsClosing ()
 end
@@ -174,6 +159,25 @@ function self:Write (packet)
 	
 	-- Update timeout
 	self:UpdateTimeout ()
+end
+
+-- Handlers
+function self:GetOpenHandler ()
+	return self.OpenHandler
+end
+
+function self:GetPacketHandler ()
+	return self.PacketHandler
+end
+
+function self:SetOpenHandler (openHandler)
+	self.OpenHandler = openHandler
+	return self
+end
+
+function self:SetPacketHandler (packetHandler)
+	self.PacketHandler = packetHandler
+	return self
 end
 
 -- Timeouts

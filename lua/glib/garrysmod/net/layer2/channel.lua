@@ -8,7 +8,7 @@ function self:ctor (channelName, handler)
 	
 	self.Queue = {}
 	
-	GLib.Net.Layer2.RegisterChannel (self)
+	self:Register ()
 end
 
 function self:dtor ()
@@ -16,9 +16,46 @@ function self:dtor ()
 	self.NetChannel:dtor ()
 	self.SplitPacketChannel:dtor ()
 	
-	GLib.Net.Layer2.UnregisterChannel (self)
+	self:Unregister ()
 end
 
+-- Registration
+function self:Register ()
+	if self:IsRegistered () then return end
+	
+	GLib.Net.Layer2.RegisterChannel (self)
+	self:SetRegistered (true)
+end
+
+function self:Unregister ()
+	if not self:IsRegistered () then return end
+	
+	GLib.Net.Layer2.UnregisterChannel (self)
+	self:SetRegistered (false)
+end
+
+-- State
+function self:SetOpen (open)
+	self.Open = open
+	
+	self.UsermessageChannel:SetOpen (open)
+	self.NetChannel:SetOpen (open)
+	self.SplitPacketChannel:GetInnerChannel ():SetOpen (open)
+	self.SplitPacketChannel:SetOpen (open)
+	
+	-- Flush the queue if we've been opened
+	if self.Open and #self.Queue > 0 then
+		for _, packet in ipairs (self.Queue) do
+			self:DispatchPacket (packet.DestinationId, packet)
+		end
+		
+		self.Queue = {}
+	end
+	
+	return self
+end
+
+-- Packets
 function self:DispatchPacket (destinationId, packet)
 	if not self:IsOpen () then
 		-- Channel not open, queue up message
@@ -41,32 +78,13 @@ function self:DispatchPacket (destinationId, packet)
 	end
 end
 
-function self:GetHandler ()
-	return self.Handler
-end
-
 function self:GetMTU ()
 	return self.SplitPacketChannel:GetMTU ()
 end
 
-function self:SetOpen (open)
-	self.Open = open
-	
-	self.UsermessageChannel:SetOpen (open)
-	self.NetChannel:SetOpen (open)
-	self.SplitPacketChannel:GetInnerChannel ():SetOpen (open)
-	self.SplitPacketChannel:SetOpen (open)
-	
-	-- Flush the queue if we've been opened
-	if self.Open and #self.Queue > 0 then
-		for _, packet in ipairs (self.Queue) do
-			self:DispatchPacket (packet.DestinationId, packet)
-		end
-		
-		self.Queue = {}
-	end
-	
-	return self
+-- Handlers
+function self:GetHandler ()
+	return self.Handler
 end
 
 function self:SetHandler (handler)

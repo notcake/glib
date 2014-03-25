@@ -33,6 +33,7 @@ function self:ctor (channelName, handler)
 	end
 end
 
+-- Packets
 function self:DispatchPacket (destinationId, packet)
 	if not self:IsOpen () then
 		GLib.Error ("UsermessageChannel:DispatchPacket : Channel isn't open! (" .. tostring (destinationId) .. "." .. self:GetName () .. ")")

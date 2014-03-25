@@ -141,7 +141,8 @@ include ("containers/networkable/list.lua")
 -- Networking
 GLib.Net = {}
 include ("net/net.lua")
-include ("net/channel.lua")
+include ("net/ichannel.lua")
+include ("net/isingleendpointchannel.lua")
 include ("net/datatype.lua")
 include ("net/inbuffer.lua")
 include ("net/outbuffer.lua")

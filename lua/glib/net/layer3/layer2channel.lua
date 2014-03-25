@@ -17,36 +17,54 @@ function self:ctor (channelName, handler, innerChannel)
 	self.InnerChannel = innerChannel
 	self.InnerChannel:SetHandler (handler)
 	
-	GLib.Net.Layer3.RegisterChannel (self)
+	self:Register ()
 end
 
 function self:dtor ()
-	GLib.Net.Layer3.UnregisterChannel (self)
+	self:Unregister ()
 end
 
+-- Registration
+function self:Register ()
+	if self:IsRegistered () then return end
+	
+	GLib.Net.Layer3.RegisterChannel (self)
+	self:SetRegistered (true)
+end
+
+function self:Unregister ()
+	if not self:IsRegistered () then return end
+	
+	GLib.Net.Layer3.UnregisterChannel (self)
+	self:SetRegistered (false)
+end
+
+-- State
+function self:IsOpen (destinationId)
+	return self.InnerChannel:IsOpen (destinationId)
+end
+
+function self:SetOpen (open)
+	self.InnerChannel:SetOpen (open)
+	return self
+end
+
+-- Packets
 function self:DispatchPacket (destinationId, packet)
 	return self.InnerChannel:DispatchPacket (destinationId, packet)
-end
-
-function self:GetHandler ()
-	return self.InnerChannel:GetHandler ()
 end
 
 function self:GetMTU ()
 	return self.InnerChannel:GetMTU ()
 end
 
-function self:IsOpen ()
-	return self.InnerChannel:IsOpen ()
+-- Handlers
+function self:GetHandler ()
+	return self.InnerChannel:GetHandler ()
 end
 
 function self:SetHandler (handler)
 	self.InnerChannel:SetHandler (handler)
 	self.Handler = handler
-	return self
-end
-
-function self:SetOpen (open)
-	self.InnerChannel:SetOpen (open)
 	return self
 end

@@ -55,7 +55,7 @@ function self:ctor (channelName, handler, innerChannel)
 		end
 	)
 	
-	GLib.Net.Layer5.RegisterChannel (self)
+	self:Register ()
 end
 
 function self:dtor ()
@@ -63,9 +63,35 @@ function self:dtor ()
 		connection:Close ()
 	end
 	
-	GLib.Net.Layer5.UnregisterChannel (self)
+	self:Unregister ()
 end
 
+-- Registration
+function self:Register ()
+	if self:IsRegistered () then return end
+	
+	GLib.Net.Layer5.RegisterChannel (self)
+	self:SetRegistered (true)
+end
+
+function self:Unregister ()
+	if not self:IsRegistered () then return end
+	
+	GLib.Net.Layer5.UnregisterChannel (self)
+	self:SetRegistered (false)
+end
+
+-- State
+function self:IsOpen ()
+	return self.InnerChannel:IsOpen ()
+end
+
+function self:SetOpen (open)
+	self.InnerChannel:SetOpen (open)
+	return self
+end
+
+-- Packets
 function self:Connect (destinationId, packet)
 	-- New connection
 	local connection = GLib.Net.Layer5.Connection (self, self:GenerateConnectionId (destinationId), destinationId)
@@ -86,12 +112,13 @@ function self:DispatchPacket (destinationId, packet)
 	return self:Connect (destinationId, packet)
 end
 
-function self:GetHandler ()
-	return self:GetOpenHandler ()
-end
-
 function self:GetMTU ()
 	return self.InnerChannel:GetMTU () - 13
+end
+
+-- Handlers
+function self:GetHandler ()
+	return self:GetOpenHandler ()
 end
 
 function self:GetOpenHandler ()
@@ -100,10 +127,6 @@ end
 
 function self:GetPacketHandler ()
 	return self.PacketHandler
-end
-
-function self:IsOpen ()
-	return self.InnerChannel:IsOpen ()
 end
 
 function self:SetHandler (handler)
@@ -117,11 +140,6 @@ end
 
 function self:SetPacketHandler (packetHandler)
 	self.PacketHandler = packetHandler
-	return self
-end
-
-function self:SetOpen (open)
-	self.InnerChannel:SetOpen (open)
 	return self
 end
 

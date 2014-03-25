@@ -59,6 +59,11 @@ function self:dtor ()
 	self:UnhookSystems ()
 end
 
+function self:GetInnerChannel ()
+	return self.InnerChannel
+end
+
+-- Packets
 function self:DispatchPacket (destinationId, packet)
 	if not self.Active then
 		self.Active = true
@@ -72,10 +77,6 @@ function self:DispatchPacket (destinationId, packet)
 	self.NextPacketId = (self.NextPacketId + 1) % 4294967296
 	
 	self.OutboundPackets [destinationId] [outboundSplitPacket:GetId ()] = outboundSplitPacket
-end
-
-function self:GetInnerChannel ()
-	return self.InnerChannel
 end
 
 function self:GetMTU ()

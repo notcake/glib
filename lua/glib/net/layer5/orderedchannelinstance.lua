@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer5.OrderedChannelInstance = GLib.MakeConstructor (self)
+GLib.Net.Layer5.OrderedChannelInstance = GLib.MakeConstructor (self, GLib.Net.ISingleEndPointChannel)
 
 function self:ctor (channel, remoteId)
 	-- Identity

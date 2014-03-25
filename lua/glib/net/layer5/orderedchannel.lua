@@ -34,28 +34,35 @@ function self:ctor (channelName, handler, innerChannel)
 		end
 	)
 	
-	GLib.Net.Layer5.RegisterChannel (self)
+	self:Register ()
 end
 
 function self:dtor ()
 	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "OrderedChannel." .. self:GetName ())
 	
-	GLib.Net.Layer5.UnregisterChannel (self)
-end
-
-function self:DispatchPacket (destinationId, packet)
-	self.Instances [destinationId] = self.Instances [destinationId] or GLib.Net.Layer5.OrderedChannelInstance (self, destinationId)
-	return self.Instances [destinationId]:DispatchPacket (packet)
+	self:Unregister ()
 end
 
 function self:GetInnerChannel ()
 	return self.InnerChannel
 end
 
-function self:GetMTU ()
-	return self.InnerChannel:GetMTU () - 4
+-- Registration
+function self:Register ()
+	if self:IsRegistered () then return end
+	
+	GLib.Net.Layer5.RegisterChannel (self)
+	self:SetRegistered (true)
 end
 
+function self:Unregister ()
+	if not self:IsRegistered () then return end
+	
+	GLib.Net.Layer5.UnregisterChannel (self)
+	self:SetRegistered (false)
+end
+
+-- State
 function self:IsOpen ()
 	return self.InnerChannel:IsOpen ()
 end
@@ -63,4 +70,14 @@ end
 function self:SetOpen (open)
 	self.InnerChannel:SetOpen (open)
 	return self
+end
+
+-- Packets
+function self:DispatchPacket (destinationId, packet)
+	self.Instances [destinationId] = self.Instances [destinationId] or GLib.Net.Layer5.OrderedChannelInstance (self, destinationId)
+	return self.Instances [destinationId]:DispatchPacket (packet)
+end
+
+function self:GetMTU ()
+	return self.InnerChannel:GetMTU () - 4
 end
