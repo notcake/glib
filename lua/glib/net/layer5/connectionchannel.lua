@@ -192,22 +192,22 @@ end
 function self:HookSingleEndpointConnectionChannel (singleEndpointConnectionChannel)
 	if not singleEndpointConnectionChannel then return end
 	
-	singleEndpointConnectionChannel:AddEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+	singleEndpointConnectionChannel:AddEventListener ("ConnectionActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, connection, hasUndispatchedPackets)
 			self:DispatchEvent ("ConnectionActivityStateChanged", connection, hasUndispatchedPackets)
 		end
 	)
-	singleEndpointConnectionChannel:AddEventListener ("Closed", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+	singleEndpointConnectionChannel:AddEventListener ("ConnectionClosed", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, connection, closureReason)
 			self:DispatchEvent ("ConnectionClosed", connection, closureReason)
 		end
 	)
-	singleEndpointConnectionChannel:AddEventListener ("Opened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+	singleEndpointConnectionChannel:AddEventListener ("ConnectionOpened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, connection)
 			self:DispatchEvent ("ConnectionOpened", connection)
 		end
 	)
-	singleEndpointConnectionChannel:AddEventListener ("TimeoutChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+	singleEndpointConnectionChannel:AddEventListener ("ConnectionTimeoutChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, connection, timeout)
 			self:DispatchEvent ("ConnectionTimeoutChanged", connection, timeout)
 		end
