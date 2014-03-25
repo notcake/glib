@@ -141,12 +141,18 @@ include ("containers/networkable/list.lua")
 -- Networking
 GLib.Net = {}
 include ("net/net.lua")
+
 include ("net/ichannel.lua")
 include ("net/isingleendpointchannel.lua")
+include ("net/singleendpointchannel.lua")
+
 include ("net/datatype.lua")
 include ("net/inbuffer.lua")
 include ("net/outbuffer.lua")
+
 include ("garrysmod/net/net.lua")
+
+-- Multiplexing
 
 -- Physical layer
 GLib.Net.Layer1 = {}
@@ -187,7 +193,7 @@ include ("net/layer5/connectionendpoint.lua")
 include ("net/layer5/connectionpackettype.lua")
 include ("net/layer5/connectionstate.lua")
 include ("net/layer5/orderedchannel.lua")
-include ("net/layer5/orderedchannelinstance.lua")
+include ("net/layer5/singleendpointorderedchannel.lua")
 include ("net/layer5/orderedchannelstate.lua")
 include ("net/layer5/layer3channel.lua")
 include ("net/layer5/layer5.lua")

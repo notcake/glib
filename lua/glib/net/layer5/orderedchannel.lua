@@ -16,21 +16,31 @@ end
 function self:ctor (channelName, handler, innerChannel)
 	self.InnerChannel = innerChannel
 	
-	self.Instances = {}
+	self.SingleEndpointChannels = {}
 	
 	self.InnerChannel:SetHandler (
 		function (sourceId, inBuffer)
-			self.Instances [sourceId] = self.Instances [sourceId] or GLib.Net.Layer5.OrderedChannelInstance (self, sourceId)
-			self.Instances [sourceId]:HandlePacket (inBuffer)
+			if not self.SingleEndpointChannels [sourceId] then
+				self:CreateSingleEndpointChannel (sourceId)
+			end
+			self.SingleEndpointChannels [sourceId]:HandlePacket (inBuffer)
 		end
 	)
 	
 	GLib.PlayerMonitor:AddEventListener ("PlayerDisconnected", "OrderedChannel." .. self:GetName (),
 		function (_, ply, userId)
-			if not self.Instances [userId] then return end
+			if not self.SingleEndpointChannels [userId] then return end
 			
-			self.Instances [userId]:dtor ()
-			self.Instances [userId] = nil
+			self.SingleEndpointChannels [userId]:dtor ()
+			self.SingleEndpointChannels [userId] = nil
+		end
+	)
+	
+	self:AddEventListener ("NameChanged",
+		function (_, oldName, name)
+			for _, singleEndpointOrderedChannel in pairs (self.SingleEndpointChannels) do
+				singleEndpointOrderedChannel:SetName (name)
+			end
 		end
 	)
 	
@@ -74,10 +84,39 @@ end
 
 -- Packets
 function self:DispatchPacket (destinationId, packet)
-	self.Instances [destinationId] = self.Instances [destinationId] or GLib.Net.Layer5.OrderedChannelInstance (self, destinationId)
-	return self.Instances [destinationId]:DispatchPacket (packet)
+	if not self.SingleEndpointChannels [destinationId] then
+		self:CreateSingleEndpointChannel (destinationId)
+	end
+	return self.SingleEndpointChannels [destinationId]:DispatchPacket (packet)
 end
 
 function self:GetMTU ()
 	return self.InnerChannel:GetMTU () - 4
+end
+
+-- Handlers
+function self:SetHandler (handler)
+	if self.Handler == handler then return self end
+	
+	self.Handler = handler
+	
+	-- Update handlers for SingleEndpointOrderedChannels
+	for _, singleEndpointOrderedChannel in pairs (self.SingleEndpointChannels) do
+		singleEndpointOrderedChannel:SetHandler (handler)
+	end
+	
+	return self
+end
+
+-- Internal, do not call
+function self:CreateSingleEndpointChannel (remoteId)
+	if self.SingleEndpointChannels [remoteId] then return self.SingleEndpointChannels [remoteId] end
+	
+	local singleEndpointChannel = GLib.Net.SingleEndpointChannel (self:GetInnerChannel (), remoteId)
+	local singleEndpointOrderedChannel = GLib.Net.Layer5.SingleEndpointOrderedChannel (singleEndpointChannel)
+	self.SingleEndpointChannels [remoteId] = singleEndpointOrderedChannel
+	singleEndpointOrderedChannel:SetName (self:GetName ())
+	singleEndpointOrderedChannel:SetHandler (self:GetHandler ())
+	
+	return self.SingleEndpointChannels [remoteId]
 end

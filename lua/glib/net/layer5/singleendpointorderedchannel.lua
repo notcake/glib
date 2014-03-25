@@ -1,12 +1,13 @@
 local self = {}
-GLib.Net.Layer5.OrderedChannelInstance = GLib.MakeConstructor (self, GLib.Net.ISingleEndPointChannel)
+GLib.Net.Layer5.SingleEndpointOrderedChannel = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChannel)
 
-function self:ctor (channel, remoteId)
+function self:ctor (innerChannel)
 	-- Identity
-	self.Channel  = channel
-	self.RemoteId = remoteId
+	self.InnerChannel = innerChannel
+	self.Name = nil
 	
 	-- State
+	self.Open = nil
 	self.State = GLib.Net.Layer5.OrderedChannelState.Initializing
 	
 	-- Packets
@@ -22,20 +23,29 @@ function self:dtor ()
 end
 
 function self:GetInitializationTimerName ()
-	return "OrderedChannel." .. self:GetChannel ():GetName () .. "." .. self:GetRemoteId ().. ".InitialBuffering"
+	return "OrderedChannel." .. self:GetName () .. "." .. self:GetRemoteId ().. ".InitialBuffering"
 end
 
 function self:GetTimeoutTimerName ()
-	return "OrderedChannel." .. self:GetChannel ():GetName () .. "." .. self:GetRemoteId ().. ".Timeout"
+	return "OrderedChannel." .. self:GetName () .. "." .. self:GetRemoteId ().. ".Timeout"
 end
 
 -- Identity
-function self:GetChannel ()
-	return self.Channel
+function self:GetInnerChannel ()
+	return self.InnerChannel
+end
+
+function self:GetName ()
+	return self.Name or self.InnerChannel:GetName ()
 end
 
 function self:GetRemoteId ()
-	return self.RemoteId
+	return self.InnerChannel:GetRemoteId ()
+end
+
+function self:SetRemoteId (remoteId)
+	self.InnerChannel:SetRemoteId (remoteId)
+	return self
 end
 
 -- State
@@ -65,7 +75,7 @@ function self:DispatchPacket (packet)
 	packet:PrependUInt32 (self.NextOutboundPacketId)
 	self.NextOutboundPacketId = (self.NextOutboundPacketId + 1) % 4294967296
 	
-	return self.Channel:GetInnerChannel ():DispatchPacket (self:GetRemoteId (), packet)
+	return self.InnerChannel:DispatchPacket (packet)
 end
 
 function self:HandlePacket (inBuffer)
@@ -144,7 +154,7 @@ function self:ProcessAvailablePackets ()
 end
 
 function self:ProcessPacket (packetId, inBuffer)
-	self.Channel:GetHandler () (self:GetRemoteId (), inBuffer)
+	self:GetHandler () (self:GetRemoteId (), inBuffer)
 end
 
 function self:ResetTimeoutTimer ()

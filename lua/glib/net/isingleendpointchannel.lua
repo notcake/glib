@@ -5,11 +5,13 @@ GLib.Net.ISingleEndpointChannel = GLib.MakeConstructor (self)
 	Events:
 		NameChanged (oldName, name)
 			Fired when this channel's name has been changed.
+		RemoteIdChanged (oldRemoteId, remoteId)
+			Fired when this channel's remote endpoint has been changed.
 ]]
 
-function self:ctor (channelName, handler)
+function self:ctor ()
 	-- Identity
-	self.Name     = channelName
+	self.Name     = nil
 	self.RemoteId = nil
 	
 	-- State
@@ -33,15 +35,25 @@ end
 function self:SetName (name)
 	if self.Name == name then return self end
 	
-	local lastName = self.Name
+	local oldName = self.Name
 	self.Name = name
-	self:DispatchEvent ("NameChanged", lastName, self.Name)
+	self:DispatchEvent ("NameChanged", oldName, self.Name)
+	
+	return self
+end
+
+function self:SetRemoteId (remoteId)
+	if self.RemoteId == remoteId then return self end
+	
+	local oldRemoteId = self.RemoteId
+	self.RemoteId = remoteId
+	self:DispatchEvent ("RemoteIdChanged", oldRemoteId, self.RemoteId)
 	
 	return self
 end
 
 -- State
-function self:IsOpen (destinationId)
+function self:IsOpen ()
 	return self.Open
 end
 
