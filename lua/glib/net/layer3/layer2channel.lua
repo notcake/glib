@@ -1,46 +1,46 @@
 local self = {}
 GLib.Net.Layer3.Layer2Channel = GLib.MakeConstructor (self, GLib.Net.Layer3.Channel)
 
-function GLib.Net.Layer3.Layer2Channel.ctor (channelName, handler, channel)
+function GLib.Net.Layer3.Layer2Channel.ctor (channelName, handler, innerChannel)
 	if type (channelName) ~= "string" then
-		channel     = channelName
-		channelName = channel:GetName ()
+		innerChannel = channelName
+		channelName  = innerChannel:GetName ()
 	end
 	
-	channel = channel or GLib.Net.Layer2.GetChannel (channelName)
-	channel = channel or GLib.Net.Layer2.RegisterChannel (channelName)
+	innerChannel = innerChannel or GLib.Net.Layer2.GetChannel (channelName)
+	innerChannel = innerChannel or GLib.Net.Layer2.RegisterChannel (channelName)
 	
-	return GLib.Net.Layer3.Layer2Channel.__ictor (channelName, handler, channel)
+	return GLib.Net.Layer3.Layer2Channel.__ictor (channelName, handler, innerChannel)
 end
 
-function self:ctor (channelName, handler, channel)
-	self.Channel = channel
-	self.Channel:SetHandler (handler)
+function self:ctor (channelName, handler, innerChannel)
+	self.InnerChannel = innerChannel
+	self.InnerChannel:SetHandler (handler)
 end
 
 function self:DispatchPacket (destinationId, packet)
-	return self.Channel:DispatchPacket (destinationId, packet)
+	return self.InnerChannel:DispatchPacket (destinationId, packet)
 end
 
 function self:GetHandler ()
-	return self.Channel:GetHandler ()
+	return self.InnerChannel:GetHandler ()
 end
 
 function self:GetMTU ()
-	return self.Channel:GetMTU ()
+	return self.InnerChannel:GetMTU ()
 end
 
 function self:IsOpen ()
-	return self.Channel:IsOpen ()
+	return self.InnerChannel:IsOpen ()
 end
 
 function self:SetHandler (handler)
-	self.Channel:SetHandler (handler)
+	self.InnerChannel:SetHandler (handler)
 	self.Handler = handler
 	return self
 end
 
 function self:SetOpen (open)
-	self.Channel:SetOpen (open)
+	self.InnerChannel:SetOpen (open)
 	return self
 end

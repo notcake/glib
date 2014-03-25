@@ -15,27 +15,27 @@ GLib.Net.Layer5.ConnectionChannel = GLib.MakeConstructor (self, GLib.Net.Layer5.
 			Fired when a connection's timeout period has changed.
 ]]
 
-function GLib.Net.Layer5.ConnectionChannel.ctor (channelName, handler, channel)
+function GLib.Net.Layer5.ConnectionChannel.ctor (channelName, handler, innerChannel)
 	if type (channelName) ~= "string" then
-		channel     = channelName
-		channelName = channel:GetName ()
+		innerChannel = channelName
+		channelName  = innerChannel:GetName ()
 	end
 	
-	channel = channel or GLib.Net.Layer3.GetChannel (channelName)
-	channel = channel or GLib.Net.Layer3.RegisterChannel (channelName)
+	innerChannel = innerChannel or GLib.Net.Layer3.GetChannel (channelName)
+	innerChannel = innerChannel or GLib.Net.Layer3.RegisterChannel (channelName)
 	
-	return GLib.Net.Layer5.ConnectionChannel.__ictor (channelName, handler, channel)
+	return GLib.Net.Layer5.ConnectionChannel.__ictor (channelName, handler, innerChannel)
 end
 
-function self:ctor (channelName, handler, channel)
-	self.Channel = channel
+function self:ctor (channelName, handler, innerChannel)
+	self.InnerChannel = innerChannel
 	
 	self.OpenHandler   = handler or GLib.NullCallback
 	self.PacketHandler = GLib.NullCallback
 	
 	self.Connections = {}
 	
-	self.Channel:SetHandler (
+	self.InnerChannel:SetHandler (
 		function (sourceId, inBuffer)
 			local connectionId = inBuffer:UInt32 ()
 			
@@ -93,7 +93,7 @@ function self:GetHandler ()
 end
 
 function self:GetMTU ()
-	return self.Channel:GetMTU () - 13
+	return self.InnerChannel:GetMTU () - 13
 end
 
 function self:GetOpenHandler ()
@@ -105,11 +105,7 @@ function self:GetPacketHandler ()
 end
 
 function self:IsOpen ()
-	return self.Channel:IsOpen ()
-end
-
-function self:SetOpen (open)
-	self.Channel:SetOpen (open)
+	return self.InnerChannel:IsOpen ()
 end
 
 function self:SetHandler (handler)
@@ -123,6 +119,11 @@ end
 
 function self:SetPacketHandler (packetHandler)
 	self.PacketHandler = packetHandler
+	return self
+end
+
+function self:SetOpen (open)
+	self.InnerChannel:SetOpen (open)
 	return self
 end
 
@@ -155,7 +156,7 @@ function self:ProcessConnectionOutboundQueue (connection)
 	if connection:GetChannel () ~= self then return end
 	if not connection:HasUndispatchedPackets () then return end
 	
-	self.Channel:DispatchPacket (connection:GetRemoteId (), connection:GenerateNextPacket ())
+	self.InnerChannel:DispatchPacket (connection:GetRemoteId (), connection:GenerateNextPacket ())
 end
 
 function self:HookConnection (connection)

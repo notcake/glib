@@ -90,3 +90,7 @@ end
 function self:GetUserName (userId)
 	return self.PlayerMonitor:GetUserName (userId)
 end
+
+function self:IsUserPresent (userId)
+	return self.PlayerMonitor:IsUserPresent (userId)
+end

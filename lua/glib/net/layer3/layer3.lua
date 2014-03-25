@@ -43,6 +43,7 @@ function GLib.Net.Layer3.RegisterChannel (channel, ...)
 	
 	if GLib.Net.Layer3.Channels [channelName] then
 		channel:SetOpen (GLib.Net.Layer3.Channels [channelName]:IsOpen ())
+		GLib.Net.Layer3.Channels [channelName]:dtor ()
 	end
 	
 	GLib.Net.Layer3.Channels [channelName] = channel
@@ -79,6 +80,8 @@ function GLib.Net.Layer3.UnregisterChannelByName (channelName)
 	if not GLib.Net.Layer3.Channels [channelName] then return end
 	
 	local channel = GLib.Net.Layer3.Channels [channelName]
+	channel:dtor ()
+	
 	GLib.Net.Layer3.Channels [channelName] = nil
 	
 	GLib.Net.Layer3:DispatchEvent ("ChannelUnregistered", channel)

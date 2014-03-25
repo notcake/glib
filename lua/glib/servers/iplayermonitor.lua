@@ -38,3 +38,7 @@ end
 function self:GetUserName (userId)
 	GLib.Error ("IPlayerMonitor:GetUserName : Not implemented.")
 end
+
+function self:IsUserPresent (userId)
+	GLib.Error ("IPlayerMonitor:IsUserPresent : Not implemented.")
+end

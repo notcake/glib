@@ -1,8 +1,8 @@
 local self = {}
 GLib.Net.Layer2.SplitPacketChannel = GLib.MakeConstructor (self, GLib.Net.Layer2.Channel)
 
-function self:ctor (channelName, handler, channel)
-	self.Channel = channel
+function self:ctor (channelName, handler, innerChannel)
+	self.InnerChannel = innerChannel
 	
 	self.NextPacketId = 1
 	
@@ -10,7 +10,7 @@ function self:ctor (channelName, handler, channel)
 	self.InboundPackets  = {}
 	self.OutboundPackets = {}
 	
-	self.Channel:SetHandler (
+	self.InnerChannel:SetHandler (
 		function (sourceId, inBuffer)
 			local packetType = inBuffer:UInt8 ()
 			local packetId   = inBuffer:UInt32 ()
@@ -58,7 +58,7 @@ end
 function self:dtor ()
 	self:UnhookSystems ()
 	
-	self.Channel:dtor ()
+	self.InnerChannel:dtor ()
 end
 
 function self:DispatchPacket (destinationId, packet)
@@ -70,14 +70,14 @@ function self:DispatchPacket (destinationId, packet)
 	self.OutboundPackets [destinationId] = self.OutboundPackets [destinationid] or {}
 	
 	local outboundSplitPacket = GLib.Net.Layer2.OutboundSplitPacket (self.NextPacketId, packet:GetString ())
-	outboundSplitPacket:SetChunkSize (math.floor (self.Channel:GetMTU () / 2))
+	outboundSplitPacket:SetChunkSize (math.floor (self.InnerChannel:GetMTU () / 2))
 	self.NextPacketId = (self.NextPacketId + 1) % 4294967296
 	
 	self.OutboundPackets [destinationId] [outboundSplitPacket:GetId ()] = outboundSplitPacket
 end
 
-function self:GetChannel ()
-	return self.Channel
+function self:GetInnerChannel ()
+	return self.InnerChannel
 end
 
 function self:GetMTU ()
@@ -108,7 +108,7 @@ function self:HookSystems ()
 						outboundSplitPacket:SerializeNextChunk (outBuffer)
 					end
 					
-					self.Channel:DispatchPacket (userId, outBuffer)
+					self.InnerChannel:DispatchPacket (userId, outBuffer)
 					
 					-- Clean up if we're done
 					if outboundSplitPacket:IsFinished () then

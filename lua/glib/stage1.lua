@@ -414,7 +414,7 @@ end
 -- GLib.Initialize uses this code
 include ("oop.lua")
 include ("timers.lua")
-include ("eventprovider.lua")
+include ("events/eventprovider.lua")
 GLib.Initialize ("GLib", GLib)
 
 -- Now load the rest
@@ -449,7 +449,7 @@ GLib.AddCSLuaFile ("glib/string.lua")
 GLib.AddCSLuaFile ("glib/oop.lua")
 GLib.AddCSLuaFile ("glib/timers.lua")
 GLib.AddCSLuaFile ("glib/userid.lua")
-GLib.AddCSLuaFile ("glib/eventprovider.lua")
+GLib.AddCSLuaFile ("glib/events/eventprovider.lua")
 GLib.AddCSLuaFile ("glib/stringbuilder.lua")
 GLib.AddCSLuaFile ("glib/io/inbuffer.lua")
 GLib.AddCSLuaFile ("glib/io/outbuffer.lua")

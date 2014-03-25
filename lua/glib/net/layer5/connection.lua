@@ -235,7 +235,7 @@ function self:GenerateNextPacket (outBuffer)
 	outBuffer:UInt8 (packetType)
 	
 	if #self.OutboundQueue > 0 then
-		outBuffer:Bytes (self.OutboundQueue [1]:GetString ())
+		outBuffer:OutBuffer (self.OutboundQueue [1])
 		table.remove (self.OutboundQueue, 1)
 	end
 	
@@ -266,7 +266,7 @@ function self:ProcessInboundPacket (inBuffer)
 	
 	local packetId = inBuffer:UInt32 ()
 	
-	self.InboundPackets [packetId] = inBuffer:Pin ()
+	self.InboundPackets [packetId] = packetId == self.NextInboundPacketId and inBuffer or inBuffer:Pin ()
 	
 	-- Process sequential packets
 	while self.InboundPackets [self.NextInboundPacketId] do

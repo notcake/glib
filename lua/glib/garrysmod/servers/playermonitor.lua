@@ -134,6 +134,10 @@ function self:GetUserName (userId)
 	return self.NameCache [userId] or userId
 end
 
+function self:IsUserPresent (userId)
+	return self.EntriesBySteamId [userId] ~= nil
+end
+
 -- Internal, do not call
 function self:ProcessQueue ()
 	-- Check for new players.

@@ -35,11 +35,11 @@ function self:DispatchPacket (destinationId, packet)
 	end
 	
 	if packet:GetSize () <= self.UsermessageChannel:GetMTU () then
-		self.UsermessageChannel:DispatchPacket (destinationId, packet)
+		return self.UsermessageChannel:DispatchPacket (destinationId, packet)
 	elseif packet:GetSize () <= self.NetChannel:GetMTU () then
-		self.NetChannel:DispatchPacket (destinationId, packet)
+		return self.NetChannel:DispatchPacket (destinationId, packet)
 	else
-		self.SplitPacketChannel:DispatchPacket (destinationId, packet)
+		return self.SplitPacketChannel:DispatchPacket (destinationId, packet)
 	end
 end
 
@@ -60,7 +60,7 @@ function self:SetOpen (open)
 	
 	self.UsermessageChannel:SetOpen (open)
 	self.NetChannel:SetOpen (open)
-	self.SplitPacketChannel:GetChannel ():SetOpen (open)
+	self.SplitPacketChannel:GetInnerChannel ():SetOpen (open)
 	self.SplitPacketChannel:SetOpen (open)
 	
 	-- Flush the queue if we've been opened

@@ -1,15 +1,20 @@
 if GLib.Stage2 then return end
 GLib.Stage2 = true
 
+-- Events
+include ("events/event.lua")
+include ("events/eventprovider.lua")
+
+-- Utility
 include ("bitconverter.lua")
-
-include ("colors.lua")
-
 include ("coroutine.lua")
 include ("glue.lua")
-
+include ("invoker.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
+
+-- Colors
+include ("colors.lua")
 
 -- IO
 include ("io/inbuffer.lua")
@@ -107,6 +112,9 @@ include ("servers/playermonitorproxy.lua")
 include ("garrysmod/servers/playermonitorentry.lua")
 include ("garrysmod/servers/playermonitor.lua")
 
+include ("servers/playerdisconnectionwatcher.lua")
+include ("servers/playerdisconnectionwatcher2.lua")
+
 -- Networking
 GLib.Networking = {}
 include ("networking/networkable.lua")
@@ -176,6 +184,8 @@ include ("net/layer5/connectionclosurereason.lua")
 include ("net/layer5/connectionendpoint.lua")
 include ("net/layer5/connectionpackettype.lua")
 include ("net/layer5/connectionstate.lua")
+include ("net/layer5/orderedchannel.lua")
+include ("net/layer5/orderedchannelinstance.lua")
 include ("net/layer5/layer3channel.lua")
 include ("net/layer5/layer5.lua")
 include ("net/layer5/connectionrunner.lua") -- Requires layer 5 to be initialized.

@@ -12,13 +12,13 @@ function self:ctor ()
 		self:RegisterChannel (channel)
 	end
 	
-	GLib.Net.Layer5:AddEventListener ("ChannelRegistered", "ConnectionRunner." .. self:GetHashCode (),
+	GLib.Net.Layer5:AddEventListener ("ChannelRegistered", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, channel)
 			self:RegisterChannel (channel)
 		end
 	)
 	
-	GLib.Net.Layer5:AddEventListener ("ChannelUnregistered", "ConnectionRunner." .. self:GetHashCode (),
+	GLib.Net.Layer5:AddEventListener ("ChannelUnregistered", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, channel)
 			self:UnregisterChannel (channel)
 		end
@@ -39,13 +39,27 @@ function self:ctor ()
 			end
 		end
 	)
+	
+	GLib.PlayerMonitor:AddEventListener ("PlayerDisconnected", "GLib.Net.Layer5.ConnectionRunner",
+		function (_, ply, userId)
+			if not self.ConnectionsByEndPoint [userId] then return end
+			
+			for connection, _ in pairs (self.ConnectionsByEndPoint) do
+				connection:Close (GLib.Net.Layer5.ConnectionClosureReason.CarrierLost)
+			end
+			
+			self.ConnectionsByEndPoint [userId] = nil
+		end
+	)
 end
 
 function self:dtor ()
-	GLib.Net.Layer5:RemoveEventListener ("ChannelRegistered",   "ConnectionRunner." .. self:GetHashCode ())
-	GLib.Net.Layer5:RemoveEventListener ("ChannelUnregistered", "ConnectionRunner." .. self:GetHashCode ())
+	GLib.Net.Layer5:RemoveEventListener ("ChannelRegistered",   "GLib.Net.Layer5.ConnectionRunner")
+	GLib.Net.Layer5:RemoveEventListener ("ChannelUnregistered", "GLib.Net.Layer5.ConnectionRunner")
 	
 	hook.Remove ("Tick", "GLib.Net.Layer5.ConnectionRunner")
+	
+	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "GLib.Net.Layer5.ConnectionRunner")
 end
 
 function self:RegisterChannel (channel)
@@ -68,7 +82,7 @@ end
 function self:HookChannel (channel)
 	if not channel then return end
 	
-	channel:AddEventListener ("ConnectionCreated", "ConnectionRunner." .. self:GetHashCode (),
+	channel:AddEventListener ("ConnectionCreated", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, connection)
 			self:HookConnection (connection)
 			
@@ -84,19 +98,19 @@ end
 function self:UnhookChannel (channel)
 	if not channel then return end
 	
-	channel:RemoveEventListener ("ConnectionCreated", "ConnectionRunner." .. self:GetHashCode ())
+	channel:RemoveEventListener ("ConnectionCreated", "GLib.Net.Layer5.ConnectionRunner")
 end
 
 function self:HookConnection (connection)
 	if not connection then return end
 	
-	connection:AddEventListener ("ActivityStateChanged", "ConnectionRunner." .. self:GetHashCode (),
+	connection:AddEventListener ("ActivityStateChanged", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, hasUndispatchedPackets)
 			self:UpdateConnectionState (connection)
 		end
 	)
 	
-	connection:AddEventListener ("Closed", "ConnectionRunner." .. self:GetHashCode (),
+	connection:AddEventListener ("Closed", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, closureReason)
 			self:UnhookConnection (connection)
 			
@@ -110,7 +124,7 @@ function self:HookConnection (connection)
 		end
 	)
 	
-	connection:AddEventListener ("TimeoutChanged", "ConnectionRunner." .. self:GetHashCode (),
+	connection:AddEventListener ("TimeoutChanged", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, hasUndispatchedPackets)
 			self:UpdateConnectionState (connection)
 		end
@@ -120,9 +134,9 @@ end
 function self:UnhookConnection (connection)
 	if not connection then return end
 	
-	connection:RemoveEventListener ("ActivityStateChanged", "ConnectionRunner." .. self:GetHashCode ())
-	connection:RemoveEventListener ("Closed",               "ConnectionRunner." .. self:GetHashCode ())
-	connection:RemoveEventListener ("TimeoutChanged",       "ConnectionRunner." .. self:GetHashCode ())
+	connection:RemoveEventListener ("ActivityStateChanged", "GLib.Net.Layer5.ConnectionRunner")
+	connection:RemoveEventListener ("Closed",               "GLib.Net.Layer5.ConnectionRunner")
+	connection:RemoveEventListener ("TimeoutChanged",       "GLib.Net.Layer5.ConnectionRunner")
 end
 
 function self:UpdateConnectionState (connection)

@@ -43,11 +43,21 @@ function GLib.Net.Layer5.RegisterLayer3Channel (channelName, handler, innerChann
 	return GLib.Net.Layer5.RegisterChannel (channel)
 end
 
-function GLib.Net.Layer5.RegisterChannel (channel)
+function GLib.Net.Layer5.RegisterOrderedChannel (channelName, handler, innerChannel)
+	local channel = GLib.Net.Layer5.OrderedChannel (channelName, handler, innerChannel)
+	return GLib.Net.Layer5.RegisterChannel (channel)
+end
+
+function GLib.Net.Layer5.RegisterChannel (channel, ...)
+	if type (channel) == "string" then
+		return GLib.Net.Layer3.RegisterOrderedChannel (channel, ...)
+	end
+	
 	local channelName = channel:GetName ()
 	
 	if GLib.Net.Layer5.Channels [channelName] then
 		channel:SetOpen (GLib.Net.Layer5.Channels [channelName]:IsOpen ())
+		GLib.Net.Layer5.Channels [channelName]:dtor ()
 	end
 	
 	GLib.Net.Layer5.Channels [channelName] = channel
@@ -73,6 +83,8 @@ function GLib.Net.Layer5.UnregisterChannelByName (channelName)
 	if not GLib.Net.Layer5.Channels [channelName] then return end
 	
 	local channel = GLib.Net.Layer5.Channels [channelName]
+	channel:dtor ()
+	
 	GLib.Net.Layer5.Channels [channelName] = nil
 	
 	GLib.Net.Layer5:DispatchEvent ("ChannelUnregistered", channel)
