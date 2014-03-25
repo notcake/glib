@@ -42,13 +42,13 @@ function self:ctor ()
 	
 	GLib.PlayerMonitor:AddEventListener ("PlayerDisconnected", "GLib.Net.Layer5.ConnectionRunner",
 		function (_, ply, userId)
-			if not self.ConnectionsByEndPoint [userId] then return end
+			if not self.ConnectionsByRemoteEndPoint [userId] then return end
 			
-			for connection, _ in pairs (self.ConnectionsByEndPoint) do
+			for connection, _ in pairs (self.ConnectionsByRemoteEndPoint) do
 				connection:Close (GLib.Net.Layer5.ConnectionClosureReason.CarrierLost)
 			end
 			
-			self.ConnectionsByEndPoint [userId] = nil
+			self.ConnectionsByRemoteEndPoint [userId] = nil
 		end
 	)
 end

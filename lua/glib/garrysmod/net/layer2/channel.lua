@@ -8,8 +8,6 @@ function self:ctor (channelName, handler)
 	
 	self.Queue = {}
 	
-	self.Open = false
-	
 	GLib.Net.Layer2.RegisterChannel (self)
 end
 
@@ -49,10 +47,6 @@ end
 
 function self:GetMTU ()
 	return self.SplitPacketChannel:GetMTU ()
-end
-
-function self:IsOpen (destinationId)
-	return self.Open
 end
 
 function self:SetOpen (open)

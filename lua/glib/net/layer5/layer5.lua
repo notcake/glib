@@ -55,6 +55,8 @@ function GLib.Net.Layer5.RegisterChannel (channel, ...)
 	
 	local channelName = channel:GetName ()
 	
+	if GLib.Net.Layer5.Channels [channelName] == channel then return channel end
+	
 	if GLib.Net.Layer5.Channels [channelName] then
 		channel:SetOpen (GLib.Net.Layer5.Channels [channelName]:IsOpen ())
 		GLib.Net.Layer5.Channels [channelName]:dtor ()

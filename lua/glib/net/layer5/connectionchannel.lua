@@ -55,8 +55,6 @@ function self:ctor (channelName, handler, innerChannel)
 		end
 	)
 	
-	GLib.EventProvider (self)
-	
 	GLib.Net.Layer5.RegisterChannel (self)
 end
 
