@@ -34,9 +34,14 @@ function GLib.Net.Layer3.RegisterLayer2Channel (channelName, handler, innerChann
 	return GLib.Net.Layer3.RegisterChannel (channel)
 end
 
+function GLib.Net.Layer3.RegisterRoutedChannel (channelName, handler, innerChannel)
+	local channel = GLib.Net.Layer3.RoutedChannel (channelName, handler, innerChannel)
+	return GLib.Net.Layer3.RegisterChannel (channel)
+end
+
 function GLib.Net.Layer3.RegisterChannel (channel, ...)
 	if type (channel) == "string" then
-		return GLib.Net.Layer3.RegisterChannelByName (channel, ...)
+		return GLib.Net.Layer3.RegisterLayer2Channel (channel, ...)
 	end
 	
 	local channelName = channel:GetName ()
@@ -55,17 +60,6 @@ function GLib.Net.Layer3.RegisterChannel (channel, ...)
 	GLib.Net.Layer3:DispatchEvent ("ChannelRegistered", channel)
 	
 	return channel
-end
-
-function GLib.Net.Layer3.RegisterChannelByName (channelName, handler)
-	local channel = GLib.Net.Layer3.GetChannel (channelName)
-	if channel then
-		channel:SetHandler (handler)
-		return channel
-	end
-	
-	channel = GLib.Net.Layer3.RoutedChannel (channelName, handler)
-	return GLib.Net.Layer3.RegisterChannel (channel)
 end
 
 function GLib.Net.Layer3.UnregisterChannel (channelOrChannelName)
