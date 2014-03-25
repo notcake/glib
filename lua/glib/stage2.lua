@@ -187,6 +187,7 @@ include ("net/layer5/connectionpackettype.lua")
 include ("net/layer5/connectionstate.lua")
 include ("net/layer5/orderedchannel.lua")
 include ("net/layer5/orderedchannelinstance.lua")
+include ("net/layer5/orderedchannelstate.lua")
 include ("net/layer5/layer3channel.lua")
 include ("net/layer5/layer5.lua")
 include ("net/layer5/connectionrunner.lua") -- Requires layer 5 to be initialized.
