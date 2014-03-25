@@ -57,3 +57,7 @@ end
 function self:String ()
 	return self:StringN8 ()
 end
+
+function self:LongString ()
+	return self:StringN32 ()
+end
