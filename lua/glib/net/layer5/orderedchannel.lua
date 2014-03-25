@@ -14,6 +14,7 @@ function GLib.Net.Layer5.OrderedChannel.ctor (channelName, handler, innerChannel
 end
 
 function self:ctor (channelName, handler, innerChannel)
+	-- Identity
 	self.InnerChannel = innerChannel
 	
 	self.SingleEndpointChannels = {}
@@ -48,6 +49,10 @@ function self:ctor (channelName, handler, innerChannel)
 end
 
 function self:dtor ()
+	for _, singleEndpointChannel in pairs (self.SingleEndpointChannels) do
+		singleEndpointChannel:dtor ()
+	end
+	
 	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "OrderedChannel." .. self:GetName ())
 	
 	self:Unregister ()

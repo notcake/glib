@@ -28,30 +28,39 @@ function GLib.Net.Layer5.ConnectionChannel.ctor (channelName, handler, innerChan
 end
 
 function self:ctor (channelName, handler, innerChannel)
+	-- Identity
 	self.InnerChannel = innerChannel
 	
+	self.SingleEndpointChannels = {}
+	
+	-- Handlers
 	self.OpenHandler   = handler or GLib.NullCallback
 	self.PacketHandler = GLib.NullCallback
 	
-	self.Connections = {}
-	
 	self.InnerChannel:SetHandler (
 		function (sourceId, inBuffer)
-			local connectionId = inBuffer:UInt32 ()
-			
-			self.Connections [sourceId] = self.Connections [sourceId] or {}
-			local connection = self.Connections [sourceId] [connectionId]
-			
-			if not connection then
-				-- New connection
-				connection = GLib.Net.Layer5.Connection (self, connectionId, sourceId)
-				connection:SetInitiator (GLib.Net.Layer5.ConnectionEndPoint.Remote)
-				
-				-- Register connection
-				self:RegisterConnection (connection)
+			if not self.SingleEndpointChannels [sourceId] then
+				self:CreateSingleEndpointChannel (sourceId)
 			end
+			self.SingleEndpointChannels [sourceId]:HandlePacket (inBuffer)
+		end
+	)
+	
+	GLib.PlayerMonitor:AddEventListener ("PlayerDisconnected", "ConnectionChannel." .. self:GetName (),
+		function (_, ply, userId)
+			if not self.SingleEndpointChannels [userId] then return end
 			
-			connection:ProcessInboundPacket (inBuffer)
+			self.SingleEndpointChannels [userId]:CloseConnections (GLib.Net.Layer5.ConnectionClosureReason.CarrierLost)
+			self.SingleEndpointChannels [userId]:dtor ()
+			self.SingleEndpointChannels [userId] = nil
+		end
+	)
+	
+	self:AddEventListener ("NameChanged",
+		function (_, oldName, name)
+			for _, singleEndpointConnectionChannel in pairs (self.SingleEndpointChannels) do
+				singleEndpointConnectionChannel:SetName (name)
+			end
 		end
 	)
 	
@@ -59,11 +68,17 @@ function self:ctor (channelName, handler, innerChannel)
 end
 
 function self:dtor ()
-	for connection, _ in pairs (self.Connections) do
-		connection:Close ()
+	for _, singleEndpointChannel in pairs (self.SingleEndpointChannels) do
+		singleEndpointChannel:dtor ()
 	end
 	
+	GLib.PlayerMonitor:RemoveEventListener ("PlayerDisconnected", "ConnectionChannel." .. self:GetName ())
+	
 	self:Unregister ()
+end
+
+function self:GetInnerChannel ()
+	return self.InnerChannel
 end
 
 -- Registration
@@ -93,19 +108,10 @@ end
 
 -- Packets
 function self:Connect (destinationId, packet)
-	-- New connection
-	local connection = GLib.Net.Layer5.Connection (self, self:GenerateConnectionId (destinationId), destinationId)
-	connection:SetInitiator (GLib.Net.Layer5.ConnectionEndPoint.Local)
-	
-	-- Register connection
-	self:RegisterConnection (connection)
-	
-	-- Write packet
-	if packet then
-		connection:Write (packet)
+	if not self.SingleEndpointChannels [destinationId] then
+		self:CreateSingleEndpointChannel (destinationId)
 	end
-	
-	return connection
+	return self.SingleEndpointChannels [destinationId]:DispatchPacket (packet)
 end
 
 function self:DispatchPacket (destinationId, packet)
@@ -134,84 +140,84 @@ function self:SetHandler (handler)
 end
 
 function self:SetOpenHandler (openHandler)
+	if self.OpenHandler == openHandler then return self end
+	
 	self.OpenHandler = openHandler
+	
+	-- Update handlers for SingleEndpointConnectionChannels
+	for _, singleEndpointConnectionChannel in pairs (self.SingleEndpointChannels) do
+		singleEndpointConnectionChannel:SetOpenHandler (handler)
+	end
+	
 	return self
 end
 
 function self:SetPacketHandler (packetHandler)
+	if self.PacketHandler == packetHandler then return self end
+	
 	self.PacketHandler = packetHandler
+	
+	-- Update handlers for SingleEndpointConnectionChannels
+	for _, singleEndpointConnectionChannel in pairs (self.SingleEndpointChannels) do
+		singleEndpointConnectionChannel:SetPacketHandler (handler)
+	end
+	
 	return self
 end
 
 -- Internal, do not call
-function self:GenerateConnectionId (destinationId)
-	local connectionId = math.random (0, 0xFFFFFFFF)
+function self:CreateSingleEndpointChannel (remoteId)
+	if self.SingleEndpointChannels [remoteId] then return self.SingleEndpointChannels [remoteId] end
 	
-	if not self.Connections [destinationId] then return connectionId end
+	local singleEndpointChannel = GLib.Net.SingleEndpointChannel (self:GetInnerChannel (), remoteId)
+	local singleEndpointConnectionChannel = GLib.Net.Layer5.SingleEndpointConnectionChannel (singleEndpointChannel)
+	self.SingleEndpointChannels [remoteId] = singleEndpointConnectionChannel
+	singleEndpointConnectionChannel:SetName (self:GetName ())
+	singleEndpointConnectionChannel:SetOpenHandler (self:GetOpenHandler ())
+	singleEndpointConnectionChannel:SetPacketHandler (self:GetPacketHandler ())
 	
-	while self.Connections [destinationId] [connectionId] do
-		connectionId = (connectionId + 1) % 4294967296
-	end
+	self:HookSingleEndpointConnectionChannel (singleEndpointConnectionChannel)
 	
-	return connectionId
-end
-
-function self:RegisterConnection (connection)
-	-- Add connection to list
-	self.Connections [connection:GetRemoteId ()] = self.Connections [connection:GetRemoteId ()] or {}
-	self.Connections [connection:GetRemoteId ()] [connection:GetId ()] = connection
-	
-	-- Hook events
-	self:HookConnection (connection)
-	
-	-- Dispatch event
-	self:DispatchEvent ("ConnectionCreated", connection)
+	return self.SingleEndpointChannels [remoteId]
 end
 
 function self:ProcessConnectionOutboundQueue (connection)
-	if connection:GetChannel () ~= self then return end
-	if not connection:HasUndispatchedPackets () then return end
+	local singleEndpointConnectionChannel = self.SingleEndpointChannels [connection:GetRemoteId ()]
+	if not singleEndpointConnectionChannel then return end
 	
-	self.InnerChannel:DispatchPacket (connection:GetRemoteId (), connection:GenerateNextPacket ())
+	singleEndpointConnectionChannel:ProcessConnectionOutboundQueue (connection)
 end
 
-function self:HookConnection (connection)
-	if not connection then return end
+function self:HookSingleEndpointConnectionChannel (singleEndpointConnectionChannel)
+	if not singleEndpointConnectionChannel then return end
 	
-	connection:AddEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
-		function (_, hasUndispatchedPackets)
+	singleEndpointConnectionChannel:AddEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+		function (_, connection, hasUndispatchedPackets)
 			self:DispatchEvent ("ConnectionActivityStateChanged", connection, hasUndispatchedPackets)
 		end
 	)
-	connection:AddEventListener ("Closed", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
-		function (_, closureReason)
+	singleEndpointConnectionChannel:AddEventListener ("Closed", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+		function (_, connection, closureReason)
 			self:DispatchEvent ("ConnectionClosed", connection, closureReason)
-			
-			-- Unregister connection
-			self:UnhookConnection (connection)
-			self.Connections [connection:GetRemoteId ()] [connection:GetId ()] = nil
-			if not next (self.Connections [connection:GetRemoteId ()]) then
-				self.Connections [connection:GetRemoteId ()] = nil
-			end
 		end
 	)
-	connection:AddEventListener ("Opened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
-		function (_)
+	singleEndpointConnectionChannel:AddEventListener ("Opened", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+		function (_, connection)
 			self:DispatchEvent ("ConnectionOpened", connection)
 		end
 	)
-	connection:AddEventListener ("TimeoutChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
-		function (_, timeout)
+	singleEndpointConnectionChannel:AddEventListener ("TimeoutChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
+		function (_, connection, timeout)
 			self:DispatchEvent ("ConnectionTimeoutChanged", connection, timeout)
 		end
 	)
 end
 
-function self:UnhookConnection (connection)
-	if not connection then return end
+function self:UnhookSingleEndpointConnectionChannel (singleEndpointConnectionChannel)
+	if not singleEndpointConnectionChannel then return end
 	
-	connection:RemoveEventListener ("ActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
-	connection:RemoveEventListener ("Closed",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
-	connection:RemoveEventListener ("Opened",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
-	connection:RemoveEventListener ("TimeoutChanged",       "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionActivityStateChanged", "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionClosed",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionOpened",               "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
+	singleEndpointConnectionChannel:RemoveEventListener ("ConnectionTimeoutChanged",       "ConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode ())
 end

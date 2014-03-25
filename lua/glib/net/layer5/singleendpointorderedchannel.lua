@@ -70,6 +70,15 @@ function self:SetState (state)
 	return self
 end
 
+function self:IsOpen ()
+	return self.InnerChannel:IsOpen ()
+end
+
+function self:SetOpen (open)
+	self.InnerChannel:SetOpen (open)
+	return self
+end
+
 -- Packets
 function self:DispatchPacket (packet)
 	packet:PrependUInt32 (self.NextOutboundPacketId)
