@@ -145,6 +145,8 @@ include ("net/net.lua")
 include ("net/ichannel.lua")
 include ("net/isingleendpointchannel.lua")
 include ("net/singleendpointchannel.lua")
+include ("net/virtualchannel.lua")
+include ("net/virtualsingleendpointchannel.lua")
 
 include ("net/datatype.lua")
 include ("net/inbuffer.lua")
