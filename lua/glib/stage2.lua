@@ -28,10 +28,14 @@ include ("threading/iwaitable.lua")
 include ("threading/waitendreason.lua")
 
 include ("threading/threading.lua")
+include ("threading/blackmagic.lua")
+
 include ("threading/threadstate.lua")
 include ("threading/thread.lua")
 include ("threading/mainthread.lua")
 include ("threading/threadrunner.lua")
+
+include ("threading/event.lua")
 
 -- Serialization
 GLib.Serialization = {}

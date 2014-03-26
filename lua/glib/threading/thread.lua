@@ -18,6 +18,9 @@ function self:ctor ()
 	
 	self.YieldTimeSliceAllowed = true
 	
+	-- Thread local storage
+	self.ThreadLocalStorage = nil
+	
 	-- State
 	self.State = GLib.Threading.ThreadState.Unstarted
 	self.Suspended = false -- Suspension can occur on top of running, waiting and sleeping
@@ -154,6 +157,17 @@ function self:SetThreadRunner (threadRunner)
 	end
 	
 	return self
+end
+
+-- Thread local storage
+function self:GetThreadLocalStorage ()
+	self.ThreadLocalStorage = self.ThreadLocalStorage or {}
+	return self.ThreadLocalStorage
+end
+
+function self:GetTLS ()
+	self.ThreadLocalStorage = self.ThreadLocalStorage or {}
+	return self.ThreadLocalStorage
 end
 
 -- ThreadRunner

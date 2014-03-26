@@ -147,6 +147,7 @@ local keywords =
 }
 
 function GLib.Lua.IsValidVariableName (name)
+	if not isstring (name) then return false end
 	if not keywords [name] and string.match (name, "^[_a-zA-Z][_a-zA-Z0-9]*$") then return true end
 	return false
 end
