@@ -28,7 +28,7 @@ end
 
 I = GLib.Identity
 
-function GLib.Threading.CallSelfAsAsync ()
+function GLib.Threading.CallSelfAsAsync (callbackParameterIndex)
 	local currentThread = GLib.GetCurrentThread ()
 	local tls = currentThread:GetThreadLocalStorage ()
 	if not tls.CallbackEvent then
@@ -42,7 +42,8 @@ function GLib.Threading.CallSelfAsAsync ()
 	
 	-- Add callback argument
 	local ret = nil
-	arguments [argumentCount] = function (...)
+	callbackParameterIndex = callbackParameterIndex or argumentCount
+	arguments [callbackParameterIndex] = function (...)
 		ret = {...}
 		tls.CallbackEvent:Fire ()
 	end
