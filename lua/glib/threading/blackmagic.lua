@@ -42,7 +42,6 @@ function GLib.Threading.CallSelfAsAsync ()
 	
 	-- Add callback argument
 	local ret = nil
-	local argumentCount = table.maxn (arguments) + 1
 	arguments [argumentCount] = function (...)
 		ret = {...}
 		tls.CallbackEvent:Fire ()
