@@ -164,10 +164,7 @@ function GLib.Error (message)
 	
 	local fullMessage = " \n\t" .. message .. "\n\t\t" .. string.gsub (GLib.StackTrace (nil, 1), "\n", "\n\t\t") .. "\n"
 	
-	local lines = string.Split (fullMessage, "\n")
-	for _, line in ipairs (lines) do
-		ErrorNoHalt (line .. "\n")
-	end
+	ErrorNoHalt (fullMessage)
 end
 
 function GLib.FindUpValue (func, name)
