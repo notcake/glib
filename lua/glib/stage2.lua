@@ -159,6 +159,11 @@ include ("net/outbuffer.lua")
 include ("garrysmod/net/net.lua")
 
 -- Multiplexing
+include ("net/multiplexing/endpointchannelmultiplexer.lua")
+--include ("net/multiplexing/multiplexedchannel.lua")
+--include ("net/multiplexing/multiplexedsingleendpointchannel.lua")
+--include ("net/multiplexing/channelmultiplexer.lua")
+--include ("net/multiplexing/singleendpointchannelmultiplexer.lua")
 
 -- Physical layer
 GLib.Net.Layer1 = {}
