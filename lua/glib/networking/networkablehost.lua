@@ -66,7 +66,7 @@ function self:IsHosting ()
 end
 
 function self:SetHostId (hostId)
-	if self.HostId = hostId then return self end
+	if self.HostId == hostId then return self end
 	
 	self.HostId = hostId
 	return self
