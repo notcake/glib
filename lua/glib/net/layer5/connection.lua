@@ -38,7 +38,7 @@ function self:ctor (channel, id, remoteId)
 	self.PacketHandler = self.Channel:GetPacketHandler () or GLib.NullCallback
 	
 	-- Timeouts
-	self.Timeout     = 10
+	self.Timeout     = 30
 	self.TimeoutTime = math.huge
 	
 	GLib.EventProvider (self)
