@@ -121,10 +121,7 @@ include ("servers/playerdisconnectionwatcher2.lua")
 
 -- Networking
 GLib.Networking = {}
-include ("networking/networkable.lua")
 include ("networking/networkablestate.lua")
-include ("networking/networkablecontainer.lua")
-include ("networking/networkablehost.lua")
 include ("networking/subscriberset.lua")
 
 include ("networking/networkablehost2.lua")
@@ -141,9 +138,6 @@ include ("containers/orderedset.lua")
 include ("containers/queue.lua")
 include ("containers/stack.lua")
 include ("containers/tree.lua")
-
--- Networking Containers
-include ("containers/networkable/list.lua")
 
 -- Networking
 GLib.Net = {}
