@@ -89,6 +89,10 @@ function self:GetMTU ()
 	GLib.Error ("IChannel:GetMTU : Not implemented.")
 end
 
+function self:HandlePacket (sourceId, inBuffer)
+	return self:GetHandler () (sourceId, inBuffer)
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self.Handler

@@ -71,6 +71,10 @@ function self:GetMTU ()
 	GLib.Error ("ISingleEndpointChannel:GetMTU : Not implemented.")
 end
 
+function self:HandlePacket (inBuffer)
+	return self:GetHandler () (self:GetRemoteId (), inBuffer)
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self.Handler

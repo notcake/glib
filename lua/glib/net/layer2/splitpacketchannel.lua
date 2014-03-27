@@ -12,45 +12,7 @@ function self:ctor (channelName, handler, innerChannel)
 	
 	self.InnerChannel:SetHandler (
 		function (sourceId, inBuffer)
-			local packetType = inBuffer:UInt8 ()
-			local packetId   = inBuffer:UInt32 ()
-			
-			local inboundSplitPacket = nil
-			if packetType == GLib.Net.Layer2.SplitPacketType.Start then
-				-- New split packet
-				inboundSplitPacket = GLib.Net.Layer2.InboundSplitPacket (packetId)
-				
-				self.InboundPackets [sourceId] = self.InboundPackets [sourceId] or {}
-				self.InboundPackets [sourceId] [packetId] = inboundSplitPacket
-				
-				inboundSplitPacket:DeserializeFirstChunk (inBuffer)
-			elseif packetType == GLib.Net.Layer2.SplitPacketType.Continuation then
-				-- Continuation of split packet
-				if not self.InboundPackets [sourceId] then return end
-				
-				inboundSplitPacket = self.InboundPackets [sourceId] [packetId]
-				if not inboundSplitPacket then return end
-				
-				inboundSplitPacket:DeserializeNextChunk (inBuffer)
-			end
-			
-			if inboundSplitPacket:IsFinished () then
-				-- Clean up
-				self.InboundPackets [sourceId] [packetId] = nil
-				if not next (self.InboundPackets [sourceId]) then
-					self.InboundPackets [sourceId] = nil
-				end
-				
-				-- Enter idle state if appropriate
-				if not next (self.InboundPackets) and
-				   not next (self.OutboundPackets) then
-					self.Active = false
-					self:UnhookSystems ()
-				end
-				
-				-- Invoke handler
-				self:GetHandler () (sourceId, GLib.StringInBuffer (inboundSplitPacket:GetData ()))
-			end
+			return self:HandlePacket (sourceId, inBuffer)
 		end
 	)
 end
@@ -81,6 +43,48 @@ end
 
 function self:GetMTU ()
 	return math.huge
+end
+
+function self:HandlePacket (sourceId, inBuffer)
+	local packetType = inBuffer:UInt8 ()
+	local packetId   = inBuffer:UInt32 ()
+	
+	local inboundSplitPacket = nil
+	if packetType == GLib.Net.Layer2.SplitPacketType.Start then
+		-- New split packet
+		inboundSplitPacket = GLib.Net.Layer2.InboundSplitPacket (packetId)
+		
+		self.InboundPackets [sourceId] = self.InboundPackets [sourceId] or {}
+		self.InboundPackets [sourceId] [packetId] = inboundSplitPacket
+		
+		inboundSplitPacket:DeserializeFirstChunk (inBuffer)
+	elseif packetType == GLib.Net.Layer2.SplitPacketType.Continuation then
+		-- Continuation of split packet
+		if not self.InboundPackets [sourceId] then return end
+		
+		inboundSplitPacket = self.InboundPackets [sourceId] [packetId]
+		if not inboundSplitPacket then return end
+		
+		inboundSplitPacket:DeserializeNextChunk (inBuffer)
+	end
+	
+	if inboundSplitPacket:IsFinished () then
+		-- Clean up
+		self.InboundPackets [sourceId] [packetId] = nil
+		if not next (self.InboundPackets [sourceId]) then
+			self.InboundPackets [sourceId] = nil
+		end
+		
+		-- Enter idle state if appropriate
+		if not next (self.InboundPackets) and
+		   not next (self.OutboundPackets) then
+			self.Active = false
+			self:UnhookSystems ()
+		end
+		
+		-- Invoke handler
+		self:GetHandler () (sourceId, GLib.StringInBuffer (inboundSplitPacket:GetData ()))
+	end
 end
 
 -- Internal, do not call

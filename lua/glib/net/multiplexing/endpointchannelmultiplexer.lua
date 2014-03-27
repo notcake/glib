@@ -85,6 +85,13 @@ function self:DispatchPacket (destinationId, packet)
 	return self.SingleEndpointChannels [destinationId]:DispatchPacket (packet)
 end
 
+function self:HandlePacket (sourceId, packet)
+	if not self.SingleEndpointChannels [sourceId] then
+		self:CreateSingleEndpointChannel (sourceId)
+	end
+	return self.SingleEndpointChannels [sourceId]:HandlePacket (packet)
+end
+
 -- Handlers
 function self:SetHandler (handler)
 	if self.Handler == handler then return self end
