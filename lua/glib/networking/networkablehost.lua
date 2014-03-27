@@ -1,5 +1,5 @@
 local self = {}
-GLib.Networking.NetworkableHost2 = GLib.MakeConstructor (self)
+GLib.Networking.NetworkableHost = GLib.MakeConstructor (self)
 
 --[[
 	Events:

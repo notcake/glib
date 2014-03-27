@@ -124,7 +124,8 @@ GLib.Networking = {}
 include ("networking/networkablestate.lua")
 include ("networking/subscriberset.lua")
 
-include ("networking/networkablehost2.lua")
+include ("networking/networkable.lua")
+include ("networking/networkablehost.lua")
 include ("networking/networkablehostmessagetype.lua")
 
 -- Containers
