@@ -10,11 +10,15 @@ GLib.Networking.SubscriberSet = GLib.MakeConstructor (self)
 		Fired when a player has been removed from this SubscriberSet.
 ]]
 
-function self:ctor ()
+function self:ctor (userId)
 	self.PlayerSet = {}
 	self.Players = {}
 	
 	GLib.EventProvider (self)
+	
+	if userId then
+		self:AddUser (userId)
+	end
 end
 
 function self:AddPlayer (ply)
@@ -26,6 +30,10 @@ function self:AddPlayer (ply)
 		
 		self:DispatchEvent ("PlayerAdded", ply)
 	end
+end
+
+function self:AddUser (userId)
+	self:AddPlayer (GLib.PlayerMonitor:GetUserEntity (userId))
 end
 
 function self:Clear ()
@@ -40,13 +48,7 @@ function self:ContainsPlayer (ply)
 end
 
 function self:ContainsUser (userId)
-	for i = 1, #self.Players do
-		if self.Players [i]:IsValid () and
-		   GLib.GetPlayerId (self.Players [i]) == userId then
-			return true
-		end
-	end
-	return false
+	return self:ContainsPlayer (GLib.PlayerMonitor:GetUserEntity (userId))
 end
 
 function self:GetPlayerEnumerator ()
@@ -84,6 +86,10 @@ function self:RemovePlayer (ply)
 	end
 	
 	self:DispatchEvent ("PlayerRemoved", ply)
+end
+
+function self:RemoveUser (userId)
+	self:RemovePlayer (GLib.PlayerMonitor:GetUserEntity (userId))
 end
 
 function self:ToString ()

@@ -162,12 +162,20 @@ function self:Write (packet)
 end
 
 -- Handlers
+function self:GetHandler ()
+	return self:GetPacketHandler ()
+end
+
 function self:GetOpenHandler ()
 	return self.OpenHandler
 end
 
 function self:GetPacketHandler ()
 	return self.PacketHandler
+end
+
+function self:SetHandler (handler)
+	return self:SetPacketHandler (handler)
 end
 
 function self:SetOpenHandler (openHandler)
