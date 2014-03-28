@@ -36,7 +36,7 @@ function GLib.String.GetLines (str)
 end
 
 function GLib.String.LineIterator (str)
-	return GLib.String.SplitIterator ("\n")
+	return GLib.String.SplitIterator (str, "\n")
 end
 
 function GLib.String.Split (str, separator)
