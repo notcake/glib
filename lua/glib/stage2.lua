@@ -14,7 +14,8 @@ include ("memoryusagereport.lua")
 include ("stringtable.lua")
 
 -- Colors
-include ("colors.lua")
+include ("colors/colors.lua")
+include ("colors/color.lua")
 
 -- IO
 include ("io/inbuffer.lua")
