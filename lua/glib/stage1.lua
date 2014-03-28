@@ -442,7 +442,6 @@ include ("loader/commands.lua")
 -- since GLib.EnumerateFolder calls GLib.Loader.Find.
 GLib.AddCSLuaFile ("glib/glib.lua")
 GLib.AddCSLuaFile ("glib/stage1.lua")
-GLib.AddCSLuaFile ("glib/string.lua")
 GLib.AddCSLuaFile ("glib/oop.lua")
 GLib.AddCSLuaFile ("glib/timers.lua")
 GLib.AddCSLuaFile ("glib/userid.lua")

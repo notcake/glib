@@ -1,6 +1,15 @@
 if GLib.Stage2 then return end
 GLib.Stage2 = true
 
+-- String
+GLib.String = {}
+include ("string/string.lua")
+include ("string/escaping.lua")
+
+-- Colors
+include ("colors/colors.lua")
+include ("colors/color.lua")
+
 -- Events
 include ("events/event.lua")
 include ("events/eventprovider.lua")
@@ -12,10 +21,6 @@ include ("glue.lua")
 include ("invoker.lua")
 include ("memoryusagereport.lua")
 include ("stringtable.lua")
-
--- Colors
-include ("colors/colors.lua")
-include ("colors/color.lua")
 
 -- IO
 include ("io/inbuffer.lua")
