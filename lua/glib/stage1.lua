@@ -415,8 +415,6 @@ include ("events/eventprovider.lua")
 GLib.Initialize ("GLib", GLib)
 
 -- Now load the rest
-include ("string.lua")
-
 include ("userid.lua")
 include ("stringbuilder.lua")
 include ("io/inbuffer.lua")
