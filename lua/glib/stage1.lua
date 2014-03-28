@@ -290,14 +290,18 @@ function GLib.IncludeDirectory (folder, recursive)
 	end
 end
 
-function GLib.InvertTable (tbl)
+function GLib.InvertTable (tbl, out)
+	out = out or tbl
+	
 	local keys = {}
-	for key, Value in pairs (tbl) do
+	for key, _ in pairs (tbl) do
 		keys [#keys + 1] = key
 	end
 	for i = 1, #keys do
-		tbl [tbl [keys [i]]] = keys [i]
+		out [tbl [keys [i]]] = keys [i]
 	end
+	
+	return out
 end
 
 function GLib.NullCallback ()
