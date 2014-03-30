@@ -1,10 +1,19 @@
 if GLib.Stage2 then return end
 GLib.Stage2 = true
 
+-- Core
+include ("oop.lua")
+
 -- String
 GLib.String = {}
 include ("string/string.lua")
 include ("string/escaping.lua")
+
+-- Enumeration
+GLib.Enumerator = {}
+include ("enumerators/enumerator.lua")
+include ("enumerators/composition.lua")
+include ("enumerators/operations.lua")
 
 -- Colors
 include ("colors/colors.lua")
