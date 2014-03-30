@@ -48,7 +48,7 @@ end
 function GLib.Enumerator.ToArray (enumerator)
 	local t = {}
 	
-	for v in enumerator () do
+	for v in enumerator do
 		t [#t + 1] = v
 	end
 	
@@ -58,7 +58,7 @@ end
 function GLib.Enumerator.ToMap (enumerator)
 	local t = {}
 	
-	for k, v in enumerator () do
+	for k, v in enumerator do
 		 t [k] = v
 	end
 	
