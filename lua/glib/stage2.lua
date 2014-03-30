@@ -11,7 +11,7 @@ include ("string/escaping.lua")
 
 -- Enumeration
 GLib.Enumerator = {}
-include ("enumerators/enumerator.lua")
+include ("enumerators/enumerators.lua")
 include ("enumerators/composition.lua")
 include ("enumerators/operations.lua")
 
