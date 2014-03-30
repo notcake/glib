@@ -66,11 +66,7 @@ function self:GetFunctionCount ()
 end
 
 function self:GetFunctionEnumerator ()
-	local i = 0
-	return function ()
-		i = i + 1
-		return self.Functions [i]
-	end
+	return GLib.ArrayEnumerator (self.Functions)
 end
 
 function self:GetInputFunction ()

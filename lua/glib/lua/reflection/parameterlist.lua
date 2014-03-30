@@ -92,11 +92,7 @@ function self:AddVariadicParameter ()
 end
 
 function self:GetEnumerator ()
-	local i = 0
-	return function ()
-		i = i + 1
-		return self.Parameters [i]
-	end
+	return GLib.ArrayEnumerator (self.Parameters)
 end
 
 function self:GetFixedParameterCount ()

@@ -116,11 +116,7 @@ end
 -- Enumerates user ids.
 -- Returns: () -> userId
 function self:GetUserEnumerator ()
-	local next, tbl, key = pairs (self.EntriesBySteamId)
-	return function ()
-		key = next (tbl, key)
-		return key
-	end
+	return GLib.KeyEnumerator (self.EntriesBySteamId)
 end
 
 function self:GetUserName (userId)
