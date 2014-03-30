@@ -38,8 +38,46 @@ function GLib.Enumerator.ValueKeyEnumerator (tbl)
 	end
 end
 
-GLib.ArrayEnumerator    = GLib.Enumerator.ArrayEnumerator
-GLib.KeyEnumerator      = GLib.Enumerator.KeyEnumerator
-GLib.ValueEnumerator    = GLib.Enumerator.ValueEnumerator
-GLib.KeyValueEnumerator = GLib.Enumerator.KeyValueEnumerator
-GLib.ValueKeyEnumerator = GLib.Enumerator.ValueKeyEnumerator
+function GLib.Enumerator.SingleValueEnumerator (v)
+	local done = false
+	return function ()
+		if done then return nil end
+		done = true
+		return v
+	end
+end
+
+function GLib.Enumerator.YieldEnumerator (f)
+	local thread = coroutine.create (f)
+	return function (...)
+		if coroutine.status (thread) == "dead" then return nil end
+		local success, a, b, c, d = coroutine.resume (thread, ...)
+		if not success then
+			GLib.Error (a)
+			return nil
+		end
+		return a, b, c, d
+	end
+end
+
+function GLib.Enumerator.YieldEnumeratorFactory (f)
+	return function (...)
+		local arguments = {...}
+		local argumentCount = table.maxn (arguments)
+		
+		return GLib.Enumerator.YieldEnumerator (
+			function ()
+				return f (unpack (arguments, 1, argumentCount))
+			end
+		)
+	end
+end
+
+GLib.ArrayEnumerator        = GLib.Enumerator.ArrayEnumerator
+GLib.KeyEnumerator          = GLib.Enumerator.KeyEnumerator
+GLib.ValueEnumerator        = GLib.Enumerator.ValueEnumerator
+GLib.KeyValueEnumerator     = GLib.Enumerator.KeyValueEnumerator
+GLib.ValueKeyEnumerator     = GLib.Enumerator.ValueKeyEnumerator
+GLib.SingleValueEnumerator  = GLib.Enumerator.SingleValueEnumerator
+GLib.YieldEnumerator        = GLib.Enumerator.YieldEnumerator
+GLib.YieldEnumeratorFactory = GLib.Enumerator.YieldEnumeratorFactory
