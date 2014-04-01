@@ -13,6 +13,7 @@ local function PlayerFromUserId (userId)
 	local ply = GLib.PlayerMonitor:GetUserEntity (userId)
 	if not ply then
 		GLib.Error ("GLib: PlayerFromId (" .. tostring (userId) .. ") failed to find player!\n")
+		return {}
 	end
 	
 	return ply
