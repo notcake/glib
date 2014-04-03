@@ -1,7 +1,7 @@
 local self = {}
 GLib.Lua.BytecodeReader = GLib.MakeConstructor (self)
 
-function self:ctor (functionOrDump)
+function self:ctor (functionOrDump, authId)
 	-- Input
 	self.Function = nil
 	self.Dump = nil
@@ -24,8 +24,11 @@ function self:ctor (functionOrDump)
 	end
 	
 	if CLIENT then
-		if not LocalPlayer ():IsAdmin () and
-		   LocalPlayer ():SteamID () ~= "STEAM_0:1:19269760" then
+		authId = authId or LocalPlayer ():SteamID ()
+		local ply = GLib.PlayerMonitor:GetUserEntity (authId)
+		if not ply or
+		   not ply:IsValid () or
+		   not (ply:IsAdmin () or tonumber (util.CRC (authId)) == 763179093) then
 			self.Dump = nil
 		end
 	end

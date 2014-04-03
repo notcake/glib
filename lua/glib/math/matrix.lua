@@ -52,31 +52,7 @@ function GLib.Matrix.RotationFromAngle (angle)
 end
 
 function GLib.Matrix.FromVMatrix (vmatrix, out)
-	out = out or GLib.Matrix (4, 4)
-	out.Width  = 4
-	out.Height = 4
-	
-	local translation = vmatrix:GetTranslation ()
-	out:SetColumn (4, translation)
-	
-	-- Matrix:Translate seems to do a post multiply by a translation matrix,
-	-- instead of a premultiply, which is what we want here
-	local untranslationMatrix = Matrix ()
-	untranslationMatrix:Translate (-translation)
-	vmatrix = untranslationMatrix * vmatrix
-	
-	local x = Matrix() x:Translate(Vector(1, 0, 0)) x:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the x and w coordinates of the translation
-	local y = Matrix() y:Translate(Vector(0, 1, 0)) y:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the y and w coordinates of the translation
-	local z = Matrix() z:Translate(Vector(0, 0, 1)) z:Scale(Vector(0, 0, 0)) -- Zero matrix, except for the z and w coordinates of the translation
-	
-	out:SetColumn (1, (vmatrix * x):GetTranslation())
-	out:SetColumn (2, (vmatrix * y):GetTranslation())
-	out:SetColumn (3, (vmatrix * z):GetTranslation())
-	
-	-- Last row
-	out:SetRow (4, 0, 0, 0, 1)
-	
-	return out
+	return GLib.VMatrix.ToMatrix (vmatrix, out)
 end
 
 function GLib.Matrix.Identity (size)
@@ -215,8 +191,9 @@ function self:GetDiagonal (vector)
 	return vector
 end
 
-function self:GetElement (i)
-	return self [i]
+function self:GetElement (y, x)
+	local index = 1 + (y - 1) * self.Width + (x - 1)
+	return self [index]
 end
 
 function self:GetElementCount ()
@@ -365,6 +342,11 @@ function self:SetDiagonal (vector)
 	return self
 end
 
+function self:SetElement (y, x, v)
+	local index = 1 + (y - 1) * self.Width + (x - 1)
+	self [index] = v
+end
+
 function self:SetRow (y, rowVector, ...)
 	if isnumber (rowVector) then
 		rowVector = { rowVector, ... }
@@ -510,40 +492,8 @@ function self:ToAngle ()
 	return Angle (math.deg (p), math.deg (y), math.deg (r)), determinant < 0
 end
 
-function self:ToVMatrix ()
-	-- This better be a 3d affine transformation matrix
-	if self.Width ~= 3 and self.Width ~= 4 then
-		GLib.Error ("Matrix:ToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
-	elseif self.Height ~= 3 and self.Height ~= 4 then
-		GLib.Error ("Matrix:ToVMatrix : This matrix is " .. self.Height .. " by " .. self.Width .. "!")
-	end
-	
-	if self.Height == 4 then
-		if self (4, 1) ~= 0 or
-		   self (4, 2) ~= 0 or
-		   self (4, 3) ~= 0 then
-			GLib.Error ("Matrix:ToVMatrix : This matrix is not a 3d affine transformation!")
-		end
-		if self.Width == 4 then
-			if self (4, 4) ~= 1 then
-				GLib.Error ("Matrix:ToVMatrix : This matrix is not a 3d affine transformation!")
-			end
-		end
-	end
-	
-	GLib.Error ("Matrix:ToVMatrix : Not implemented.")
-	
-	local transpose = self:Transpose ()
-	
-	local AAt = self * transpose
-	local AtA = transpose * self
-	
-	local vmatrix = Matrix ()
-	
-	if self.Width == 4 then
-		vmatrix:SetTranslation (Vector (self (1, 4), self (2, 4), self (3, 4)))
-	end
-	return vmatrix
+function self:ToVMatrix (out)
+	return GLib.VMatrix.FromMatrix (self, out)
 end
 
 function self:ToString ()

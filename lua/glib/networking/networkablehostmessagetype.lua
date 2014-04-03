@@ -1,5 +1,6 @@
 GLib.Networking.NetworkableHostMessageType = GLib.Enum (
 	{
-		NetworkableDestroyed = 1
+		NetworkableDestroyed = 0x01,
+		Custom               = 0xFF
 	}
 )

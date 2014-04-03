@@ -3,6 +3,8 @@ GLib.Networking.NetworkableHost = GLib.MakeConstructor (self)
 
 --[[
 	Events:
+		CustomPacketReceived (destinationId, InBuffer packet)
+			Fired when a custom packet has been received.
 		DispatchPacket (destinationId, OutBuffer packet)
 			Fired when a packet needs to be dispatched.
 ]]
@@ -61,7 +63,11 @@ function self:IsHost (remoteId)
 	return self.HostId == remoteId
 end
 
-function self:IsHosting ()
+function self:IsHosting (networkable)
+	if networkable and networkable.IsHosting then
+		return networkable:IsHosting ()
+	end
+	
 	return self.HostId == GLib.GetLocalId ()
 end
 
@@ -86,6 +92,14 @@ function self:SetSubscriberSet (subscriberSet)
 end
 
 -- Packets
+function self:DispatchCustomPacket (destinationId, packet)
+	local outBuffer = GLib.Net.OutBuffer ()
+	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageType.Custom)
+	outBuffer:OutBuffer (packet)
+	
+	return self:DispatchPacket (destinationId, outBuffer)
+end
+
 function self:DispatchPacket (destinationId, packet, object)
 	self:CheckWeakNetworkables ()
 	
@@ -120,9 +134,12 @@ function self:HandlePacket (sourceId, inBuffer)
 			local networkableId = inBuffer:UInt32 ()
 			if networkableId == 0 then return end -- Nope, we're not unregistering ourself
 			self:UnregisterNetworkable (networkableId)
+		elseif messageType == GLib.Networking.NetworkableHostMessageType.Custom then
+			self:DispatchEvent ("CustomPacketReceived", sourceId, inBuffer)
 		end
 	else
 		local networkable = self:GetNetworkable (networkableId)
+		if not networkable then return end
 		return networkable:HandlePacket (sourceId, inBuffer)
 	end
 end
@@ -151,7 +168,7 @@ end
 function self:RegisterNetworkable (networkable, networkableId)
 	self:CheckWeakNetworkables ()
 	
-	if not self:IsHosting () and not networkableId then
+	if not self:IsHosting (networkable) and not networkableId then
 		-- We're not the host so we shouldn't be allowed to register networkables
 		GLib.Error ("NetworkableHost:RegisterNetworkable : Cannot register Networkables when not hosting!")
 		return
@@ -169,7 +186,7 @@ function self:RegisterNetworkable (networkable, networkableId)
 		self.NetworkableIds [networkable] = networkableId
 		self.NetworkableRefCounts [networkableId] = 0
 		
-		if self:IsHosting () then
+		if self:IsHosting (networkable) then
 			self.WeakNetworkablesById [networkableId] = networkable
 		else
 			self.NetworkablesById [networkableId] = networkable
