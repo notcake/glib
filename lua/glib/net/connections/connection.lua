@@ -48,6 +48,14 @@ function self:ctor (remoteId, id, channel)
 	self.TimeoutTime = math.huge
 	
 	GLib.EventProvider (self)
+	
+	self:AddEventListener ("Closed",
+		function ()
+			if self.PacketAvailableEvent then
+				self.PacketAvailableEvent:Fire ()
+			end
+		end
+	)
 end
 
 -- Identity
@@ -176,6 +184,19 @@ function self:HasUndispatchedPackets ()
 	return #self.OutboundQueue > 0 or self:IsClosing ()
 end
 
+function self:Read ()
+	if self:IsClosed () then return nil end
+	
+	self.PacketAvailableEvent = self.PacketAvailableEvent or GLib.Threading.Event ()
+	
+	GLib.GetCurrentThread ():WaitForSingleObject (self.PacketAvailableEvent)
+	
+	local packet = self.LastAvailablePacket
+	self.LastAvailablePacket = nil
+	return packet
+end
+
+
 function self:Write (packet)
 	if self:IsClosing () then return end
 	if self:IsClosed  () then return end
@@ -191,17 +212,6 @@ function self:Write (packet)
 	-- Update timeout
 	self:UpdateTimeout ()
 end
-
-function self:Read ()
-	if self:IsClosed () then return nil end
-	
-	self.PacketAvailableEvent = self.PacketAvailableEvent or GLib.Threading.Event ()
-	
-	GLib.GetCurrentThread ():WaitForSingleObject (self.PacketAvailableEvent)
-	
-	return self.LastAvailablePacket
-end
-
 -- Handlers
 function self:GetHandler ()
 	return self:GetPacketHandler ()

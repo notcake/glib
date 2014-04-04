@@ -19,6 +19,10 @@ function self:dtor ()
 	self:SetNetworkableHost (nil)
 end
 
+function self:IsHosting ()
+	return nil
+end
+
 -- NetworkableHost
 function self:GetNetworkableHost ()
 	return self.NetworkableHost

@@ -3,11 +3,23 @@ GLib.Networking.ConnectionNetworkable = GLib.MakeConstructor (self, GLib.Network
 
 function self:ctor (connection)
 	self.Connection = connection
+	
+	self.Hosting = nil
+	
 	self:HookConnection (connection)
 end
 
 function self:dtor ()
 	self:UnhookConnection (connection)
+end
+
+function self:IsHosting ()
+	return self.Hosting
+end
+
+function self:SetHosting (hosting)
+	self.Hosting = hosting
+	return self
 end
 
 -- Identity
