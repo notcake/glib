@@ -30,6 +30,8 @@ function self:ctor ()
 	-- Weak networkable checking
 	self.WeakNetworkableCheckInterval = 5
 	self.LastWeakNetworkableCheckTime = 0
+	
+	GLib.EventProvider (self)
 end
 
 function self:dtor ()
