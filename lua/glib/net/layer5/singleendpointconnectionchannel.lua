@@ -111,7 +111,7 @@ function self:HandlePacket (inBuffer)
 		self:RegisterConnection (connection)
 	end
 	
-	connection:ProcessInboundPacket (inBuffer)
+	connection:HandlePacket (inBuffer)
 end
 
 -- Handlers

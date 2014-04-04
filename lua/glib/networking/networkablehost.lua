@@ -189,7 +189,7 @@ function self:RegisterNetworkable (networkable, networkableId)
 	
 	if not self.NetworkableIds [networkable] then
 		-- New networkable
-		networkableId = networkableId or self:AllocateNetworkableId ()
+		networkableId = networkableId or self:GenerateNetworkableId ()
 		
 		self.NetworkableIds [networkable] = networkableId
 		self.NetworkableRefCounts [networkableId] = 0
@@ -243,22 +243,14 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 end
 
 -- Internal, do not call
-function self:AllocateNetworkableId ()
-	local networkableId = self.NextNetworkableId
+function self:GenerateNetworkableId ()
+	local networkableId = math.random (1, 0xFFFFFFFF)
 	
-	-- Check if it's reserved or already in use
-	if networkableId == 0 or
-	   self:GetNetworkableById (networkableId) then
-		self.NextNetworkableId = math.min (#self.NetworkablesById, #self.WeakNetworkablesById)
-		
-		if self.NextNetworkableId >= 4294967296 then
-			-- How did this happen I am not good with computer
-			GLib.Error ("NetworkableHost:AllocateNetworkableId : Cannot allocate ID, 4,294,967,296 IDs already exist.")
-			return nil
-		end
+	while networkableId == 0 or
+	      self:GetNetworkableById (networkableId) do
+		networkableId = (networkableId + 1) % 4294967296
 	end
 	
-	self.NextNetworkableId = (self.NextNetworkableId + 1) % 4294967296
 	return networkableId
 end
 

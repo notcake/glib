@@ -15,6 +15,10 @@ function self:GetRemoteId ()
 	return self.Connection:GetRemoteId ()
 end
 
+function self:GetConnection ()
+	return self.Connection
+end
+
 -- State
 function self:Close (reason)
 	return self.Connection:Close (reason)
@@ -42,12 +46,19 @@ function self:Write (packet)
 	return self.Connection:Write (packet)
 end
 
+-- Handlers
+function self:SetPacketHandler (packetHandler)
+	self.Connection:SetPacketHandler (packetHandler)
+	return self
+end
+
 -- Internal, do not call
 function self:HookConnection (connection)
 	if not connection then return end
 	
 	connection:AddEventListener ("Closed", "ConnectionNetworkable",
 		function (_, connectionClosureReason)
+			self:DispatchEvent ("Closed", connectionClosureReason)
 			self:dtor ()
 		end
 	)

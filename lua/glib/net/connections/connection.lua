@@ -63,6 +63,21 @@ function self:GetRemoteId ()
 	return self.RemoteId
 end
 
+function self:SetChannel (channel)
+	self.Channel = channel
+	return self
+end
+
+function self:SetId (id)
+	self.Id = id
+	return self
+end
+
+function self:SetRemoteId (remoteId)
+	self.RemoteId = remoteId
+	return self
+end
+
 -- State
 function self:Close (reason)
 	if self:IsClosed () then return end
