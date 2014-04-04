@@ -181,7 +181,7 @@ function self:HandlePacket (inBuffer)
 end
 
 function self:HasUndispatchedPackets ()
-	return #self.OutboundQueue > 0 or self:IsClosing ()
+	return #self.OutboundQueue > 0 or self:IsOpening () or self:IsClosing ()
 end
 
 function self:Read ()

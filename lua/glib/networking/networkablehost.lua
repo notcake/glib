@@ -228,6 +228,10 @@ function self:RegisterStrongNetworkable (networkable, networkableId)
 	return self:RegisterNetworkable (networkable, networkableId, false)
 end
 
+function self:RegisterWeakNetworkable (networkable, networkableId)
+	return self:RegisterNetworkable (networkable, networkableId, true)
+end
+
 function self:UnregisterNetworkable (networkableOrNetworkableId)
 	local networkable
 	local networkableId
