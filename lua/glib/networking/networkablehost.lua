@@ -274,7 +274,7 @@ end
 
 function self:DispatchNetworkableDestroyed (networkableId)
 	local outBuffer = GLib.Net.OutBuffer ()
-	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageTypes.NetworkableDestroyed)
+	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageType.NetworkableDestroyed)
 	outBuffer:UInt32 (networkableId)
 	
 	self:DispatchPacket (nil, outBuffer)
