@@ -150,8 +150,10 @@ end
 
 -- Objects
 function self:ClearNetworkables ()
-	for networkable, _ in pairs (self.NetworkableIds) do
-		self:UnhookNetworkable (networkable)
+	if self.NetworkableIds then
+		for networkable, _ in pairs (self.NetworkableIds) do
+			self:UnhookNetworkable (networkable)
+		end
 	end
 	
 	self.NextNetworkableId    = 1
