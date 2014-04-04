@@ -127,15 +127,13 @@ function self:DispatchPacket (destinationId, packet, object)
 	end
 	
 	-- Build packet
-	local outBuffer = GLib.Net.OutBuffer ()
-	outBuffer:UInt32 (networkableId)
-	outBuffer:OutBuffer (packet)
+	packet:PrependUInt32 (networkableId)
 	
 	-- Dispatch
 	if self.Channel then
-		self.Channel:DispatchPacket (destinationId, outBuffer)
+		self.Channel:DispatchPacket (destinationId, packet)
 	else
-		self:DispatchEvent ("DispatchPacket", destinationId, outBuffer)
+		self:DispatchEvent ("DispatchPacket", destinationId, packet)
 	end
 end
 
@@ -198,11 +196,6 @@ end
 function self:RegisterNetworkable (networkable, networkableId, weakReference)
 	self:CheckWeakNetworkables ()
 	
-	if not self:IsHosting (networkable) and not networkableId then
-		-- We're not the host so we shouldn't be allowed to register networkables
-		GLib.Error ("NetworkableHost:RegisterNetworkable : Cannot register Networkables when not hosting!")
-		return
-	end
 	if networkableId == 0 then
 		-- Reserved ID, not allowed
 		GLib.Error ("NetworkableHost:RegisterNetworkable : Cannot register Networkable with reserver ID 0!")
@@ -216,9 +209,7 @@ function self:RegisterNetworkable (networkable, networkableId, weakReference)
 		self.NetworkableIds [networkable] = networkableId
 		self.NetworkableRefCounts [networkableId] = 0
 		
-		if weakReference == nil then
-			weakReference = true
-		end
+		if weakReference == nil then weakReference = true end
 		
 		if weakReference then
 			self.WeakNetworkablesById [networkableId] = networkable
@@ -229,7 +220,10 @@ function self:RegisterNetworkable (networkable, networkableId, weakReference)
 			self.NetworkablesById [networkableId] = networkable
 		end
 		
-		networkable:SetNetworkableHost (self)
+		-- Set the Networkable's NetworkableHost
+		if networkable.SetNetworkableHost then
+			networkable:SetNetworkableHost (self)
+		end
 		
 		-- Hook networkable
 		self:HookNetworkable (networkable)
@@ -237,6 +231,7 @@ function self:RegisterNetworkable (networkable, networkableId, weakReference)
 		networkableId = self.NetworkableIds [networkable]
 	end
 	
+	-- Increment reference count
 	self.NetworkableRefCounts [networkableId] = self.NetworkableRefCounts [networkableId] + 1
 end
 
@@ -266,6 +261,8 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 	self.NetworkableRefCounts [networkableId] = self.NetworkableRefCounts [networkableId] - 1
 	
 	if self.NetworkableRefCounts [networkableId] == 0 then
+		local hosting = self:IsHosting (networkable)
+		
 		-- Unregister networkable
 		self.NetworkableIds [networkable] = nil
 		self.NetworkablesById [networkableId] = nil
@@ -273,7 +270,9 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 		self.NetworkableRefCounts [networkableId] = nil
 		self.HostingWeakNetworkables [networkableId] = nil
 		
-		self:DispatchNetworkableDestroyed (networkableId)
+		if hosting then
+			self:DispatchNetworkableDestroyed (networkableId)
+		end
 		
 		networkable:SetNetworkableHost (nil)
 		
@@ -287,7 +286,9 @@ function self:CreateConnection (remoteId, initiator, networkableId)
 	local connection = GLib.Net.Connection (remoteId)
 	connection:SetInitiator (initiator)
 	local connectionNetworkable = GLib.Networking.ConnectionNetworkable (connection)
-	connectionNetworkable:SetHosting (connection:IsLocallyInitiated ())
+	
+	-- Neither endpoints are hosting, and the connection is unregistered on both sides when it closes anyway.
+	connectionNetworkable:SetHosting (false)
 	
 	self:RegisterStrongNetworkable (connectionNetworkable, networkableId)
 	connection:SetId (self:GetNetworkableId (connectionNetworkable))
@@ -356,6 +357,7 @@ end
 
 function self:HookNetworkable (networkable)
 	if not networkable then return end
+	if not networkable.AddEventListener then return end
 	
 	networkable:AddEventListener ("DispatchPacket", "NetworkableHost." .. self:GetHashCode (),
 		function (_, destinationId, packet)
@@ -366,6 +368,7 @@ end
 
 function self:UnhookNetworkable (networkable)
 	if not networkable then return end
+	if not networkable.RemoveEventListener then return end
 	
 	networkable:RemoveEventListener ("DispatchPacket", "NetworkableHost." .. self:GetHashCode ())
 end

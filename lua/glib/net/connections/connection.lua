@@ -166,6 +166,13 @@ function self:DispatchNextPacket ()
 	if not self:HasUndispatchedPackets () then return end
 	
 	self:DispatchEvent ("DispatchPacket", self:GenerateNextPacket ())
+	
+	-- Close the channel if our last packet has been dispatched
+	if self:IsClosing () and #self.OutboundQueue == 0 then
+		-- Close the connection
+		self.State = GLib.Net.ConnectionState.Closed
+		self:DispatchEvent ("Closed", GLib.Net.ConnectionClosureReason.LocalClosure)
+	end
 end
 
 function self:DispatchPacket (packet)
@@ -302,11 +309,6 @@ function self:GenerateNextPacket (outBuffer)
 		-- Open the connection
 		self.State = GLib.Net.ConnectionState.Open
 		self:DispatchEvent ("Opened")
-	end
-	if self:IsClosing () and #self.OutboundQueue == 0 then
-		-- Close the connection
-		self.State = GLib.Net.ConnectionState.Closed
-		self:DispatchEvent ("Closed", GLib.Net.ConnectionClosureReason.LocalClosure)
 	end
 	
 	if not self:HasUndispatchedPackets () then
