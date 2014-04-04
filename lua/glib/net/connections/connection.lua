@@ -1,5 +1,5 @@
 local self = {}
-GLib.Net.Layer5.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChannel)
+GLib.Net.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChannel)
 
 --[[
 	Events:
@@ -7,6 +7,8 @@ GLib.Net.Layer5.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpoin
 			Fired when the connection's undispatched packet count decreases to 0 or increases to 1.
 		Closed (ConnectionClosureReason closureReason)
 			Fired when the connection has been closed.
+		DispatchPacket (OutBuffer packet)
+			Fired when a packet needs to be dispatched.
 		Opened (remoteId, InBuffer inBuffer)
 			Fired when the first packet has been received.
 		TimeoutChanged (timeout)
@@ -20,7 +22,7 @@ function self:ctor (channel, id, remoteId)
 	self.RemoteId = remoteId
 	
 	-- State
-	self.State         = GLib.Net.Layer5.ConnectionState.Opening
+	self.State         = GLib.Net.ConnectionState.Opening
 	self.Initiator     = nil
 	self.ClosureReason = nil
 	
@@ -61,18 +63,18 @@ end
 function self:Close (reason)
 	if self:IsClosed () then return end
 	
-	reason = reason or GLib.Net.Layer5.ConnectionClosureReason.LocalClosure
+	reason = reason or GLib.Net.ConnectionClosureReason.LocalClosure
 	
 	local hasUndispatchedPackets = self:HasUndispatchedPackets ()
-	if reason == GLib.Net.Layer5.ConnectionClosureReason.LocalClosure then
-		self.State = GLib.Net.Layer5.ConnectionState.Closing
+	if reason == GLib.Net.ConnectionClosureReason.LocalClosure then
+		self.State = GLib.Net.ConnectionState.Closing
 	else
 		-- Close the connection immediately
 		self:ClearOutboundQueue ()
 		
 		hasUndispatchedPackets = self:HasUndispatchedPackets ()
 		
-		self.State = GLib.Net.Layer5.ConnectionState.Closed
+		self.State = GLib.Net.ConnectionState.Closed
 	end
 	
 	self.ClosureReason = reason
@@ -91,27 +93,27 @@ function self:GetInitiator ()
 end
 
 function self:IsLocallyInitiated ()
-	return self.Initiator == GLib.Net.Layer5.ConnectionEndPoint.Local
+	return self.Initiator == GLib.Net.ConnectionEndPoint.Local
 end
 
 function self:IsRemotelyInitiated ()
-	return self.Initiator == GLib.Net.Layer5.ConnectionEndPoint.Remote
+	return self.Initiator == GLib.Net.ConnectionEndPoint.Remote
 end
 
 function self:IsClosed ()
-	return self.State == GLib.Net.Layer5.ConnectionState.Closed
+	return self.State == GLib.Net.ConnectionState.Closed
 end
 
 function self:IsClosing ()
-	return self.State == GLib.Net.Layer5.ConnectionState.Closing
+	return self.State == GLib.Net.ConnectionState.Closing
 end
 
 function self:IsOpen ()
-	return self.State == GLib.Net.Layer5.ConnectionState.Open
+	return self.State == GLib.Net.ConnectionState.Open
 end
 
 function self:IsOpening ()
-	if self.State == GLib.Net.Layer5.ConnectionState.Opening then return true end
+	if self.State == GLib.Net.ConnectionState.Opening then return true end
 	if self:IsLocallyInitiated () and not self.OpenPacketSent then return true end
 	
 	return false
@@ -133,12 +135,22 @@ function self:ClearOutboundQueue ()
 	end
 end
 
+function self:DispatchNextPacket ()
+	if not self:HasUndispatchedPackets () then return end
+	
+	self:DispatchEvent ("DispatchPacket", self:GenerateNextPacket ())
+end
+
 function self:DispatchPacket (packet)
 	self:Write (packet)
 end
 
 function self:GetMTU ()
 	return self.Channel:GetMTU ()
+end
+
+function self:HandlePacket (inBuffer)
+	return self:ProcessInboundPacket (inBuffer)
 end
 
 function self:HasUndispatchedPackets ()
@@ -221,11 +233,7 @@ end
 
 -- Internal, do not call
 function self:GenerateNextPacket (outBuffer)
-	if not self:HasUndispatchedPackets () then
-		-- WTF, caller. You had one job.
-		GLib.Error ("Connection:GenerateNextPacket : YOU HAD ONE JOB.")
-		return
-	end
+	if not self:HasUndispatchedPackets () then return nil end
 	
 	outBuffer = outBuffer or GLib.Net.OutBuffer ()
 	outBuffer:UInt32 (self:GetId ())
@@ -234,14 +242,14 @@ function self:GenerateNextPacket (outBuffer)
 	
 	local packetType = 0
 	if #self.OutboundQueue > 0 then
-		packetType = packetType + GLib.Net.Layer5.ConnectionPacketType.Data
+		packetType = packetType + GLib.Net.ConnectionPacketType.Data
 	end
 	if self:IsOpening () then
-		packetType = packetType + GLib.Net.Layer5.ConnectionPacketType.Open
+		packetType = packetType + GLib.Net.ConnectionPacketType.Open
 		self.OpenPacketSent = true
 	end
 	if self:IsClosing () and #self.OutboundQueue <= 1 then
-		packetType = packetType + GLib.Net.Layer5.ConnectionPacketType.Close
+		packetType = packetType + GLib.Net.ConnectionPacketType.Close
 	end
 	
 	outBuffer:UInt8 (packetType)
@@ -253,13 +261,13 @@ function self:GenerateNextPacket (outBuffer)
 	
 	if self:IsOpening () then
 		-- Open the connection
-		self.State = GLib.Net.Layer5.ConnectionState.Open
+		self.State = GLib.Net.ConnectionState.Open
 		self:DispatchEvent ("Opened")
 	end
 	if self:IsClosing () and #self.OutboundQueue == 0 then
 		-- Close the connection
-		self.State = GLib.Net.Layer5.ConnectionState.Closed
-		self:DispatchEvent ("Closed", GLib.Net.Layer5.ConnectionClosureReason.LocalClosure)
+		self.State = GLib.Net.ConnectionState.Closed
+		self:DispatchEvent ("Closed", GLib.Net.ConnectionClosureReason.LocalClosure)
 	end
 	
 	if not self:HasUndispatchedPackets () then
@@ -300,10 +308,10 @@ end
 function self:ProcessPacket (packetId, inBuffer)
 	local packetType = inBuffer:UInt8 ()
 	
-	if bit.band (packetType, GLib.Net.Layer5.ConnectionPacketType.Open) ~= 0 then
+	if bit.band (packetType, GLib.Net.ConnectionPacketType.Open) ~= 0 then
 		if self:IsOpening () then
 			-- Open the connection
-			self.State = GLib.Net.Layer5.ConnectionState.Open
+			self.State = GLib.Net.ConnectionState.Open
 			self:DispatchEvent ("Opened")
 			
 			self:GetOpenHandler () (self:GetRemoteId (), inBuffer, self)
@@ -314,7 +322,7 @@ function self:ProcessPacket (packetId, inBuffer)
 		end
 	end
 	
-	if bit.band (packetType, GLib.Net.Layer5.ConnectionPacketType.Data) ~= 0 then
+	if bit.band (packetType, GLib.Net.ConnectionPacketType.Data) ~= 0 then
 		if self:IsOpening () then
 			-- We didn't get a packet with the Open flag.
 			self:Close ()
@@ -323,8 +331,8 @@ function self:ProcessPacket (packetId, inBuffer)
 		self:GetPacketHandler () (self:GetRemoteId (), inBuffer, self)
 	end
 	
-	if bit.band (packetType, GLib.Net.Layer5.ConnectionPacketType.Close) ~= 0 then
-		self:Close (GLib.Net.Layer5.ConnectionClosureReason.RemoteClosure)
+	if bit.band (packetType, GLib.Net.ConnectionPacketType.Close) ~= 0 then
+		self:Close (GLib.Net.ConnectionClosureReason.RemoteClosure)
 	end
 	
 	-- Update timeout

@@ -178,6 +178,14 @@ include ("net/multiplexing/endpointchannelmultiplexer.lua")
 --include ("net/multiplexing/channelmultiplexer.lua")
 --include ("net/multiplexing/singleendpointchannelmultiplexer.lua")
 
+-- Connections
+include ("net/connections/connection.lua")
+include ("net/connections/connectionclosurereason.lua")
+include ("net/connections/connectionendpoint.lua")
+include ("net/connections/connectionpackettype.lua")
+include ("net/connections/connectionstate.lua")
+include ("net/connections/connectionrunner.lua")
+
 -- Physical layer
 GLib.Net.Layer1 = {}
 include ("net/layer1/channel.lua")
@@ -212,11 +220,6 @@ GLib.Net.Layer5 = {}
 include ("net/layer5/channel.lua")
 include ("net/layer5/connectionchannel.lua")
 include ("net/layer5/singleendpointconnectionchannel.lua")
-include ("net/layer5/connection.lua")
-include ("net/layer5/connectionclosurereason.lua")
-include ("net/layer5/connectionendpoint.lua")
-include ("net/layer5/connectionpackettype.lua")
-include ("net/layer5/connectionstate.lua")
 include ("net/layer5/orderedchannel.lua")
 include ("net/layer5/singleendpointorderedchannel.lua")
 include ("net/layer5/orderedchannelstate.lua")

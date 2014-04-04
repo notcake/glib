@@ -1,4 +1,4 @@
-GLib.Net.Layer5.ConnectionClosureReason = GLib.Enum (
+GLib.Net.ConnectionClosureReason = GLib.Enum (
 	{
 		LocalClosure  =  1,
 		RemoteClosure =  2,

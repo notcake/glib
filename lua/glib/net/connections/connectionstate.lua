@@ -1,4 +1,4 @@
-GLib.Net.Layer5.ConnectionState = GLib.Enum (
+GLib.Net.ConnectionState = GLib.Enum (
 	{
 		Opening = 1, -- Awaiting first packet
 		Open    = 2, -- First packet received

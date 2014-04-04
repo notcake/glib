@@ -8,8 +8,36 @@ GLib.Networking.Networkable = GLib.MakeConstructor (self)
 ]]
 
 function self:ctor ()
+	-- NetworkableHost
+	self.NetworkableHost = nil
+	
 	-- Subscribers
 	self.SubscriberSet = nil
+end
+
+function self:dtor ()
+	self:SetNetworkableHost (nil)
+end
+
+-- NetworkableHost
+function self:GetNetworkableHost ()
+	return self.NetworkableHost
+end
+
+function self:SetNetworkableHost (networkableHost)
+	if self.NetworkableHost == networkableHost then return self end
+	
+	if self.NetworkableHost then
+		self.NetworkableHost:UnregisterNetworkable (self)
+	end
+	
+	self.NetworkableHost = networkableHost
+	
+	if self.NetworkableHost then
+		self.NetworkableHost:RegisterNetworkable (self)
+	end
+	
+	return self
 end
 
 -- Subscribers

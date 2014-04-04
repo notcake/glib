@@ -45,11 +45,13 @@ function self:SetChannel (channel)
 	if self.Channel == channel then return self end
 	
 	self.Channel = channel
-	self.Channel:SetHandler (
-		function (sourceId, inBuffer)
-			self:HandlePacket (sourceId, inBuffer)
-		end
-	)
+	if self.Channel then
+		self.Channel:SetHandler (
+			function (sourceId, inBuffer)
+				self:HandlePacket (sourceId, inBuffer)
+			end
+		)
+	end
 	
 	return self
 end
@@ -65,7 +67,9 @@ end
 
 function self:IsHosting (networkable)
 	if networkable and networkable.IsHosting then
-		return networkable:IsHosting ()
+		if networkable:IsHosting () ~= nil then
+			return networkable:IsHosting ()
+		end
 	end
 	
 	return self.HostId == GLib.GetLocalId ()
