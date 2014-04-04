@@ -15,7 +15,7 @@ GLib.Net.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChanne
 			Fired when the timeout period has changed.
 ]]
 
-function self:ctor (channel, id, remoteId)
+function self:ctor (remoteId, id, channel)
 	-- Identity
 	self.Channel  = channel
 	self.Id       = id
@@ -35,9 +35,13 @@ function self:ctor (channel, id, remoteId)
 	self.InboundPackets = {}
 	self.OutboundQueue  = {}
 	
+	-- Synchronous reading
+	self.LastAvailablePacket = nil
+	self.PacketAvailableEvent = nil
+	
 	-- Handlers
-	self.OpenHandler   = self.Channel:GetOpenHandler   () or GLib.NullCallback
-	self.PacketHandler = self.Channel:GetPacketHandler () or GLib.NullCallback
+	self.OpenHandler   = GLib.NullCallback
+	self.PacketHandler = GLib.NullCallback
 	
 	-- Timeouts
 	self.Timeout     = 30
@@ -173,6 +177,16 @@ function self:Write (packet)
 	self:UpdateTimeout ()
 end
 
+function self:Read ()
+	if self:IsClosed () then return nil end
+	
+	self.PacketAvailableEvent = self.PacketAvailableEvent or GLib.Threading.Event ()
+	
+	GLib.GetCurrentThread ():WaitForSingleObject (self.PacketAvailableEvent)
+	
+	return self.LastAvailablePacket
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self:GetPacketHandler ()
@@ -236,7 +250,6 @@ function self:GenerateNextPacket (outBuffer)
 	if not self:HasUndispatchedPackets () then return nil end
 	
 	outBuffer = outBuffer or GLib.Net.OutBuffer ()
-	outBuffer:UInt32 (self:GetId ())
 	outBuffer:UInt32 (self.NextOutboundPacketId)
 	self.NextOutboundPacketId = (self.NextOutboundPacketId + 1) % 4294967296
 	
@@ -327,6 +340,10 @@ function self:ProcessPacket (packetId, inBuffer)
 			-- We didn't get a packet with the Open flag.
 			self:Close ()
 			return
+		end
+		self.LastAvailablePacket = inBuffer
+		if self.PacketAvailableEvent then
+			self.PacketAvailableEvent:Fire ()
 		end
 		self:GetPacketHandler () (self:GetRemoteId (), inBuffer, self)
 	end

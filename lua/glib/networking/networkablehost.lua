@@ -169,6 +169,10 @@ function self:GetNetworkableId (networkable)
 	return self.NetworkableIds [networkable]
 end
 
+function self:IsNetworkableRegistered (networkable)
+	return self.NetworkableIds [networkable] ~= nil
+end
+
 function self:RegisterNetworkable (networkable, networkableId)
 	self:CheckWeakNetworkables ()
 	
@@ -195,6 +199,8 @@ function self:RegisterNetworkable (networkable, networkableId)
 		else
 			self.NetworkablesById [networkableId] = networkable
 		end
+		
+		networkable:SetNetworkableHost (self)
 		
 		-- Hook networkable
 		self:HookNetworkable (networkable)
@@ -228,6 +234,8 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 		self.NetworkableRefCounts [networkableId] = nil
 		
 		self:DispatchNetworkableDestroyed (networkableId)
+		
+		networkable:SetNetworkableHost (nil)
 		
 		-- Unhook networkable
 		self:UnhookNetworkable (networkable)

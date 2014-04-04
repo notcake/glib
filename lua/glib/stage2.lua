@@ -143,6 +143,8 @@ include ("networking/networkable.lua")
 include ("networking/networkablehost.lua")
 include ("networking/networkablehostmessagetype.lua")
 
+include ("networking/connectionnetworkable.lua")
+
 -- Containers
 GLib.Containers = {}
 include ("containers/binarytree.lua")

@@ -75,7 +75,7 @@ end
 
 function self:Connect (packet)
 	-- New connection
-	local connection = GLib.Net.Connection (self, self:GenerateConnectionId (), self:GetRemoteId ())
+	local connection = GLib.Net.Connection (self:GetRemoteId (), self:GenerateConnectionId (), self)
 	connection:SetInitiator (GLib.Net.ConnectionEndPoint.Local)
 	
 	-- Register connection
@@ -104,7 +104,7 @@ function self:HandlePacket (inBuffer)
 	
 	if not connection then
 		-- New connection
-		connection = GLib.Net.Connection (self, connectionId, self:GetRemoteId ())
+		connection = GLib.Net.Connection (self:GetRemoteId (), connectionId, self)
 		connection:SetInitiator (GLib.Net.ConnectionEndPoint.Remote)
 		
 		-- Register connection
@@ -156,6 +156,10 @@ function self:RegisterConnection (connection)
 	-- Add connection to list
 	self.Connections [connection:GetId ()] = connection
 	
+	-- Set connection handlers
+	connection:SetOpenHandler   (self:GetOpenHandler   () or GLib.NullCallback)
+	connection:SetPacketHandler (self:GetPacketHandler () or GLib.NullCallback)
+	
 	-- Hook events
 	self:HookConnection (connection)
 	
@@ -182,6 +186,7 @@ function self:HookConnection (connection)
 	)
 	connection:AddEventListener ("DispatchPacket", "SingleEndpointConnectionChannel." .. self:GetName () .. "." .. self:GetHashCode (),
 		function (_, packet)
+			packet:PrependUInt32 (connection:GetId ())
 			self.InnerChannel:DispatchPacket (packet)
 		end
 	)

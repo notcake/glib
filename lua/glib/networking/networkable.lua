@@ -33,7 +33,8 @@ function self:SetNetworkableHost (networkableHost)
 	
 	self.NetworkableHost = networkableHost
 	
-	if self.NetworkableHost then
+	if self.NetworkableHost and
+	   not self.NetworkableHost:IsNetworkableRegistered (self) then
 		self.NetworkableHost:RegisterNetworkable (self)
 	end
 	
