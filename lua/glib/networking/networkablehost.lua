@@ -22,11 +22,12 @@ function self:ctor ()
 	self.SubscriberSet = nil
 	
 	-- Networkables
-	-- self.NextNetworkableId    = 1
-	-- self.NetworkableIds       = GLib.WeakKeyTable ()
-	-- self.NetworkablesById     = {}
-	-- self.WeakNetworkablesById = GLib.WeakValueTable ()
-	-- self.NetworkableRefCounts = {}
+	-- self.NextNetworkableId       = 1
+	-- self.NetworkableIds          = GLib.WeakKeyTable ()
+	-- self.NetworkablesById        = {}
+	-- self.WeakNetworkablesById    = GLib.WeakValueTable ()
+	-- self.NetworkableRefCounts    = {}
+	-- self.HostingWeakNetworkables = {}
 	self:ClearNetworkables () -- This will initialize the fields above
 	
 	-- Weak networkable checking
@@ -120,6 +121,11 @@ function self:DispatchPacket (destinationId, packet, object)
 	local networkableId = self:GetNetworkableId (object)
 	if not object then networkableId = 0 end
 	
+	if not networkableId then
+		GLib.Error ("NetworkableHost:DispatchPacket : object is not registered with this NetworkableHost!")
+		return
+	end
+	
 	-- Build packet
 	local outBuffer = GLib.Net.OutBuffer ()
 	outBuffer:UInt32 (networkableId)
@@ -137,13 +143,19 @@ function self:HandlePacket (sourceId, inBuffer)
 	self:CheckWeakNetworkables ()
 	
 	local networkableId = inBuffer:UInt32 ()
+	
 	if networkableId == 0 then
 		-- Message destined for this NetworkableHost
 		local messageType = inBuffer:UInt8 ()
 		
 		if messageType == GLib.Networking.NetworkableHostMessageType.NetworkableDestroyed then
 			local networkableId = inBuffer:UInt32 ()
-			if networkableId == 0 then return end -- Nope, we're not unregistering ourself
+			local networkable = self:GetNetworkableById (networkableId)
+			
+			if networkableId == 0           then return end -- Nope, we're not unregistering ourself.
+			if not networkable              then return end -- Nothing to unregister.
+			if self:IsHosting (networkable) then return end -- We don't work for you.
+			
 			self:UnregisterNetworkable (networkableId)
 		elseif messageType == GLib.Networking.NetworkableHostMessageType.Custom then
 			self:DispatchEvent ("CustomPacketReceived", sourceId, inBuffer)
@@ -163,11 +175,12 @@ function self:ClearNetworkables ()
 		end
 	end
 	
-	self.NextNetworkableId    = 1
-	self.NetworkableIds       = GLib.WeakKeyTable ()
-	self.NetworkablesById     = {}
-	self.WeakNetworkablesById = GLib.WeakValueTable ()
-	self.NetworkableRefCounts = {}
+	self.NextNetworkableId       = 1
+	self.NetworkableIds          = GLib.WeakKeyTable ()
+	self.NetworkablesById        = {}
+	self.WeakNetworkablesById    = GLib.WeakValueTable ()
+	self.NetworkableRefCounts    = {}
+	self.HostingWeakNetworkables = {}
 end
 
 function self:GetNetworkableById (id)
@@ -204,11 +217,14 @@ function self:RegisterNetworkable (networkable, networkableId, weakReference)
 		self.NetworkableRefCounts [networkableId] = 0
 		
 		if weakReference == nil then
-			weakReference = self:IsHosting (networkable)
+			weakReference = true
 		end
 		
 		if weakReference then
 			self.WeakNetworkablesById [networkableId] = networkable
+			if self:IsHosting (networkable) then
+				self.HostingWeakNetworkables [networkableId] = true
+			end
 		else
 			self.NetworkablesById [networkableId] = networkable
 		end
@@ -246,13 +262,16 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 	if not networkable   then return end
 	if not networkableId then return end
 	
+	-- Decrement reference count
 	self.NetworkableRefCounts [networkableId] = self.NetworkableRefCounts [networkableId] - 1
 	
 	if self.NetworkableRefCounts [networkableId] == 0 then
+		-- Unregister networkable
 		self.NetworkableIds [networkable] = nil
 		self.NetworkablesById [networkableId] = nil
 		self.WeakNetworkablesById [networkableId] = nil
 		self.NetworkableRefCounts [networkableId] = nil
+		self.HostingWeakNetworkables [networkableId] = nil
 		
 		self:DispatchNetworkableDestroyed (networkableId)
 		
@@ -319,7 +338,10 @@ function self:CheckWeakNetworkables ()
 		   not self.WeakNetworkablesById [networkableId] then
 			self.NetworkableRefCounts [networkableId] = nil
 			
-			self:DispatchNetworkableDestroyed (networkableId)
+			if self.HostingWeakNetworkables [networkableId] then
+			   self.HostingWeakNetworkables [networkableId] = nil
+				self:DispatchNetworkableDestroyed (networkableId)
+			end
 		end
 	end
 end
