@@ -13,6 +13,8 @@ function self:ctor ()
 	
 	-- Subscribers
 	self.SubscriberSet = nil
+	
+	GLib.EventProvider (self)
 end
 
 function self:dtor ()
