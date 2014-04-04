@@ -268,9 +268,17 @@ function self:CreateConnection (remoteId, initiator, networkableId)
 	
 	self:RegisterStrongNetworkable (connectionNetworkable, networkableId)
 	connection:SetId (self:GetNetworkableId (connectionNetworkable))
+	
 	if self.ConnectionRunner then
 		self.ConnectionRunner:RegisterConnection (connection)
 	end
+	
+	-- Connection termination handler
+	connectionNetworkable:AddEventListener ("Closed",
+		function ()
+			self:UnregisterNetworkable (connectionNetworkable)
+		end
+	)
 	
 	self:DispatchEvent ("ConnectionCreated", connection, connectionNetworkable)
 	
