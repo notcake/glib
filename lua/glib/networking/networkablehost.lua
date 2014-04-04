@@ -144,7 +144,7 @@ function self:HandlePacket (sourceId, inBuffer)
 			self:DispatchEvent ("CustomPacketReceived", sourceId, inBuffer)
 		end
 	else
-		local networkable = self:GetNetworkable (networkableId)
+		local networkable = self:GetNetworkableById (networkableId)
 		if not networkable then return end
 		return networkable:HandlePacket (sourceId, inBuffer)
 	end
