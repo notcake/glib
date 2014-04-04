@@ -13,12 +13,12 @@ if SERVER then
 	GLib.AddCSLuaFile = AddCSLuaFile
 	
 	function GLib.AddCSLuaFolder (folder, recursive)
-		print ("GLib : Adding " .. folder .. "/* to lua pack...")
+		GLib.Debug ("GLib : Adding " .. folder .. "/* to lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaFile, recursive)
 	end
 
 	function GLib.AddCSLuaFolderRecursive (folder)
-		print ("GLib : Adding " .. folder .. "/* to lua pack...")
+		GLib.Debug ("GLib : Adding " .. folder .. "/* to lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaFile, true)
 	end
 	
@@ -31,16 +31,20 @@ if SERVER then
 	
 	function GLib.AddCSLuaPackFolder (folder, recursive)
 		local startTime = SysTime ()
-		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, recursive)
-		MsgN (" done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		if SysTime () - startTime > 0.5 then
+			MsgN ("GLib : Adding " .. folder .. "/* to virtual lua pack... done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		end
+		GLib.Debug ("GLib : Adding " .. folder .. "/* to virtual lua pack... done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 
 	function GLib.AddCSLuaPackFolderRecursive (folder)
 		local startTime = SysTime ()
-		Msg ("GLib : Adding " .. folder .. "/* to virtual lua pack...")
 		GLib.EnumerateLuaFolder (folder, "LUA", GLib.AddCSLuaPackFile, true)
-		MsgN (" done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		if SysTime () - startTime > 0.5 then
+			MsgN ("GLib : Adding " .. folder .. "/* to virtual lua pack... done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
+		end
+		GLib.Debug ("GLib : Adding " .. folder .. "/* to virtual lua pack... done (" .. GLib.Loader.PackFileManager:GetFileCount () .. " total files, " .. GLib.FormatDuration (SysTime () - startTime) .. ")")
 	end
 	
 	function GLib.AddCSLuaPackSystem (systemTableName)
@@ -242,7 +246,7 @@ function GLib.Initialize (systemName, systemTable)
 	
 	hook.Add ("ShutDown", tostring (systemName),
 		function ()
-			print ("Unloading " .. systemName .. "...")
+			GLib.Debug ("Unloading " .. systemName .. "...")
 			systemTable:DispatchEvent ("Unloaded")
 		end
 	)

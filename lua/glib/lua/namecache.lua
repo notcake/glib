@@ -30,7 +30,6 @@ function self:ctor ()
 	
 	hook.Add ("GLibSystemLoaded", "GLib.Lua.NameCache",
 		function (systemName)
-			print ("GLib.Lua.NameCache : Queued " .. systemName .. " for indexing.")
 			self:Index (_G [systemName], systemName)
 			
 			if CLIENT then
@@ -181,7 +180,7 @@ function self:StartIndexingThread ()
 		return
 	end
 	
-	print ("GLib.Lua.NameCache : Indexing thread started.")
+	GLib.Debug ("GLib.Lua.NameCache : Indexing thread started.")
 	
 	self.Thread = GLib.Threading.Thread ()
 	self.Thread:Start (
@@ -204,7 +203,7 @@ function self:StartIndexingThread ()
 				self:ProcessTable (t, tableName, separator)
 			end
 			
-			print ("GLib.Lua.NameCache : Indexing took " .. GLib.FormatDuration (SysTime () - self.Thread:GetStartTime ()) .. ".")
+			GLib.Debug ("GLib.Lua.NameCache : Indexing took " .. GLib.FormatDuration (SysTime () - self.Thread:GetStartTime ()) .. ".")
 		end
 	)
 end
