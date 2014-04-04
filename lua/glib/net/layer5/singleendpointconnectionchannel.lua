@@ -76,7 +76,7 @@ end
 function self:Connect (packet)
 	-- New connection
 	local connection = GLib.Net.Connection (self:GetRemoteId (), self:GenerateConnectionId (), self)
-	connection:SetInitiator (GLib.Net.ConnectionEndPoint.Local)
+	connection:SetInitiator (GLib.Net.ConnectionEndpoint.Local)
 	
 	-- Register connection
 	self:RegisterConnection (connection)
@@ -105,7 +105,7 @@ function self:HandlePacket (inBuffer)
 	if not connection then
 		-- New connection
 		connection = GLib.Net.Connection (self:GetRemoteId (), connectionId, self)
-		connection:SetInitiator (GLib.Net.ConnectionEndPoint.Remote)
+		connection:SetInitiator (GLib.Net.ConnectionEndpoint.Remote)
 		
 		-- Register connection
 		self:RegisterConnection (connection)

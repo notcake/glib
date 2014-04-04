@@ -120,11 +120,11 @@ function self:GetInitiator ()
 end
 
 function self:IsLocallyInitiated ()
-	return self.Initiator == GLib.Net.ConnectionEndPoint.Local
+	return self.Initiator == GLib.Net.ConnectionEndpoint.Local
 end
 
 function self:IsRemotelyInitiated ()
-	return self.Initiator == GLib.Net.ConnectionEndPoint.Remote
+	return self.Initiator == GLib.Net.ConnectionEndpoint.Remote
 end
 
 function self:IsClosed ()
@@ -212,6 +212,7 @@ function self:Write (packet)
 	-- Update timeout
 	self:UpdateTimeout ()
 end
+
 -- Handlers
 function self:GetHandler ()
 	return self:GetPacketHandler ()

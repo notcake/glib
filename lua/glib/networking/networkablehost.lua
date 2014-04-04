@@ -3,6 +3,8 @@ GLib.Networking.NetworkableHost = GLib.MakeConstructor (self)
 
 --[[
 	Events:
+		ConnectionCreated (ConnectionNetworkable connectionNetworkable)
+			Fired when a connection has been created.
 		CustomPacketReceived (destinationId, InBuffer packet)
 			Fired when a custom packet has been received.
 		DispatchPacket (destinationId, OutBuffer packet)
@@ -30,6 +32,9 @@ function self:ctor ()
 	-- Weak networkable checking
 	self.WeakNetworkableCheckInterval = 5
 	self.LastWeakNetworkableCheckTime = 0
+	
+	-- Connections
+	self.ConnectionRunner = nil
 	
 	GLib.EventProvider (self)
 end
@@ -177,7 +182,7 @@ function self:IsNetworkableRegistered (networkable)
 	return self.NetworkableIds [networkable] ~= nil
 end
 
-function self:RegisterNetworkable (networkable, networkableId)
+function self:RegisterNetworkable (networkable, networkableId, weakReference)
 	self:CheckWeakNetworkables ()
 	
 	if not self:IsHosting (networkable) and not networkableId then
@@ -198,7 +203,11 @@ function self:RegisterNetworkable (networkable, networkableId)
 		self.NetworkableIds [networkable] = networkableId
 		self.NetworkableRefCounts [networkableId] = 0
 		
-		if self:IsHosting (networkable) then
+		if weakReference == nil then
+			weakReference = self:IsHosting (networkable)
+		end
+		
+		if weakReference then
 			self.WeakNetworkablesById [networkableId] = networkable
 		else
 			self.NetworkablesById [networkableId] = networkable
@@ -213,6 +222,10 @@ function self:RegisterNetworkable (networkable, networkableId)
 	end
 	
 	self.NetworkableRefCounts [networkableId] = self.NetworkableRefCounts [networkableId] + 1
+end
+
+function self:RegisterStrongNetworkable (networkable, networkableId)
+	return self:RegisterNetworkable (networkable, networkableId, false)
 end
 
 function self:UnregisterNetworkable (networkableOrNetworkableId)
@@ -244,6 +257,33 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 		-- Unhook networkable
 		self:UnhookNetworkable (networkable)
 	end
+end
+
+-- Connections
+function self:CreateConnection (remoteId, initiator, networkableId)
+	local connection = GLib.Net.Connection (remoteId)
+	connection:SetInitiator (initiator)
+	local connectionNetworkable = GLib.Networking.ConnectionNetworkable (connection)
+	connectionNetworkable:SetHosting (connection:IsLocallyInitiated ())
+	
+	self:RegisterStrongNetworkable (connectionNetworkable, networkableId)
+	connection:SetId (self:GetNetworkableId (connectionNetworkable))
+	if self.ConnectionRunner then
+		self.ConnectionRunner:RegisterConnection (connection)
+	end
+	
+	self:DispatchEvent ("ConnectionCreated", connection, connectionNetworkable)
+	
+	return connection
+end
+
+function self:GetConnectionRunner ()
+	return self.ConnectionRunner
+end
+
+function self:SetConnectionRunner (connectionRunner)
+	self.ConnectionRunner = connectionRunner
+	return self
 end
 
 -- Internal, do not call

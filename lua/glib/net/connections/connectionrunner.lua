@@ -4,7 +4,7 @@ GLib.Net.ConnectionRunner = GLib.MakeConstructor (self)
 function self:ctor ()
 	self.Channels = GLib.WeakKeyTable ()
 	
-	self.ConnectionsByRemoteEndPoint = {}
+	self.ConnectionsByRemoteEndpoint = {}
 	self.ActiveConnections  = GLib.WeakKeyTable () -- Connections with undispatched packets.
 	self.TimeoutConnections = GLib.WeakKeyTable () -- Connections with timeouts.
 	
@@ -27,13 +27,13 @@ function self:ctor ()
 	
 	GLib.PlayerMonitor:AddEventListener ("PlayerDisconnected", "GLib.Net.ConnectionRunner." .. self:GetHashCode (),
 		function (_, ply, userId)
-			if not self.ConnectionsByRemoteEndPoint [userId] then return end
+			if not self.ConnectionsByRemoteEndpoint [userId] then return end
 			
-			for connection, _ in pairs (self.ConnectionsByRemoteEndPoint) do
+			for connection, _ in pairs (self.ConnectionsByRemoteEndpoint) do
 				connection:Close (GLib.Net.ConnectionClosureReason.CarrierLost)
 			end
 			
-			self.ConnectionsByRemoteEndPoint [userId] = nil
+			self.ConnectionsByRemoteEndpoint [userId] = nil
 		end
 	)
 end
@@ -63,8 +63,8 @@ end
 function self:RegisterConnection (connection)
 	self:HookConnection (connection)
 	
-	self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()] = self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()] or GLib.WeakKeyTable ()
-	self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()] [connection] = true
+	self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()] = self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()] or GLib.WeakKeyTable ()
+	self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()] [connection] = true
 	
 	self:UpdateConnectionState (connection)
 end
@@ -73,9 +73,9 @@ function self:UnregisterConnection (connection)
 	self:UnhookConnection (connection)
 	
 	-- Unregister connection
-	self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()] [connection] = nil
-	if not next (self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()]) then
-		self.ConnectionsByRemoteEndPoint [connection:GetRemoteId ()] = nil
+	self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()] [connection] = nil
+	if not next (self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()]) then
+		self.ConnectionsByRemoteEndpoint [connection:GetRemoteId ()] = nil
 	end
 	
 	self:UpdateConnectionState (connection)
