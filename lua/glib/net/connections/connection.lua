@@ -366,8 +366,8 @@ function self:ProcessPacket (packetId, inBuffer)
 			self:Close ()
 			return
 		end
-		self.LastAvailablePacket = inBuffer
 		if self.PacketAvailableEvent then
+			self.LastAvailablePacket = inBuffer:Pin ()
 			self.PacketAvailableEvent:Fire ()
 		end
 		self:GetPacketHandler () (self:GetRemoteId (), inBuffer, self)

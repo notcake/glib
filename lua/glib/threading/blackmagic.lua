@@ -71,11 +71,23 @@ function GLib.Threading.CallSelfAsSync ()
 	-- Bail out if there is no callback
 	if not callback then return false end
 	
-	-- Invoke function without callback
-	local ret = { info.func (unpack (arguments, 1, argumentCount)) }
-	
-	-- Call callback with return values
-	callback (unpack (ret, 1, table.maxn (ret)))
+	if GLib.InThread () then
+		-- Invoke function without callback
+		local ret = { info.func (unpack (arguments, 1, argumentCount)) }
+		
+		-- Call callback with return values
+		callback (unpack (ret, 1, table.maxn (ret)))
+	else
+		GLib.CallAsync (
+			function ()
+				-- Invoke function without callback
+				local ret = { info.func (unpack (arguments, 1, argumentCount)) }
+				
+				-- Call callback with return values
+				callback (unpack (ret, 1, table.maxn (ret)))
+			end
+		)
+	end
 	
 	return true
 end
