@@ -39,6 +39,10 @@ function self:AddEventListener (eventName, nameOrCallback, callback)
 	self.EventListeners [eventName] [nameOrCallback] = callback
 end
 
+function self:Clear ()
+	self.EventListeners = {}
+end
+
 function self:Clone (eventProvider)
 	eventProvider = eventProvider or GLib.EventProvider ()
 	eventProvider = eventProvider:GetEventProvider ()
