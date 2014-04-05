@@ -100,7 +100,8 @@ function GLib.Threading.CallSelfInThread ()
 	
 	-- Invoke
 	local arguments, argumentCount = GetArgumentList (3, info.nparams)
-	GLib.CallAsync (info.func, unpack (arguments, 1, argumentCount))
+	local thread = GLib.CallAsync (info.func, unpack (arguments, 1, argumentCount))
+	GLib.Threading.ThreadRunner:RunThread (thread)
 	
 	return true
 end
