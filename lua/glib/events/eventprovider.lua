@@ -43,6 +43,15 @@ function self:Clear ()
 	self.EventListeners = {}
 end
 
+function self:ClearEventListeners (eventName)
+	if not eventName then
+		self:Clear ()
+		return
+	end
+	
+	self.EventListeners [eventName] = nil
+end
+
 function self:Clone (eventProvider)
 	eventProvider = eventProvider or GLib.EventProvider ()
 	eventProvider = eventProvider:GetEventProvider ()
