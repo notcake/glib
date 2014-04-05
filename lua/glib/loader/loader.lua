@@ -291,8 +291,10 @@ function GLib.Loader.RunSerializedPackFile (executionTarget, serializedPackFile,
 					fileSize = fileSize .. " decompressed to " .. GLib.FormatFileSize (decompressedSize)
 				end
 				
-				MsgN ("GLib.Loader : Running pack file \"" .. packFileSystem:GetName () .. "\", deserialization took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. fileSize .. ").")
+				Msg ("GLib.Loader : Running pack file \"" .. packFileSystem:GetName () .. "\", deserialization took " .. GLib.FormatDuration (SysTime () - startTime) .. " (" .. packFileSystem:GetFileCount () .. " total files, " .. fileSize .. ")...")
+				startTime = SysTime ()
 				GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
+				MsgN (" took " .. GLib.FormatDuration (SysTime () - startTime) .. ".")
 			end
 		)
 	else
