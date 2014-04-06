@@ -108,8 +108,8 @@ function self:IsVariadic ()
 	return self.Variadic
 end
 
-function self:ToString ()
-	local parameterList = "("
+function self:ToUnbracketedString ()
+	local parameterList = ""
 	
 	local first = true
 	for parameter in self:GetEnumerator () do
@@ -119,7 +119,9 @@ function self:ToString ()
 		parameterList = parameterList .. parameter:ToString ()
 	end
 	
-	parameterList = parameterList .. ")"
-	
 	return parameterList
+end
+
+function self:ToString ()
+	return "(" .. self:ToUnbracketedString () .. ")"
 end
