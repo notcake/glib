@@ -16,7 +16,10 @@ end
 
 function GLib.Enumerator.Map (enumerator, f)
 	return function ()
-		return f (enumerator ())
+		local a, b, c, d = enumerator ()
+		if a == nil then return nil end
+		
+		return f (a, b, c, d)
 	end
 end
 
