@@ -38,6 +38,10 @@ function GLib.Enumerator.ValueKeyEnumerator (tbl)
 	end
 end
 
+function GLib.Enumerator.NullEnumerator ()
+	return GLib.NullCallback
+end
+
 function GLib.Enumerator.SingleValueEnumerator (v)
 	local done = false
 	return function ()
@@ -78,6 +82,7 @@ GLib.KeyEnumerator          = GLib.Enumerator.KeyEnumerator
 GLib.ValueEnumerator        = GLib.Enumerator.ValueEnumerator
 GLib.KeyValueEnumerator     = GLib.Enumerator.KeyValueEnumerator
 GLib.ValueKeyEnumerator     = GLib.Enumerator.ValueKeyEnumerator
+GLib.NullEnumerator         = GLib.Enumerator.NullEnumerator
 GLib.SingleValueEnumerator  = GLib.Enumerator.SingleValueEnumerator
 GLib.YieldEnumerator        = GLib.Enumerator.YieldEnumerator
 GLib.YieldEnumeratorFactory = GLib.Enumerator.YieldEnumeratorFactory
