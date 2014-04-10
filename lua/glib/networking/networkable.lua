@@ -69,3 +69,7 @@ end
 
 function self:HandlePacket (sourceId, inBuffer)
 end
+
+function self:HandleRemoteDestruction ()
+	self:dtor ()
+end

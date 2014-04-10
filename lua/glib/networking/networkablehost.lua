@@ -155,6 +155,10 @@ function self:HandlePacket (sourceId, inBuffer)
 			if self:IsHosting (networkable) then return end -- We don't work for you.
 			
 			self:UnregisterNetworkable (networkableId)
+			
+			if networkable.HandleRemoteDestruction then
+				networkable:HandleRemoteDestruction ()
+			end
 		elseif messageType == GLib.Networking.NetworkableHostMessageType.Custom then
 			self:DispatchEvent ("CustomPacketReceived", sourceId, inBuffer)
 		end
