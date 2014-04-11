@@ -140,6 +140,7 @@ include ("networking/networkablestate.lua")
 include ("networking/subscriberset.lua")
 
 include ("networking/networkable.lua")
+include ("networking/singleendpointnetworkable.lua")
 include ("networking/networkablehost.lua")
 include ("networking/networkablehostmessagetype.lua")
 

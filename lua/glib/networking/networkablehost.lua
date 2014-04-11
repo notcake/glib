@@ -22,7 +22,7 @@ function self:ctor ()
 	self.SubscriberSet = nil
 	
 	-- Networkables
-	-- self.NextNetworkableId       = 1
+	self.NetworkableCount        = 0
 	-- self.NetworkableIds          = GLib.WeakKeyTable ()
 	-- self.NetworkablesById        = {}
 	-- self.WeakNetworkablesById    = GLib.WeakValueTable ()
@@ -177,7 +177,7 @@ function self:ClearNetworkables ()
 		end
 	end
 	
-	self.NextNetworkableId       = 1
+	self.NetworkableCount        = 0
 	self.NetworkableIds          = GLib.WeakKeyTable ()
 	self.NetworkablesById        = {}
 	self.WeakNetworkablesById    = GLib.WeakValueTable ()
@@ -187,6 +187,14 @@ end
 
 function self:GetNetworkableById (id)
 	return self.NetworkablesById [id] or self.WeakNetworkablesById [id]
+end
+
+function self:GetNetworkableCount ()
+	return self.NetworkableCount
+end
+
+function self:GetNetworkableEnumerator ()
+	return GLib.KeyEnumerator (self.NetworkableIds)
 end
 
 function self:GetNetworkableId (networkable)
@@ -210,6 +218,7 @@ function self:RegisterNetworkable (networkable, networkableId, weakReference)
 		-- New networkable
 		networkableId = networkableId or self:GenerateNetworkableId ()
 		
+		self.NetworkableCount = self.NetworkableCount + 1
 		self.NetworkableIds [networkable] = networkableId
 		self.NetworkableRefCounts [networkableId] = 0
 		
@@ -268,6 +277,7 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 		local hosting = self:IsHosting (networkable)
 		
 		-- Unregister networkable
+		self.NetworkableCount = self.NetworkableCount - 1
 		self.NetworkableIds [networkable] = nil
 		self.NetworkablesById [networkableId] = nil
 		self.WeakNetworkablesById [networkableId] = nil
@@ -278,7 +288,10 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 			self:DispatchNetworkableDestroyed (networkableId)
 		end
 		
-		networkable:SetNetworkableHost (nil)
+		-- Clear the Networkable's NetworkableHost
+		if networkable.SetNetworkableHost then
+			networkable:SetNetworkableHost (nil)
+		end
 		
 		-- Unhook networkable
 		self:UnhookNetworkable (networkable)
