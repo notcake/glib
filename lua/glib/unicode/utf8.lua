@@ -79,6 +79,29 @@ function GLib.UTF8.CharacterToOffset (str, char)
 	return offset
 end
 
+function GLib.UTF8.ChunkSplit (str, chunkSize)
+	local chunks = {}
+	
+	local chunkStart = 1
+	while chunkStart <= #str do
+		if #chunks > 1e5 then
+			GLib.Error ("UTF8.ChunkSplit : 100,000 chunks??")
+			break
+		end
+		
+		local chunkEnd = GLib.UTF8.GetSequenceStart (str, chunkStart + chunkSize)
+		
+		if chunkStart >= chunkEnd then
+			chunkEnd = chunkStart + GLib.UTF8.SequenceLength (str, chunkStart)
+		end
+		
+		chunks [#chunks + 1] = string_sub (str, chunkStart, chunkEnd - 1)
+		chunkStart = chunkEnd
+	end
+	
+	return chunks
+end
+
 function GLib.UTF8.ContainsSequences (str, offset)
 	return string_find (str, "[\192-\255]", offset) and true or false
 end
@@ -97,7 +120,7 @@ end
 
 function GLib.UTF8.GetSequenceStart (str, offset)
 	if offset <= 0 then return 1 end
-	if offset > #str then offset = #str end
+	if offset > #str then return #str + 1 end
 	
 	local startOffset = offset
 	while startOffset >= 1 do
@@ -292,6 +315,8 @@ function GLib.UTF8.NextWordBoundary (str, offset)
 	end
 end
 
+-- This isn't used anywhere
+-- Behaviour is subject to change
 function GLib.UTF8.PreviousChar (str, offset)
 	offset = offset or (#str + 1)
 	if offset <= 1 then return "", 0 end
