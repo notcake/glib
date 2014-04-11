@@ -1,5 +1,5 @@
 local self = {}
-GLib.Networking.Networkable = GLib.MakeConstructor (self)
+GLib.Networking.Networkable = GLib.MakeConstructor (self, GLib.IDisposable)
 
 --[[
 	Events:

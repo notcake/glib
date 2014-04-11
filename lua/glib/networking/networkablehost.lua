@@ -136,9 +136,7 @@ function self:DispatchPacket (destinationId, packet, object)
 	-- Build packet
 	packet:PrependUInt32 (networkableId)
 	
-	if self.Debug then
-		print ("NetworkableHost:DispatchPacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (object) .. ")")
-	end
+	if self.Debug then print ("NetworkableHost:DispatchPacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (object) .. ")") end
 	
 	-- Dispatch
 	if self.Channel then
@@ -165,7 +163,7 @@ function self:HandlePacket (sourceId, inBuffer)
 			if not networkable              then return end -- Nothing to unregister.
 			if self:IsHosting (networkable) then return end -- We don't work for you.
 			
-			print ("NetworkableHost:HandlePacket : Remote end of networkable " .. GLib.Lua.ToCompactLuaString (networkable) .. " destroyed.")
+			if self.Debug then print ("NetworkableHost:HandlePacket : Remote end of networkable " .. GLib.Lua.ToCompactLuaString (networkable) .. " destroyed.") end
 			self:UnregisterNetworkable (networkableId)
 			
 			if networkable.HandleRemoteDestruction then
@@ -177,15 +175,12 @@ function self:HandlePacket (sourceId, inBuffer)
 	else
 		local networkable = self:GetNetworkableById (networkableId)
 		if not networkable then
-			if self.Debug then
-				print ("NetworkableHost:HandlePacket : Unknown networkable ID " .. string.format ("0x%08x", networkableId))
-			end
+			if self.Debug then print ("NetworkableHost:HandlePacket : Unknown networkable ID " .. string.format ("0x%08x", networkableId)) end
 			return
 		end
 		
-		if self.Debug then
-			print ("NetworkableHost:HandlePacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (networkable) .. ")")
-		end
+		if self.Debug then print ("NetworkableHost:HandlePacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (networkable) .. ")") end
+		
 		return networkable:HandlePacket (sourceId, inBuffer)
 	end
 end
@@ -194,6 +189,12 @@ end
 function self:ClearNetworkables ()
 	if self.NetworkableIds then
 		for networkable, _ in pairs (self.NetworkableIds) do
+			-- Clear the Networkable's NetworkableHost
+			if networkable.SetNetworkableHost then
+				networkable:SetNetworkableHost (nil)
+			end
+			
+			-- Unhook networkable
 			self:UnhookNetworkable (networkable)
 		end
 	end
@@ -390,7 +391,7 @@ function self:DispatchNetworkableDestroyed (networkableId)
 	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageType.NetworkableDestroyed)
 	outBuffer:UInt32 (networkableId)
 	
-	print ("NetworkableHost:DispatchNetworkableDestroyed : " .. networkableId)
+	if self.Debug then print ("NetworkableHost:DispatchNetworkableDestroyed : " .. networkableId) end
 	
 	self:DispatchPacket (nil, outBuffer)
 end

@@ -3,6 +3,7 @@ GLib.Stage2 = true
 
 -- Core
 include ("oop.lua")
+include ("idisposable.lua")
 
 -- String
 GLib.String = {}
