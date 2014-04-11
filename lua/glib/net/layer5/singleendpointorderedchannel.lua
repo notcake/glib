@@ -8,7 +8,7 @@ function self:ctor (innerChannel)
 	
 	-- State
 	self.Open = nil
-	self.State = GLib.Net.Layer5.OrderedChannelState.Initializing
+	self.State = GLib.Net.Layer5.OrderedChannelState.Uninitialized
 	
 	-- Packets
 	self.NextInboundPacketId  = nil
