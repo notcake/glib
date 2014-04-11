@@ -13,6 +13,7 @@ end
 
 -- Packets
 function self:DispatchPacket (destinationId, packet)
+	if destinationId == GLib.GetEveryoneId () then destinationId = self.Channel:GetRemoteId () end
 	if destinationId ~= self.Channel:GetRemoteId () then return end
 	return self.Channel:DispatchPacket (packet)
 end

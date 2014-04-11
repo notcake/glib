@@ -165,6 +165,7 @@ function self:HandlePacket (sourceId, inBuffer)
 			if not networkable              then return end -- Nothing to unregister.
 			if self:IsHosting (networkable) then return end -- We don't work for you.
 			
+			print ("NetworkableHost:HandlePacket : Remote end of networkable " .. GLib.Lua.ToCompactLuaString (networkable) .. " destroyed.")
 			self:UnregisterNetworkable (networkableId)
 			
 			if networkable.HandleRemoteDestruction then
@@ -388,6 +389,8 @@ function self:DispatchNetworkableDestroyed (networkableId)
 	local outBuffer = GLib.Net.OutBuffer ()
 	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageType.NetworkableDestroyed)
 	outBuffer:UInt32 (networkableId)
+	
+	print ("NetworkableHost:DispatchNetworkableDestroyed : " .. networkableId)
 	
 	self:DispatchPacket (nil, outBuffer)
 end
