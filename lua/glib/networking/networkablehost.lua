@@ -12,6 +12,8 @@ GLib.Networking.NetworkableHost = GLib.MakeConstructor (self)
 ]]
 
 function self:ctor ()
+	self.Debug = false
+	
 	-- Channel
 	self.Channel = nil
 	
@@ -42,6 +44,11 @@ end
 
 function self:dtor ()
 	self:ClearNetworkables ()
+end
+
+function self:SetDebug (debug)
+	self.Debug = debug
+	return self
 end
 
 -- Channel
@@ -129,6 +136,10 @@ function self:DispatchPacket (destinationId, packet, object)
 	-- Build packet
 	packet:PrependUInt32 (networkableId)
 	
+	if self.Debug then
+		print ("NetworkableHost:DispatchPacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (object) .. ")")
+	end
+	
 	-- Dispatch
 	if self.Channel then
 		self.Channel:DispatchPacket (destinationId, packet)
@@ -164,7 +175,16 @@ function self:HandlePacket (sourceId, inBuffer)
 		end
 	else
 		local networkable = self:GetNetworkableById (networkableId)
-		if not networkable then return end
+		if not networkable then
+			if self.Debug then
+				print ("NetworkableHost:HandlePacket : Unknown networkable ID " .. string.format ("0x%08x", networkableId))
+			end
+			return
+		end
+		
+		if self.Debug then
+			print ("NetworkableHost:HandlePacket : Networkable ID " .. string.format ("0x%08x", networkableId) .. " (" .. GLib.Lua.ToCompactLuaString (networkable) .. ")")
+		end
 		return networkable:HandlePacket (sourceId, inBuffer)
 	end
 end

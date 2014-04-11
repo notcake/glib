@@ -26,6 +26,8 @@ function self:ctor (remoteId, id, channel)
 	self.Initiator     = nil
 	self.ClosureReason = nil
 	
+	self.CloseEvent = nil
+	
 	-- Packets
 	self.OpenPacketSent = false
 	
@@ -112,6 +114,10 @@ function self:Close (reason)
 	
 	if self:IsClosed () then
 		self:DispatchEvent ("Closed", self.ClosureReason)
+		
+		if self.CloseEvent then
+			self.CloseEvent:Fire ()
+		end
 	end
 end
 
@@ -151,6 +157,21 @@ function self:SetInitiator (initiator)
 	return self
 end
 
+function self:Wait (callback)
+	if self:IsClosed () then
+		if callback then callback () end
+		return
+	end
+	
+	self.CloseEvent = self.CloseEvent or GLib.Threading.Event ()
+	
+	if callback then
+		self.CloseEvent:Wait (callback)
+	else
+		GLib.GetCurrentThread ():WaitForSingleObject (self.CloseEvent)
+	end
+end
+
 -- Packets
 function self:ClearOutboundQueue ()
 	local hasUndispatchedPackets = self:HasUndispatchedPackets ()
@@ -172,11 +193,21 @@ function self:DispatchNextPacket ()
 		-- Close the connection
 		self.State = GLib.Net.ConnectionState.Closed
 		self:DispatchEvent ("Closed", GLib.Net.ConnectionClosureReason.LocalClosure)
+		
+		if self.CloseEvent then
+			self.CloseEvent:Fire ()
+		end
 	end
 end
 
 function self:DispatchPacket (packet)
 	self:Write (packet)
+end
+
+function self:Flush ()
+	while self:HasUndispatchedPackets () do
+		self:DispatchNextPacket ()
+	end
 end
 
 function self:GetMTU ()
