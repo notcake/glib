@@ -343,7 +343,10 @@ function self:WaitForMultipleObjects (...)
 				self.WaitObjects [waitable] = nil
 				if next (self.WaitObjects) == nil then
 					self:SetState (GLib.Threading.ThreadState.Running)
-					GLib.Threading.ThreadRunner:RunThread (self)
+					
+					if not GLib.Threading.ThreadRunner:IsCurrentThread (self) then
+						GLib.Threading.ThreadRunner:RunThread (self)
+					end
 				end
 			end
 		)
