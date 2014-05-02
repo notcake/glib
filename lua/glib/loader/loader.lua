@@ -237,6 +237,7 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 		-- Weapons
 		local _, folders = packFileSystem:Find ("weapons/*")
 		for _, className in ipairs (folders) do
+			local success = false
 			local _SWEP = SWEP
 			SWEP = {}
 			SWEP.Primary   = {}
@@ -245,16 +246,20 @@ function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 			
 			-- Run file
 			if packFileSystem:Exists ("weapons/" .. className .. "/" .. prefix .. "init.lua") then
+				success = true
 				GLib.Loader.Include ("weapons/" .. className .. "/" .. prefix .. "init.lua")
 			elseif packFileSystem:Exists ("weapons/" .. className .. "/shared.lua") then
+				success = true
 				GLib.Loader.Include ("weapons/" .. className .. "/shared.lua")
 			end
 			
-			weapons.Register (SWEP, SWEP.ClassName, true)
-			
-			-- Update existing entities
-			for _, ent in ipairs (ents.FindByClass (SWEP.ClassName)) do
-				table.Merge (ent:GetTable (), SWEP)
+			if success then
+				weapons.Register (SWEP, SWEP.ClassName, true)
+				
+				-- Update existing entities
+				for _, ent in ipairs (ents.FindByClass (SWEP.ClassName)) do
+					table.Merge (ent:GetTable (), SWEP)
+				end
 			end
 			
 			SWEP = _SWEP
