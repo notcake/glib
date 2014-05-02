@@ -8,10 +8,14 @@ local function PlayerFromUserId (userId)
 	end
 	
 	if CLIENT and userId == GLib.GetServerId () then return nil end
-	if userId == GLib.GetEveryoneId () then return player.GetAll () end
+	if userId == GLib.GetEveryoneId () then
+		local recipientFilter = RecipientFilter ()
+		recipientFilter:AddAllPlayers ()
+		return recipientFilter
+	end
 	
 	local ply = GLib.PlayerMonitor:GetUserEntity (userId)
-	if not ply then return {} end
+	if not ply then return nil end
 	
 	return ply
 end
@@ -41,6 +45,8 @@ function self:DispatchPacket (destinationId, packet)
 	end
 	
 	destinationId = PlayerFromUserId (destinationId)
+	if not destinationId then return end -- Drop packet
+	
 	GLib.Net.Layer1.UsermessageDispatcher:Dispatch (destinationId, self:GetName (), packet)
 end
 
