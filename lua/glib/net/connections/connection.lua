@@ -24,8 +24,9 @@ function self:ctor (remoteId, id, channel)
 	-- State
 	self.State         = GLib.Net.ConnectionState.Opening
 	self.Initiator     = nil
-	self.ClosureReason = nil
 	
+	-- Closure
+	self.ClosureReason = nil
 	self.CloseEvent = nil
 	
 	-- Packets
@@ -321,7 +322,7 @@ function self:GenerateNextPacket (outBuffer)
 	if #self.OutboundQueue > 0 then
 		packetType = packetType + GLib.Net.ConnectionPacketType.Data
 	end
-	if self:IsOpening () then
+	if self:IsOpening () and self:IsLocallyInitiated () then
 		packetType = packetType + GLib.Net.ConnectionPacketType.Open
 		self.OpenPacketSent = true
 	end
