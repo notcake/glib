@@ -376,7 +376,9 @@ function self:CheckWeakNetworkables ()
 	for networkableId, _ in pairs (self.NetworkableRefCounts) do
 		if not self.NetworkablesById [networkableId] and
 		   not self.WeakNetworkablesById [networkableId] then
+			-- Weak networkable got garbage collected
 			self.NetworkableRefCounts [networkableId] = nil
+			self.NetworkableCount = self.NetworkableCount - 1
 			
 			if self.HostingWeakNetworkables [networkableId] then
 			   self.HostingWeakNetworkables [networkableId] = nil
