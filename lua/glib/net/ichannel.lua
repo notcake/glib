@@ -93,6 +93,10 @@ function self:HandlePacket (sourceId, inBuffer)
 	return self:GetHandler () (sourceId, inBuffer)
 end
 
+function self:IsDestinationRoutable (destinationId)
+	GLib.Error ("IChannel:IsDestinationRoutable : Not implemented.")
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self.Handler

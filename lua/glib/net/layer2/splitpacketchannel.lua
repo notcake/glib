@@ -87,6 +87,10 @@ function self:HandlePacket (sourceId, inBuffer)
 	end
 end
 
+function self:IsDestinationRoutable (destinationId)
+	return self.InnerChannel:IsDestinationRoutable (destinationId)
+end
+
 -- Internal, do not call
 function self:HookSystems ()
 	timer.Create ("GLib.SplitPacketChannel." .. self:GetName (), 0.5, 0,

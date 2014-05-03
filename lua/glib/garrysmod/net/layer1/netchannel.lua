@@ -53,3 +53,12 @@ end
 function self:GetMTU ()
 	return 65536 - #self:GetName () - 2
 end
+
+function self:IsDestinationRoutable (destinationId)
+	if destinationId == GLib.GetEveryoneId () then return true end
+	
+	if CLIENT then return destinationId == GLib.GetServerId () end
+	if SERVER then return GLib.PlayerMonitor:GetUserEntity (destinationId) ~= nil end
+	
+	return false
+end

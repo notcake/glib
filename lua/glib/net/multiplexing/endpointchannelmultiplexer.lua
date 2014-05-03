@@ -92,6 +92,10 @@ function self:HandlePacket (sourceId, packet)
 	return self.SingleEndpointChannels [sourceId]:HandlePacket (packet)
 end
 
+function self:IsDestinationRoutable (destinationId)
+	return self.InnerChannel:IsDestinationRoutable (destinationId)
+end
+
 -- Handlers
 function self:SetHandler (handler)
 	if self.Handler == handler then return self end

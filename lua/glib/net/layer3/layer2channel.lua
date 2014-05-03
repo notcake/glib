@@ -58,6 +58,10 @@ function self:GetMTU ()
 	return self.InnerChannel:GetMTU ()
 end
 
+function self:IsDestinationRoutable (destinationId)
+	return self.InnerChannel:IsDestinationRoutable (destinationId)
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self.InnerChannel:GetHandler ()

@@ -75,6 +75,10 @@ function self:HandlePacket (inBuffer)
 	return self:GetHandler () (self:GetRemoteId (), inBuffer)
 end
 
+function self:IsDestinationRoutable (destinationId)
+	return destinationId == self:GetRemoteId ()
+end
+
 -- Handlers
 function self:GetHandler ()
 	return self.Handler

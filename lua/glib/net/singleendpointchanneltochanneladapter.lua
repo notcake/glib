@@ -25,3 +25,7 @@ end
 function self:HandlePacket (sourceId, inBuffer)
 	return self.Channel:HandlePacket (inBuffer)
 end
+
+function self:IsDestinationRoutable (destinationId)
+	return self.Channel:IsDestinationRoutable (destinationId)
+end

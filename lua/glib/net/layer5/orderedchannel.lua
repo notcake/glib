@@ -41,6 +41,10 @@ function self:GetMTU ()
 	return self.InnerChannel:GetMTU () - 4
 end
 
+function self:IsDestinationRoutable (destinationId)
+	return self.InnerChannel:IsDestinationRoutable (destinationId)
+end
+
 -- Internal, do not call
 function self:CreateSingleEndpointChannel (remoteId)
 	if self.SingleEndpointChannels [remoteId] then return self.SingleEndpointChannels [remoteId] end
