@@ -220,7 +220,7 @@ function self:HandlePacket (inBuffer)
 end
 
 function self:HasUndispatchedPackets ()
-	return #self.OutboundQueue > 0 or self:IsOpening () or self:IsClosing ()
+	return #self.OutboundQueue > 0 or (self:IsOpening () and self:IsLocallyInitiated ()) or self:IsClosing ()
 end
 
 function self:Read ()
@@ -414,4 +414,8 @@ function self:ProcessPacket (packetId, inBuffer)
 	
 	-- Update timeout
 	self:UpdateTimeout ()
+end
+
+function self:ToString ()
+	return "Connection [" .. self:GetHashCode () .. " " .. self:GetRemoteId () .. " (" .. GLib.PlayerMonitor:GetUserName (self:GetRemoteId ()) .. ")]"
 end
