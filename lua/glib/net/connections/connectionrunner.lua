@@ -29,7 +29,7 @@ function self:ctor ()
 		function (_, ply, userId)
 			if not self.ConnectionsByRemoteEndpoint [userId] then return end
 			
-			for connection, _ in pairs (self.ConnectionsByRemoteEndpoint) do
+			for connection, _ in pairs (self.ConnectionsByRemoteEndpoint [userId]) do
 				connection:Close (GLib.Net.ConnectionClosureReason.CarrierLost)
 			end
 			
