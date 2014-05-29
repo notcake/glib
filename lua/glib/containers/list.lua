@@ -14,6 +14,12 @@ function self:Add (item)
 	return self
 end
 
+function self:AddRange (enumerable)
+	for item in enumerable:GetEnumerator () do
+		self:Add (item)
+	end
+end
+
 function self:Clear ()
 	self.Count = 0
 	
@@ -59,6 +65,10 @@ function self:Insert (index, item)
 	table.insert (self.Items, index, item)
 	self.Count = self.Count + 1
 	return self
+end
+
+function self:IsEmpty ()
+	return self.Count == 0
 end
 
 function self:Remove (item)

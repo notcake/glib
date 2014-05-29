@@ -156,8 +156,12 @@ include ("containers/linkedlistnode.lua")
 include ("containers/list.lua")
 include ("containers/orderedset.lua")
 include ("containers/queue.lua")
+include ("containers/set.lua")
 include ("containers/stack.lua")
 include ("containers/tree.lua")
+
+include ("containers/eventedset.lua")
+include ("containers/binarysetoperatorcontroller.lua")
 
 -- Networking
 GLib.Net = {}
