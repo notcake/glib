@@ -94,11 +94,10 @@ local function Object_Is (self, typeConstructor)
 	end
 	
 	local metatable = self
-	while metatable do
-		if metatable.__ictor == typeConstructor then return true end
-		if metatable.__base2 and self.Is (metatable.__base2, typeConstructor) then return true end
-		
-		metatable = metatable.__base
+	if metatable.__ictor == typeConstructor then return true end
+	
+	for _, basetable in ipairs (metatable.__bases) do
+		if self.Is (basetable, typeConstructor) then return true end
 	end
 	
 	return false
@@ -117,10 +116,10 @@ local StaticTableMetatable =
 		
 		Produces a constructor for the object defined by metatable.
 		base may be nil or the constructor of a base class.
-		base2 may be nil or the constructor of another base class.
-		The second base class must not be a class with inheritance.
+		...  may be nil or the constructors of additional base class.
+		The additional base classes must not be classes with inheritance.
 ]]
-function GLib.MakeConstructor (metatable, base, base2)
+function GLib.MakeConstructor (metatable, base, ...)
 	metatable.__index = metatable
 	
 	-- Instance constructor, what this function returns
@@ -131,23 +130,28 @@ function GLib.MakeConstructor (metatable, base, base2)
 		local basetable = GLib.GetMetaTable (base)
 		metatable.__tostring = metatable.__tostring or basetable.__tostring
 		metatable.__base = basetable
+		metatable.__bases = { basetable }
 		setmetatable (metatable, basetable)
 		
-		-- 2nd base class
-		if base2 then
-			local base2table = GLib.GetMetaTable (base2)
-			
-			-- Copy everything but the metamethods / metafields
-			for k, v in pairs (base2table) do
-				if string.sub (k, 1, 2) ~= "__" then metatable [k] = v end
+		-- Additional base classes
+		if ... then
+			for k, base in ipairs ({...}) do
+				local basetable = GLib.GetMetaTable (basetable)
+				metatable.__bases [#metatable.__bases + 1] = basetable
+				
+				-- Copy everything but the metamethods / metafields
+				for k, v in pairs (basetable) do
+					if string.sub (k, 1, 2) ~= "__" then metatable [k] = v end
+				end
+				metatable.__base2 = basetable
+				metatable.ctor2 = basetable.ctor
+				metatable.dtor2 = basetable.dtor
 			end
-			metatable.__base2 = base2table
-			metatable.ctor2 = base2table.ctor
 		end
 	else
 		-- No base class
 		metatable.GetHashCode = metatable.GetHashCode or Object_GetHashCode
-		metatable.Is = metatable.Is or Object_Is
+		metatable.Is          = metatable.Is          or Object_Is
 	end
 	
 	-- Instance constructor
@@ -163,9 +167,20 @@ function GLib.MakeConstructor (metatable, base, base2)
 			
 			-- Pull together list of constructors and destructors needing to be called
 			while base ~= nil do
+				-- ctor and dtor
 				ctors [#ctors + 1] = rawget (base, "ctor")
-				ctors [#ctors + 1] = rawget (base, "ctor2")
 				dtors [#dtors + 1] = rawget (base, "dtor")
+				
+				-- Additioanl base class ctors and dtors
+				-- No support for additional base class inheritance
+				for i = 2, #base.__bases do
+					ctors [#ctors + 1] = rawget (base.__bases, "ctor")
+				end
+				
+				for i = 2, #base.__bases do
+					dtors [#dtors + 1] = rawget (base.__bases, "dtor")
+				end
+				
 				base = base.__base
 			end
 			
