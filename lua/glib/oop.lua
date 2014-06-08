@@ -15,49 +15,122 @@
 		__ictor    - Instance constructor static method.
 		             Creates and returns an instance of the class.
 				     This static method should not be overridden.
-					 
+					
 		__static   - A boolean whose value is always true.
 		             This field should not be overridden.
 	}
 	
 	Instance metatable
 	{
-		ctor       - The constructor method for a given class.
-		             Does not call base class constructors.
-		           
-		dtor       - The destructor method for a given class.
-		             Does not call base class destructors.
-		           
-		__index    - This metatable itself.
-		           
-		__ictor    - Instance constructor static method.
-		             Creates and returns an instance of the class.
-				     This static method should not be overridden.
-		           
-		__ctor     - The constructor method for a given class.
-		             Calls all base class constructors.
-				     This method should not be overridden.
-				     
-		__dtor     - The destructor method for a given class.
-		             Calls all base class destructors.
-				     This method should not be overridden.
-		           
-		__base     - The instance metatable of the base class.
-				     This field should not be overridden.
-		           
-		__base2    - The instance metatable of the second base class.
-				     This field should not be overridden.
+		ctor          - The constructor method for a given class.
+		                Does not call base class constructors.
+		                
+		dtor          - The destructor method for a given class.
+		                Does not call base class destructors.
+		                
+		__index       - This metatable itself.
+		                
+		__ictor       - Instance constructor static method.
+		                Creates and returns an instance of the class.
+		                This static method should not be overridden.
+		                
+		__ctor        - The constructor method for a given class.
+		                Calls all base class constructors.
+		                This method should not be overridden.
+		                
+		__dtor        - The destructor method for a given class.
+		                Calls all base class destructors.
+		                This method should not be overridden.
+		                
+		__base        - The instance metatable of the base class.
+		                This field should not be overridden.
+		                
+		__bases       - Array of instance metatables of all base classes.
+		                This field should not be overridden or modified.
+		                
+		__basemethods - Map of inherited method names to the instance metatables they come from
+		                This field should not be overridden or modified.
 	}
 	
 	Instance table
 	{
-		dtor       - The destructor method for a given class.
-		             Calls all base class destructors.
-				  
-		__HashCode - Stores a cached copy of the object's hash code.
-		             This field should not be overridden unless GetHashCode has been overridden.
+		dtor          - The destructor method for a given class.
+		                Calls all base class destructors.
+		                
+		__HashCode    - Stores a cached copy of the object's hash code.
+		                This field should not be overridden unless GetHashCode has been overridden.
 	}
 ]]
+
+local self = {}
+local Object = self
+
+function self:GetHashCode ()
+	if not self.__HashCode then
+		self.__HashCode = string.sub (string.format ("%p", self), 3)
+	end
+	
+	return self.__HashCode
+end
+
+function self:Is (typeConstructor)
+	if type (typeConstructor) == "table" then
+		typeConstructor = typeConstructor.__ictor
+	end
+	
+	local metatable = self
+	if metatable.__ictor == typeConstructor then return true end
+	
+	return Object.IsDerivedFrom (self, typeConstructor)
+end
+
+function self:IsDerivedFrom (typeConstructor)
+	if type (typeConstructor) == "table" then
+		typeConstructor = typeConstructor.__ictor
+	end
+	
+	local metatable = self
+	for _, basetable in ipairs (metatable.__bases) do
+		if self.Is (basetable, typeConstructor) then return true end
+	end
+	
+	return false
+end
+
+local self = {}
+local StaticTableMetatable = self
+
+function self:GetInstanceTable ()
+	return GLib.GetMetaTable (self)
+end
+
+function self:SetInstanceConstructor (ictor)
+	if self.__ictor == ictor then return self end
+	
+	if self.ctor == ictor then
+		self.ctor = nil
+	end
+	
+	self.__ictor = ictor
+	self.ctor    = self.ctor or self.__ictor
+	
+	return self
+end
+
+function self:__call (...)
+	return self.ctor (...)
+end
+
+function GLib.CreateStaticTable (ictor, out)
+	local staticTable = out or {}
+	staticTable.__ictor  = ictor
+	staticTable.__static = true
+	staticTable.ctor     = ictor
+	
+	setmetatable (staticTable, StaticTableMetatable)
+	
+	return staticTable
+end
 
 function GLib.GetMetaTable (typeConstructor)
 	if GLib.IsStaticTable (typeConstructor) then
@@ -80,36 +153,6 @@ function GLib.IsStaticTable (t)
 	return rawget (t, "__static") == true
 end
 
-local function Object_GetHashCode (self)
-	if not self.__HashCode then
-		self.__HashCode = string.sub (string.format ("%p", self), 3)
-	end
-	
-	return self.__HashCode
-end
-
-local function Object_Is (self, typeConstructor)
-	if type (typeConstructor) == "table" then
-		typeConstructor = typeConstructor.__ictor
-	end
-	
-	local metatable = self
-	if metatable.__ictor == typeConstructor then return true end
-	
-	for _, basetable in ipairs (metatable.__bases) do
-		if self.Is (basetable, typeConstructor) then return true end
-	end
-	
-	return false
-end
-
-local StaticTableMetatable =
-{
-	__call = function (self, ...)
-		return self.ctor (...)
-	end
-}
-
 --[[
 	GLib.MakeConstructor (metatable, base, base2)
 		Returns: () -> Object
@@ -120,7 +163,16 @@ local StaticTableMetatable =
 		The additional base classes must not be classes with inheritance.
 ]]
 function GLib.MakeConstructor (metatable, base, ...)
-	metatable.__index = metatable
+	metatable.__index       = metatable
+	
+	-- Inheritance
+	metatable.__bases       = {}
+	metatable.__basemethods = {}
+	for k, v in pairs (metatable) do
+		if isfunction (v) then
+			metatable.__basemethods [k] = metatable
+		end
+	end
 	
 	-- Instance constructor, what this function returns
 	local ictor
@@ -130,28 +182,55 @@ function GLib.MakeConstructor (metatable, base, ...)
 		local basetable = GLib.GetMetaTable (base)
 		metatable.__tostring = metatable.__tostring or basetable.__tostring
 		metatable.__base = basetable
-		metatable.__bases = { basetable }
+		metatable.__bases [#metatable.__bases + 1] = basetable
 		setmetatable (metatable, basetable)
+		
+		-- Copy in __basemethods from base class
+		for methodName, basebasetable in pairs (basetable.__basemethods) do
+			metatable.__basemethods [methodName] = basebasetable
+		end
+		
+		-- Fill __basemethods with base class methods
+		for k, v in pairs (basetable) do
+			if isfunction (v) then
+				metatable.__basemethods [k] = basetable
+			end
+		end
 		
 		-- Additional base classes
 		if ... then
-			for k, base in ipairs ({...}) do
-				local basetable = GLib.GetMetaTable (basetable)
+			for _, base in ipairs ({...}) do
+				local basetable = GLib.GetMetaTable (base)
 				metatable.__bases [#metatable.__bases + 1] = basetable
 				
 				-- Copy everything but the metamethods / metafields
+				
+				-- Methods directly on base instance table
 				for k, v in pairs (basetable) do
-					if string.sub (k, 1, 2) ~= "__" then metatable [k] = v end
+					if (not metatable.__basemethods [k] or
+					    Object.IsDerivedFrom (basetable, metatable.__basemethods [k])) and
+					   string.sub (k, 1, 2) ~= "__" then
+						metatable [k] = v
+						metatable.__basemethods [k] = basetable
+					end
 				end
-				metatable.__base2 = basetable
-				metatable.ctor2 = basetable.ctor
-				metatable.dtor2 = basetable.dtor
+				
+				-- Methods inherited by the base class
+				for methodName, basebasetable in pairs (basetable.__basemethods) do
+					if (not metatable.__basemethods [methodName] or
+					    Object.IsDerivedFrom (basebasetable, metatable.__basemethods [methodName])) and
+					   string.sub (methodName, 1, 2) ~= "__" then
+						metatable [methodName] = basebasetable [methodName]
+						metatable.__basemethods [methodName] = basebasetable
+					end
+				end
 			end
 		end
 	else
 		-- No base class
-		metatable.GetHashCode = metatable.GetHashCode or Object_GetHashCode
-		metatable.Is          = metatable.Is          or Object_Is
+		metatable.GetHashCode   = metatable.GetHashCode   or Object.GetHashCode
+		metatable.Is            = metatable.Is            or Object.Is
+		metatable.IsDerivedFrom = metatable.IsDerivedFrom or Object.IsDerivedFrom
 	end
 	
 	-- Instance constructor
@@ -220,11 +299,5 @@ function GLib.MakeConstructor (metatable, base, ...)
 	metatable.__ictor = ictor
 	
 	-- Static table
-	local staticTable = {}
-	staticTable.__ictor = ictor
-	staticTable.__static = true
-	staticTable.ctor = ictor
-	setmetatable (staticTable, StaticTableMetatable)
-	
-	return staticTable
+	return GLib.CreateStaticTable (ictor)
 end
