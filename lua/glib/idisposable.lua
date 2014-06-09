@@ -30,3 +30,7 @@ end
 function self:IsDisposed ()
 	return self.Disposed
 end
+
+function self:IsValid ()
+	return not self.Disposed
+end
