@@ -91,6 +91,14 @@ function self:PruneCache ()
 			end
 		end
 	end
+	
+	-- Remove nonexistant files from the last access times table
+	for dataPath, _ in pairs (self.LastAccessTimes) do
+		if not file.Exists ("data/" .. dataPath, "GAME") then
+			self.LastAccessTimes [dataPath] = nil
+			self:FlagSaveNeeded ()
+		end
+	end
 end
 
 function self:UpdateLastAccessTime (namespace, id, versionHash)
