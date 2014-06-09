@@ -44,7 +44,13 @@
 		                
 		__base        - The instance metatable of the base class.
 		                This field should not be overridden.
-		                
+		
+		__GetType     - Returns the type table fot his class.
+		                This field should not be overridden.
+	}
+	
+	Type table
+	{
 		__bases       - Array of instance metatables of all base classes.
 		                This field should not be overridden or modified.
 		                
@@ -90,7 +96,7 @@ function self:IsDerivedFrom (typeConstructor)
 	end
 	
 	local metatable = self
-	for _, basetable in ipairs (metatable.__bases) do
+	for _, basetable in ipairs (metatable:__GetType ().__bases) do
 		if self.Is (basetable, typeConstructor) then return true end
 	end
 	
@@ -166,13 +172,10 @@ function GLib.MakeConstructor (metatable, base, ...)
 	metatable.__index       = metatable
 	
 	-- Inheritance
-	metatable.__bases       = {}
-	metatable.__basemethods = {}
-	for k, v in pairs (metatable) do
-		if isfunction (v) then
-			metatable.__basemethods [k] = metatable
-		end
-	end
+	local typeinfo = {}
+	metatable.__GetType = function () return typeinfo end
+	typeinfo.__bases       = {}
+	typeinfo.__basemethods = {}
 	
 	-- Instance constructor, what this function returns
 	local ictor
@@ -182,18 +185,18 @@ function GLib.MakeConstructor (metatable, base, ...)
 		local basetable = GLib.GetMetaTable (base)
 		metatable.__tostring = metatable.__tostring or basetable.__tostring
 		metatable.__base = basetable
-		metatable.__bases [#metatable.__bases + 1] = basetable
+		typeinfo.__bases [#typeinfo.__bases + 1] = basetable
 		setmetatable (metatable, basetable)
 		
 		-- Copy in __basemethods from base class
-		for methodName, basebasetable in pairs (basetable.__basemethods) do
-			metatable.__basemethods [methodName] = basebasetable
+		for methodName, basebasetable in pairs (basetable:__GetType ().__basemethods) do
+			typeinfo.__basemethods [methodName] = basebasetable
 		end
 		
 		-- Fill __basemethods with base class methods
 		for k, v in pairs (basetable) do
 			if isfunction (v) then
-				metatable.__basemethods [k] = basetable
+				typeinfo.__basemethods [k] = basetable
 			end
 		end
 		
@@ -201,27 +204,27 @@ function GLib.MakeConstructor (metatable, base, ...)
 		if ... then
 			for _, base in ipairs ({...}) do
 				local basetable = GLib.GetMetaTable (base)
-				metatable.__bases [#metatable.__bases + 1] = basetable
+				typeinfo.__bases [#typeinfo.__bases + 1] = basetable
 				
 				-- Copy everything but the metamethods / metafields
 				
 				-- Methods directly on base instance table
 				for k, v in pairs (basetable) do
-					if (not metatable.__basemethods [k] or
-					    Object.IsDerivedFrom (basetable, metatable.__basemethods [k])) and
+					if (not typeinfo.__basemethods [k] or
+					    Object.IsDerivedFrom (basetable, typeinfo.__basemethods [k])) and
 					   string.sub (k, 1, 2) ~= "__" then
 						metatable [k] = v
-						metatable.__basemethods [k] = basetable
+						typeinfo.__basemethods [k] = basetable
 					end
 				end
 				
 				-- Methods inherited by the base class
-				for methodName, basebasetable in pairs (basetable.__basemethods) do
-					if (not metatable.__basemethods [methodName] or
-					    Object.IsDerivedFrom (basebasetable, metatable.__basemethods [methodName])) and
+				for methodName, basebasetable in pairs (basetable:__GetType ().__basemethods) do
+					if (not typeinfo.__basemethods [methodName] or
+					    Object.IsDerivedFrom (basebasetable, typeinfo.__basemethods [methodName])) and
 					   string.sub (methodName, 1, 2) ~= "__" then
 						metatable [methodName] = basebasetable [methodName]
-						metatable.__basemethods [methodName] = basebasetable
+						typeinfo.__basemethods [methodName] = basebasetable
 					end
 				end
 			end
@@ -252,12 +255,12 @@ function GLib.MakeConstructor (metatable, base, ...)
 				
 				-- Additioanl base class ctors and dtors
 				-- No support for additional base class inheritance
-				for i = 2, #base.__bases do
-					ctors [#ctors + 1] = rawget (base.__bases, "ctor")
+				for i = 2, #base:__GetType ().__bases do
+					ctors [#ctors + 1] = rawget (base:__GetType ().__bases, "ctor")
 				end
 				
-				for i = 2, #base.__bases do
-					dtors [#dtors + 1] = rawget (base.__bases, "dtor")
+				for i = 2, #base:__GetType ().__bases do
+					dtors [#dtors + 1] = rawget (base:__GetType ().__bases, "dtor")
 				end
 				
 				base = base.__base
