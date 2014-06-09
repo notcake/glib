@@ -3,73 +3,86 @@
 	
 	Static table metatable
 	{
-		__call     - Invokes the ctor static method of the static table.
-		             The ctor static method should create and return an instance of the class.
+		__call                 - Invokes the ctor static method of the static table.
+		                         The ctor static method should create and return an instance of the class.
+		                         
+		GetInstanceMetatable   - Returns the instance metatable for this class.
+		                         This method should not be overridden.
+		                         
+		SetInstanceConstructor - Sets the instance constructor for this class.
+		                         This method should not be overridden or called.
 	}
 	
 	Static tables
 	{
-		ctor       - Creates and returns an intance of the class.
-		             This static method is overrideable.
-		           
-		__ictor    - Instance constructor static method.
-		             Creates and returns an instance of the class.
-				     This static method should not be overridden.
-					
-		__static   - A boolean whose value is always true.
-		             This field should not be overridden.
+		ctor                   - Creates and returns an intance of the class.
+		                         This static method is overrideable.
+		                         
+		__ictor                - Instance constructor static method.
+		                         Creates and returns an instance of the class.
+		                         This static method should not be overridden.
+		                         
+		__static               - A boolean whose value is always true.
+		                         This field should not be overridden.
 	}
 	
 	Instance metatable
 	{
-		ctor          - The constructor method for a given class.
-		                Does not call base class constructors.
-		                
-		dtor          - The destructor method for a given class.
-		                Does not call base class destructors.
-		                
-		__index       - This metatable itself.
-		                
-		__ictor       - Instance constructor static method.
-		                Creates and returns an instance of the class.
-		                This static method should not be overridden.
-		                
-		__ctor        - The constructor method for a given class.
-		                Calls all base class constructors.
-		                This method should not be overridden.
-		                
-		__dtor        - The destructor method for a given class.
-		                Calls all base class destructors.
-		                This method should not be overridden.
-		                
-		__base        - The instance metatable of the base class.
-		                This field should not be overridden.
-		
-		__GetType     - Returns the type table fot his class.
-		                This field should not be overridden.
+		ctor                   - The constructor method for a given class.
+		                         Does not call base class constructors.
+		                         
+		dtor                   - The destructor method for a given class.
+		                         Does not call base class destructors.
+		                         
+		__index                - This metatable itself.
+		                         
+		__ictor                - Instance constructor static method.
+		                         Creates and returns an instance of the class.
+		                         This static method should not be overridden.
+		                         
+		__ctor                 - The constructor method for a given class.
+		                         Calls all base class constructors.
+		                         This method should not be overridden.
+		                         
+		__dtor                 - The destructor method for a given class.
+		                         Calls all base class destructors.
+		                         This method should not be overridden.
+		                         
+		__base                 - The instance metatable of the base class.
+		                         This field should not be overridden.
+		                         
+		__GetStaticTable       - Returns the static table for this class.
+		                         This method should not be overridden.
+		                         
+		__GetType              - Returns the type table for this class.
+		                         This method should not be overridden.
 	}
 	
 	Type table
 	{
-		__bases       - Array of instance metatables of all base classes.
-		                This field should not be overridden or modified.
-		                
-		__basemethods - Map of inherited method names to the instance metatables they come from
-		                This field should not be overridden or modified.
+		__bases                - Array of instance metatables of all base classes.
+		                         This field should not be overridden or modified.
+		                        
+		__basemethods          - Map of inherited method names to the instance metatables they come from
+		                         This field should not be overridden or modified.
+		                         
+		GetStaticTable         - Returns the static table for this class.
+		                         This method should not be overridden.
 	}
 	
 	Instance table
 	{
-		dtor          - The destructor method for a given class.
-		                Calls all base class destructors.
-		                
-		__HashCode    - Stores a cached copy of the object's hash code.
-		                This field should not be overridden unless GetHashCode has been overridden.
+		dtor                   - The destructor method for a given class.
+		                         Calls all base class destructors.
+		                        
+		__HashCode             - Stores a cached copy of the object's hash code.
+		                         This field should not be overridden unless GetHashCode has been overridden.
 	}
 ]]
 
 local self = {}
 local Object = self
+self.__index = self
 
 function self:GetHashCode ()
 	if not self.__HashCode then
@@ -105,8 +118,9 @@ end
 
 local self = {}
 local StaticTableMetatable = self
+self.__index = self
 
-function self:GetInstanceTable ()
+function self:GetInstanceMetatable ()
 	return GLib.GetMetaTable (self)
 end
 
@@ -134,7 +148,6 @@ function GLib.CreateStaticTable (ictor, out)
 	staticTable.ctor     = ictor
 	
 	setmetatable (staticTable, StaticTableMetatable)
-	
 	return staticTable
 end
 
@@ -172,10 +185,13 @@ function GLib.MakeConstructor (metatable, base, ...)
 	metatable.__index       = metatable
 	
 	-- Inheritance
+	local statictable = GLib.CreateStaticTable ()
 	local typeinfo = {}
-	metatable.__GetType = function () return typeinfo end
-	typeinfo.__bases       = {}
-	typeinfo.__basemethods = {}
+	metatable.__GetStaticTable = function () return statictable end
+	metatable.__GetType        = function () return typeinfo    end
+	typeinfo.__bases           = {}
+	typeinfo.__basemethods     = {}
+	typeinfo.GetStaticTable    = function () return statictable end
 	
 	-- Instance constructor, what this function returns
 	local ictor
@@ -302,5 +318,6 @@ function GLib.MakeConstructor (metatable, base, ...)
 	metatable.__ictor = ictor
 	
 	-- Static table
-	return GLib.CreateStaticTable (ictor)
+	statictable:SetInstanceConstructor (ictor)
+	return statictable
 end
