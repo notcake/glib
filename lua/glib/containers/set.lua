@@ -61,6 +61,7 @@ end
 function self:Remove (item)
 	if not self:Contains (item) then return end
 	
+	self.Count = self.Count - 1
 	self.ItemSet [item] = nil
 end
 
