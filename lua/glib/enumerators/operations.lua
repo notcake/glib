@@ -4,22 +4,22 @@ end
 
 function GLib.Enumerator.Filter (enumerator, f)
 	return function ()
-		local a, b, c, d = nil
+		local a, b, c, d, e, f = nil
 		repeat
-			a, b, c, d = enumerator ()
+			a, b, c, d, e, f = enumerator ()
 			if a == nil then return nil end
-		until f (a, b, c, d)
+		until f (a, b, c, d, e, f)
 		
-		return a, b, c, d
+		return a, b, c, d, e, f
 	end
 end
 
 function GLib.Enumerator.Map (enumerator, f)
 	return function ()
-		local a, b, c, d = enumerator ()
+		local a, b, c, d, e, f = enumerator ()
 		if a == nil then return nil end
 		
-		return f (a, b, c, d)
+		return f (a, b, c, d, e, f)
 	end
 end
 

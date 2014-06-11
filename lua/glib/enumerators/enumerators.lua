@@ -55,12 +55,12 @@ function GLib.Enumerator.YieldEnumerator (f)
 	local thread = coroutine.create (f)
 	return function (...)
 		if coroutine.status (thread) == "dead" then return nil end
-		local success, a, b, c, d = coroutine.resume (thread, ...)
+		local success, a, b, c, d, e, f = coroutine.resume (thread, ...)
 		if not success then
 			GLib.Error (a)
 			return nil
 		end
-		return a, b, c, d
+		return a, b, c, d, e, f
 	end
 end
 
