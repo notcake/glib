@@ -106,6 +106,16 @@ function self:GetEventProvider ()
 	return self
 end
 
+function self:HasEventListeners (eventName)
+	if not eventName then
+		if next (self.EventListeners) == nil then return false end
+		return next (self.EventListeners [next (self.EventListeners)]) ~= nil
+	end
+	
+	if not self.EventListeners [eventName] then return end
+	return next (self.EventListeners [eventName]) ~= nil
+end
+
 function self:RemoveEventListener (eventName, nameOrCallback)
 	if not self.EventListeners [eventName] then return end
 	self.EventListeners [eventName] [nameOrCallback] = nil
