@@ -269,14 +269,14 @@ function GLib.MakeConstructor (metatable, base, ...)
 				ctors [#ctors + 1] = rawget (base, "ctor")
 				dtors [#dtors + 1] = rawget (base, "dtor")
 				
-				-- Additioanl base class ctors and dtors
+				-- Additional base class ctors and dtors
 				-- No support for additional base class inheritance
 				for i = 2, #base:__GetType ().__bases do
-					ctors [#ctors + 1] = rawget (base:__GetType ().__bases, "ctor")
+					ctors [#ctors + 1] = rawget (base:__GetType ().__bases [i], "ctor")
 				end
 				
 				for i = 2, #base:__GetType ().__bases do
-					dtors [#dtors + 1] = rawget (base:__GetType ().__bases, "dtor")
+					dtors [#dtors + 1] = rawget (base:__GetType ().__bases [i], "dtor")
 				end
 				
 				base = base.__base
