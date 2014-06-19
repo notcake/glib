@@ -73,12 +73,16 @@ function self:GetFunction ()
 	return self.Function
 end
 
-function self:GetPrototype ()
-	return "function " .. self:GetParameterList ():ToString ()
-end
-
 function self:GetInfoTable ()
 	return self.InfoTable
+end
+
+function self:GetName ()
+	return GLib.Lua.GetFunctionName (self.Function)
+end
+
+function self:GetPrototype ()
+	return "function " .. self:GetParameterList ():ToString ()
 end
 
 function self:GetParameterList ()
