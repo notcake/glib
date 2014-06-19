@@ -150,6 +150,10 @@ function self:Filter (filter)
 	end
 end
 
+function self:GetCount ()
+	return self.Count
+end
+
 --- Returns an iterator which returns LinkedListNodes in this LinkedList. Deletion of the last LinkedListNode returned by the iterator is allowed.
 -- @return An iterator which returns LinkedListNodes in this LinkedList
 function self:GetEnumerator ()
