@@ -68,3 +68,9 @@ function GLib.Enumerator.ToMap (enumerator)
 	return t
 end
 GLib.Enumerator.ToTable = GLib.Enumerator.ToMap
+
+function GLib.Enumerator.Unpack (enumerator)
+	local value = enumerator ()
+	if not value then return end
+	return value, GLib.Enumerator.Unpack (enumerator)
+end
