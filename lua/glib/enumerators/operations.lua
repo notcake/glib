@@ -2,24 +2,24 @@ function GLib.Enumerator.Concat (enumerator, separator)
 	return table.concat (GLib.Enumerator.ToArray (GLib.Enumerator.Map (enumerator, tostring)), separator)
 end
 
-function GLib.Enumerator.Filter (enumerator, f)
+function GLib.Enumerator.Filter (enumerator, filterFunction)
 	return function ()
 		local a, b, c, d, e, f = nil
 		repeat
 			a, b, c, d, e, f = enumerator ()
 			if a == nil then return nil end
-		until f (a, b, c, d, e, f)
+		until filterFunction (a, b, c, d, e, f)
 		
 		return a, b, c, d, e, f
 	end
 end
 
-function GLib.Enumerator.Map (enumerator, f)
+function GLib.Enumerator.Map (enumerator, mapFunction)
 	return function ()
 		local a, b, c, d, e, f = enumerator ()
 		if a == nil then return nil end
 		
-		return f (a, b, c, d, e, f)
+		return mapFunction (a, b, c, d, e, f)
 	end
 end
 
