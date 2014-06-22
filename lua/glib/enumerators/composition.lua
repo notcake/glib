@@ -1,5 +1,7 @@
 function GLib.Enumerator.Join (enumerator1, enumerator2, enumerator3, ...)
-	if not enumerator3 then
+	if not enumerator2 then
+		return enumerator1
+	elseif not enumerator3 then
 		local i = 1
 		return function ()
 			local a, b, c, d, e, f = nil
