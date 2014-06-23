@@ -123,8 +123,6 @@ function self:TestUpdateItem (item)
 	if self.MembershipFunction (self.Left and self.Left:Contains (item) or false, self.Right and self.Right:Contains (item) or false, item) then
 		self.Result:Add (item)
 	else
-		print ("ITEMREMOVED", item)
-		print (GLib.StackTrace ())
 		self.Result:Remove (item)
 	end
 end
