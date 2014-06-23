@@ -46,9 +46,9 @@ function self:SetLeft (left)
 	
 	local lastLeft = self.Left
 	
-	self:HookSet (self.Left)
-	self.Left = left
 	self:UnhookSet (self.Left)
+	self.Left = left
+	self:HookSet (self.Left)
 	
 	self:TestUpdateItems (lastLeft)
 	self:TestUpdateItems (self.Left)
@@ -61,9 +61,9 @@ function self:SetRight (right)
 	
 	local lastRight = self.Right
 	
-	self:HookSet (self.Right)
-	self.Right = right
 	self:UnhookSet (self.Right)
+	self.Right = right
+	self:HookSet (self.Right)
 	
 	self:TestUpdateItems (lastRight)
 	self:TestUpdateItems (self.Right)
@@ -123,6 +123,8 @@ function self:TestUpdateItem (item)
 	if self.MembershipFunction (self.Left and self.Left:Contains (item) or false, self.Right and self.Right:Contains (item) or false, item) then
 		self.Result:Add (item)
 	else
+		print ("ITEMREMOVED", item)
+		print (GLib.StackTrace ())
 		self.Result:Remove (item)
 	end
 end
