@@ -185,6 +185,7 @@ function GLib.FindUpValue (func, name)
 	end
 end
 
+local string_format = string.format
 local timeUnits = { "ns", "µs", "ms", "s", "ks", "Ms", "Gs", "Ts", "Ps", "Es", "Zs", "Ys" }
 function GLib.FormatDuration (duration)
 	duration = duration * 1000000000
@@ -194,7 +195,7 @@ function GLib.FormatDuration (duration)
 		duration = duration / 1000
 		unitIndex = unitIndex + 1
 	end
-	return tostring (math.floor (duration * 100 + 0.5) / 100) .. " " .. timeUnits [unitIndex]
+	return string_format ("%.2f %s", duration, timeUnits [unitIndex])
 end
 
 local sizeUnits = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" }
@@ -204,7 +205,7 @@ function GLib.FormatFileSize (size)
 		size = size / 1024
 		unitIndex = unitIndex + 1
 	end
-	return tostring (math.floor (size * 100 + 0.5) / 100) .. " " .. sizeUnits [unitIndex]
+	return string_format ("%.2f %s", size, sizeUnits [unitIndex])
 end
 
 function GLib.GetStackDepth ()
