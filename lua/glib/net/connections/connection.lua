@@ -15,20 +15,6 @@ GLib.Net.Connection = GLib.MakeConstructor (self, GLib.Net.ISingleEndpointChanne
 			Fired when the timeout period has changed.
 ]]
 
-local function DebugPrint (m)
-	if true then return end
-	
-	if SERVER then
-		easylua.Print (m)
-	else
-		if #m > 192 then
-			print (m)
-		else
-			easylua.PrintOnServer (m)
-		end
-	end
-end
-
 function self:ctor (remoteId, id, channel)
 	-- Identity
 	self.Channel  = channel
@@ -40,7 +26,6 @@ function self:ctor (remoteId, id, channel)
 	self.Initiator     = nil
 	
 	-- Closure
-	self.CloseStackTrace = nil
 	self.ClosureReason = nil
 	self.CloseEvent = nil
 	
@@ -70,16 +55,10 @@ function self:ctor (remoteId, id, channel)
 	self:AddEventListener ("Closed",
 		function ()
 			if self.PacketAvailableEvent then
-				if self.LastAvailablePacket == nil and next (self.PacketAvailableEvent.Waiters) then
-					DebugPrint (self:ToString () .. " : Closed : PacketAvailableEvent:Fire")
-					DebugPrint (self.CloseStackTrace)
-				end
 				self.PacketAvailableEvent:Fire ()
 			end
 		end
 	)
-	
-	DebugPrint (self:ToString () .. ":ctor : To " .. self.RemoteId .. " (" .. (GLib.PlayerMonitor:GetUserName (self.RemoteId) or self.RemoteId) .. ")")
 end
 
 -- Identity
@@ -115,9 +94,6 @@ function self:Close (reason)
 	if self:IsClosed () then return end
 	
 	reason = reason or GLib.Net.ConnectionClosureReason.LocalClosure
-	
-	DebugPrint (self:ToString () .. ":Close : " .. GLib.Net.ConnectionClosureReason [reason])
-	self.CloseStackTrace = GLib.StackTrace ()
 	
 	local hasUndispatchedPackets = self:HasUndispatchedPackets ()
 	if reason == GLib.Net.ConnectionClosureReason.LocalClosure then
@@ -374,22 +350,16 @@ function self:GenerateNextPacket (outBuffer)
 	-- Update timeout
 	self:UpdateTimeout ()
 	
-	DebugPrint (self:ToString () .. ":GenerateNextPacket : Packet type " .. packetType .. ", sequence number " .. (self.NextOutboundPacketId - 1))
-	
 	return outBuffer
 end
 
 function self:ProcessInboundPacket (inBuffer)
-	if self:IsClosing () then DebugPrint (self:ToString () .. ":ProcessInboundPacket : Dropping packet (closing).") return end
-	if self:IsClosed  () then DebugPrint (self:ToString () .. ":ProcessInboundPacket : Dropping packet (closed).") return end
+	if self:IsClosing () then return end
+	if self:IsClosed  () then return end
 	
 	local packetId = inBuffer:UInt32 ()
 	
 	self.InboundPackets [packetId] = packetId == self.NextInboundPacketId and inBuffer or inBuffer:Pin ()
-	
-	if packetId ~= self.NextInboundPacketId then
-		DebugPrint (self:ToString () .. ":ProcessInboundPacket : Received " .. packetId .. ", but was expecting " .. self.NextInboundPacketId)
-	end
 	
 	-- Process sequential packets
 	while self.InboundPackets [self.NextInboundPacketId] do
@@ -411,7 +381,6 @@ end
 function self:ProcessPacket (packetId, inBuffer)
 	local packetType = inBuffer:UInt8 ()
 	
-	DebugPrint (self:ToString () .. ":ProcessPacket : Packet type: " .. packetType .. ", sequence number " .. packetId)
 	if bit.band (packetType, GLib.Net.ConnectionPacketType.Open) ~= 0 then
 		if self:IsOpening () then
 			-- Open the connection
@@ -434,9 +403,6 @@ function self:ProcessPacket (packetId, inBuffer)
 		end
 		if self.PacketAvailableEvent then
 			self.LastAvailablePacket = inBuffer:Pin ()
-			if self.LastAvailablePacket == nil and next (self.PacketAvailableEvent.Waiters) then
-				DebugPrint (self:ToString () .. ":ProcessPacket : PacketAvailableEvent:Fire")
-			end
 			self.PacketAvailableEvent:Fire ()
 		end
 		self:GetPacketHandler () (self:GetRemoteId (), inBuffer, self)
