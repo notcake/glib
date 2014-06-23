@@ -1,8 +1,19 @@
-function GLib.Enumerator.ArrayEnumerator (tbl)
-	local i = 0
-	return function ()
-		i = i + 1
-		return tbl [i]
+function GLib.Enumerator.ArrayEnumerator (tbl, maxIndex)
+	maxIndex = maxIndex or math.huge
+	
+	if maxIndex == math.huge then
+		local i = 0
+		return function ()
+			i = i + 1
+			if i > maxIndex then return nil end
+			return tbl [i]
+		end
+	else
+		local i = 0
+		return function ()
+			i = i + 1
+			return tbl [i]
+		end
 	end
 end
 
