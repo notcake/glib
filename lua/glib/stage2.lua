@@ -149,6 +149,7 @@ include ("networking/connectionnetworkable.lua")
 
 -- Containers
 GLib.Containers = {}
+include ("containers/icollection.lua")
 include ("containers/binarytree.lua")
 include ("containers/binarytreenode.lua")
 include ("containers/linkedlist.lua")

@@ -1,5 +1,5 @@
 local self = {}
-GLib.Containers.Set = GLib.MakeConstructor (self)
+GLib.Containers.Set = GLib.MakeConstructor (self, GLib.Containers.ICollection)
 
 function self:ctor ()
 	self.Count = 0
@@ -7,6 +7,7 @@ function self:ctor ()
 	self.ItemSet = {}
 end
 
+-- ICollection
 function self:Add (item)
 	if self:Contains (item) then return self end
 	
@@ -14,12 +15,6 @@ function self:Add (item)
 	self.ItemSet [item] = true
 	
 	return self
-end
-
-function self:AddRange (enumerable)
-	for item in enumerable:GetEnumerator () do
-		self:Add (item)
-	end
 end
 
 function self:Clear ()
@@ -42,6 +37,18 @@ function self:GetEnumerator ()
 	return GLib.KeyEnumerator (self.ItemSet)
 end
 
+function self:IsEmpty ()
+	return self.Count == 0
+end
+
+function self:Remove (item)
+	if not self:Contains (item) then return end
+	
+	self.Count = self.Count - 1
+	self.ItemSet [item] = nil
+end
+
+-- Set
 function self:Intersect (enumerable, out)
 	out = out or self.__ictor ()
 	
@@ -52,17 +59,6 @@ function self:Intersect (enumerable, out)
 	end
 	
 	return out
-end
-
-function self:IsEmpty ()
-	return self.Count == 0
-end
-
-function self:Remove (item)
-	if not self:Contains (item) then return end
-	
-	self.Count = self.Count - 1
-	self.ItemSet [item] = nil
 end
 
 function self:Subtract (set, out)

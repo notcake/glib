@@ -1,5 +1,5 @@
 local self = {}
-GLib.Containers.List = GLib.MakeConstructor (self)
+GLib.Containers.List = GLib.MakeConstructor (self, GLib.Containers.ICollection)
 
 function self:ctor ()
 	self.Count = 0
@@ -7,17 +7,12 @@ function self:ctor ()
 	self.Items = {}
 end
 
+-- ICollection
 function self:Add (item)
 	self.Count = self.Count + 1
 	self.Items [self.Count] = item
 	
 	return self
-end
-
-function self:AddRange (enumerable)
-	for item in enumerable:GetEnumerator () do
-		self:Add (item)
-	end
 end
 
 function self:Clear ()
@@ -30,6 +25,23 @@ function self:Contains (item)
 	return self:IndexOf (item) ~= nil
 end
 
+function self:GetCount ()
+	return self.Count
+end
+
+function self:GetEnumerator ()
+	return GLib.ArrayEnumerator (self.Items)
+end
+
+function self:IsEmpty ()
+	return self.Count == 0
+end
+
+function self:Remove (item)
+	self:RemoveAt (self:IndexOf (item))
+end
+
+-- List
 function self:Filter (filter)
 	local filteredList = GLib.Containers.List ()
 	
@@ -46,14 +58,6 @@ function self:Get (index)
 	return self.Items [index]
 end
 
-function self:GetCount ()
-	return self.Count
-end
-
-function self:GetEnumerator ()
-	return GLib.ArrayEnumerator (self.Items)
-end
-
 function self:IndexOf (item)
 	for i = 1, self.Count do
 		if self.Items [i] == item then return i end
@@ -65,14 +69,6 @@ function self:Insert (index, item)
 	table.insert (self.Items, index, item)
 	self.Count = self.Count + 1
 	return self
-end
-
-function self:IsEmpty ()
-	return self.Count == 0
-end
-
-function self:Remove (item)
-	self:RemoveAt (self:IndexOf (item))
 end
 
 function self:RemoveAt (index)
