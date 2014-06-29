@@ -32,6 +32,8 @@ end
 function self:Dispatch (...)
 	if self.ShouldSuppressEvents then return end
 	
+	local a, b, c = nil, nil, nil
+	
 	for callbackName, callback in pairs (self.Listeners) do
 		local success, r0, r1, r2 = xpcall (callback, GLib.Error, ...)
 		if not success then
