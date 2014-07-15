@@ -70,12 +70,18 @@ end
 local tableNameBlacklist =
 {
 	["chathud.lines"] = true,
+	["chathud.markup.chunks"] = true,
 	["chatsounds.ac.words"] = true,
 	["chatsounds.List"] = true,
 	["chatsounds.SortedList"] = true,
 	["chatsounds.SortedList2"] = true,
 	["chatsounds.SortedListKeys"] = true,
 	["GAuth.Groups"] = true,
+	["GCAD.JITInfo"] = true,
+	["GCAD.NavigationGraphEntityList.NavigationGraphNodeEntityList"] = true,
+	["GCAD.NavigationGraphEntityList.NavigationGraphEdgeEntityList"] = true,
+	["GCAD.NavigationGraphRenderer"] = true,
+	["GCAD.RootSceneGraph"] = true,
 	["GLib.Loader.PackFileManager.MergedPackFileSystem.Root"] = true,
 	["GLib.Lua.FunctionCache"] = true,
 	["GCompute.GlobalNamespace"] = true,
