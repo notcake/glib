@@ -362,7 +362,7 @@ local function ParseUnicodeData (unicodeData)
 				line = string.Trim (line)
 				
 				if line ~= "" then
-					local bits = string.Split (line), ";")
+					local bits = string.Split (line, ";")
 					local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
 					
 					lastCodePoint = codePoint
