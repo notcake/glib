@@ -357,42 +357,48 @@ local function ParseUnicodeData (unicodeData)
 				-- 14. Lowercase mapping
 				-- 15. Titlecase mapping
 				
-				local bits = string.Split (string.Trim (dataLines [i]), ";")
-				local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
+				local line = dataLines [i]
+				line = string.gsub (line, "#.*$", "")
+				line = string.Trim (line)
 				
-				lastCodePoint = codePoint
-				
-				characterNames [codePoint] = bits [2]
-				
-				-- Decomposition
-				if bits [6] and bits [6] ~= "" then
-					local decompositionBits = string.Split (bits [6], " ")
-					local decomposition = ""
-					for i = 1, #decompositionBits do
-						local codePoint = tonumber ("0x" .. decompositionBits [i])
-						if codePoint then
-							decomposition = decomposition .. GLib.UTF8.Char (codePoint)
+				if line ~= "" then
+					local bits = string.Split (line), ";")
+					local codePoint = tonumber ("0x" .. (bits [1] or "0")) or 0
+					
+					lastCodePoint = codePoint
+					
+					characterNames [codePoint] = bits [2]
+					
+					-- Decomposition
+					if bits [6] and bits [6] ~= "" then
+						local decompositionBits = string.Split (bits [6], " ")
+						local decomposition = ""
+						for i = 1, #decompositionBits do
+							local codePoint = tonumber ("0x" .. decompositionBits [i])
+							if codePoint then
+								decomposition = decomposition .. GLib.UTF8.Char (codePoint)
+							end
 						end
+						decompositionMap [GLib.UTF8.Char (codePoint)] = decomposition
 					end
-					decompositionMap [GLib.UTF8.Char (codePoint)] = decomposition
-				end
-				
-				-- Uppercase
-				if bits [13] and bits [13] ~= "" then
-					if bits [13]:find (" ") then print (bits [13]) end
-					uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
-				end
-				
-				-- Lowercase
-				if bits [14] and bits [14] ~= "" then
-					if bits [14]:find (" ") then print (bits [14]) end
-					lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
-				end
-				
-				-- Titlecase
-				if bits [15] and bits [15] ~= "" then
-					if bits [15]:find (" ") then print (bits [15]) end
-					titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
+					
+					-- Uppercase
+					if bits [13] and bits [13] ~= "" then
+						if bits [13]:find (" ") then print (bits [13]) end
+						uppercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [13]))
+					end
+					
+					-- Lowercase
+					if bits [14] and bits [14] ~= "" then
+						if bits [14]:find (" ") then print (bits [14]) end
+						lowercaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [14]))
+					end
+					
+					-- Titlecase
+					if bits [15] and bits [15] ~= "" then
+						if bits [15]:find (" ") then print (bits [15]) end
+						titlecaseMap [GLib.UTF8.Char (codePoint)] = GLib.UTF8.Char (tonumber ("0x" .. bits [15]))
+					end
 				end
 				
 				i = i + 1
