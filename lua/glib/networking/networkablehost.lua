@@ -307,6 +307,7 @@ function self:UnregisterNetworkable (networkableOrNetworkableId)
 		self.HostingWeakNetworkables [networkableId] = nil
 		
 		if hosting then
+			-- Notify the remote end that the networkable has been destroyed
 			self:DispatchNetworkableDestroyed (networkableId)
 		end
 		
@@ -388,6 +389,7 @@ function self:CheckWeakNetworkables ()
 	end
 end
 
+-- Notifies the remote end that a networkable has been detroyed
 function self:DispatchNetworkableDestroyed (networkableId)
 	local outBuffer = GLib.Net.OutBuffer ()
 	outBuffer:UInt8 (GLib.Networking.NetworkableHostMessageType.NetworkableDestroyed)
