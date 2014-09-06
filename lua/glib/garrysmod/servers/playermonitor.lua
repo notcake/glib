@@ -150,8 +150,8 @@ function self:ProcessQueue ()
 	for ply, _ in pairs (self.QueuedPlayers) do
 		local userId = GLib.GetPlayerId (ply)
 		if not ply:IsValid () then
+			-- Player joined and left really quickly.
 			self.QueuedPlayers [ply] = nil
-			GLib.Error ("PlayerMonitor : No idea what just happened (" .. tostring (ply) .. ").")
 		elseif userId and
 			   userId ~= "STEAM_ID_PENDING" then
 			self.QueuedPlayers [ply] = nil
