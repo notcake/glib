@@ -6,8 +6,10 @@ GLib.Threading.Thread = GLib.MakeConstructor (self, GLib.Threading.IWaitable)
 		Fired when this Thread's state has changed.
 	Terminated ()
 		Fired when this Thread has terminated.
-	Yielded ()
-		Fired when this Thread has yielded.
+	ExecutionSliceEnded ()
+		Fired when this Thread's execution slice has ended.
+	ExecutionSliceStarted ()
+		Fired when this Thread's execution slice has started.
 ]]
 
 function self:ctor ()

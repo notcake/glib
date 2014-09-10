@@ -33,6 +33,8 @@ function self:ctor ()
 				
 				self:SetCurrentThread (thread)
 				
+				thread:DispatchEvent ("ExecutionSliceStarted")
+				
 				local success, error = coroutine.resume (thread:GetCoroutine ())
 				if not success then
 					self:SetCurrentThread (GLib.Threading.MainThread)
@@ -41,7 +43,7 @@ function self:ctor ()
 					ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
 				end
 				
-				thread:DispatchEvent ("Yielded")
+				thread:DispatchEvent ("ExecutionSliceEnded")
 				
 				if thread:IsTerminated () then
 					thread:DispatchEvent ("Terminated")
@@ -119,6 +121,8 @@ function self:RunThread (thread)
 	
 	self:PushCurrentThread (thread)
 	
+	thread:DispatchEvent ("ExecutionSliceStarted")
+	
 	local success, error = coroutine.resume (thread:GetCoroutine ())
 	self:PopCurrentThread ()
 	
@@ -127,7 +131,7 @@ function self:RunThread (thread)
 		thread:Terminate ()
 	end
 	
-	thread:DispatchEvent ("Yielded")
+	thread:DispatchEvent ("ExecutionSliceEnded")
 	
 	if thread:IsTerminated () then
 		thread:DispatchEvent ("Terminated")
