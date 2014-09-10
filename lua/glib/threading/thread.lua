@@ -5,7 +5,9 @@ GLib.Threading.Thread = GLib.MakeConstructor (self, GLib.Threading.IWaitable)
 	StateChanged (ThreadState state, bool suspended)
 		Fired when this Thread's state has changed.
 	Terminated ()
-		Fired when this Thread has terminated
+		Fired when this Thread has terminated.
+	Yielded ()
+		Fired when this Thread has yielded.
 ]]
 
 function self:ctor ()

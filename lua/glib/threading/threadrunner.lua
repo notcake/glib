@@ -41,6 +41,8 @@ function self:ctor ()
 					ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
 				end
 				
+				thread:DispatchEvent ("Yielded")
+				
 				if thread:IsTerminated () then
 					thread:DispatchEvent ("Terminated")
 				end
@@ -124,6 +126,8 @@ function self:RunThread (thread)
 		ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
 		thread:Terminate ()
 	end
+	
+	thread:DispatchEvent ("Yielded")
 	
 	if thread:IsTerminated () then
 		thread:DispatchEvent ("Terminated")
