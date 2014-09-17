@@ -88,6 +88,11 @@ function GLib.Enumerator.YieldEnumeratorFactory (f)
 	end
 end
 
+function GLib.Enumerator.ToEnumerable (x)
+	if x.GetEnumerator then return x end
+	return GLib.Enumerator.EnumerableAdapter (x, GLib.Enumerator.ArrayEnumerator)
+end
+
 GLib.ArrayEnumerator        = GLib.Enumerator.ArrayEnumerator
 GLib.KeyEnumerator          = GLib.Enumerator.KeyEnumerator
 GLib.ValueEnumerator        = GLib.Enumerator.ValueEnumerator
@@ -97,3 +102,5 @@ GLib.NullEnumerator         = GLib.Enumerator.NullEnumerator
 GLib.SingleValueEnumerator  = GLib.Enumerator.SingleValueEnumerator
 GLib.YieldEnumerator        = GLib.Enumerator.YieldEnumerator
 GLib.YieldEnumeratorFactory = GLib.Enumerator.YieldEnumeratorFactory
+
+GLib.ToEnumerable           = GLib.Enumerator.ToEnumerable

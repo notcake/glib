@@ -15,6 +15,7 @@ GLib.Enumerator = {}
 include ("enumerators/enumerators.lua")
 include ("enumerators/composition.lua")
 include ("enumerators/operations.lua")
+include ("enumerators/enumerableadapter.lua")
 
 -- Colors
 include ("colors/colors.lua")
@@ -69,6 +70,8 @@ include ("lua/backup.lua")
 include ("lua/detours.lua")
 
 include ("lua/namecache.lua")
+
+include ("lua/codeexporter.lua")
 
 -- Lua Reflection
 include ("lua/reflection/function.lua")
@@ -320,3 +323,5 @@ GLib.CallDelayed (
 		hook.Call ("GLibStage2Loaded", GAMEMODE or GM)
 	end
 )
+
+GLib.CodeExporter = GLib.Lua.CodeExporter ("GLib", "glib")
