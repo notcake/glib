@@ -182,11 +182,11 @@ function self:GenerateCode ()
 	
 	-- Client-only functions
 	if not self.FinalizedClientsideFunctions:IsEmpty () then
-		functionCode = "if CLIENT then\r\n"
+		functionCode = functionCode .. "if CLIENT then\r\n"
 		for f in self.FinalizedClientsideFunctions:GetEnumerator () do
-			functionCode = functionCode .. self:ProcessCode (GLib.Lua.ToLuaString (f)) .. "\r\n\r\n"
+			functionCode = functionCode .. "\t" .. string.gsub (self:ProcessCode (GLib.Lua.ToLuaString (f)), "\n", "\n\t") .. "\r\n\r\n"
 		end
-		functionCode = "end\r\n"
+		functionCode = functionCode .. "end\r\n"
 	end
 	functionCode = functionCode .. "\r\n"
 	
@@ -407,7 +407,7 @@ function self:AddIncludeFile (filePath)
 end
 
 function self:AddClientsideIncludeFile (filePath)
-	self.IncludeFiles:Add (filePath)
+	self.ClientsideIncludeFiles:Add (filePath)
 end
 
 function self:AddFinalizedFunction (f)
