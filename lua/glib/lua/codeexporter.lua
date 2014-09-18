@@ -2,33 +2,39 @@ local self = {}
 GLib.Lua.CodeExporter = GLib.MakeConstructor (self)
 
 function self:ctor (sourceSystemName, sourceFolderName, destinationSystemName, destinationFolderName)
-	self.SourceSystemName       = sourceSystemName
-	self.SourceFolderName       = sourceFolderName
+	self.SourceSystemName             = sourceSystemName
+	self.SourceFolderName             = sourceFolderName
 	
-	self.DestinationSystemName  = destinationSystemName
-	self.DestinationFolderName  = destinationFolderName
+	self.DestinationSystemName        = destinationSystemName
+	self.DestinationFolderName        = destinationFolderName
 	
-	self.AuxiliarySystemNames   = GLib.Containers.OrderedSet ()
+	self.AuxiliarySystemNames         = GLib.Containers.OrderedSet ()
 	
-	self.TableNames             = GLib.Containers.OrderedSet ()
+	self.TableNames                   = GLib.Containers.OrderedSet ()
 	
 	-- Functions
-	self.Functions              = GLib.Containers.OrderedSet ()
-	self.FunctionNames          = GLib.Containers.OrderedSet ()
+	self.Functions                    = GLib.Containers.OrderedSet ()
+	self.FunctionNames                = GLib.Containers.OrderedSet ()
 	
-	self.CustomCode             = {}
+	self.ClientsideFunctions          = GLib.Containers.OrderedSet ()
+	self.ClientsideFunctionNames      = GLib.Containers.OrderedSet ()
+	
+	self.CustomCode                   = {}
 	
 	-- Resources
-	self.ByteMap                = nil
-	self.Resources              = {}
+	self.ByteMap                      = nil
+	self.Resources                    = {}
 	
 	-- Files
-	self.Files                  = GLib.Containers.OrderedSet ()
+	self.Files                        = GLib.Containers.OrderedSet ()
+	self.ClientsideFiles              = GLib.Containers.OrderedSet ()
 	
 	-- Output
-	self.IncludeFiles           = GLib.Containers.OrderedSet ()
-	self.FinalizedFunctions     = GLib.Containers.OrderedSet ()
-	self.FinalizedTableNames    = GLib.Containers.OrderedSet ()
+	self.IncludeFiles                 = GLib.Containers.OrderedSet ()
+	self.ClientsideIncludeFiles       = GLib.Containers.OrderedSet ()
+	self.FinalizedFunctions           = GLib.Containers.OrderedSet ()
+	self.FinalizedClientsideFunctions = GLib.Containers.OrderedSet ()
+	self.FinalizedTableNames          = GLib.Containers.OrderedSet ()
 end
 
 function self:AddAuxiliarySystemName (auxiliarySystemName)
@@ -59,9 +65,25 @@ function self:AddFunction (f)
 	end
 end
 
+function self:AddClientsideFunction (f)
+	if isfunction (f) then
+		self.ClientsideFunctions:Add (f)
+	elseif isstring (f) then
+		self.ClientsideFunctionNames:Add (f)
+	else
+		GLib.Error ("CodeExporter:AddClientsideFunction : Expected a function or string, got a " .. type (f) .. "!")
+	end
+end
+
 function self:AddFunctions (enumerable)
 	for f in GLib.ToEnumerable (enumerable):GetEnumerator () do
 		self:AddFunction (f)
+	end
+end
+
+function self:AddClientsideFunctions (enumerable)
+	for f in GLib.ToEnumerable (enumerable):GetEnumerator () do
+		self:AddClientsideFunction (f)
 	end
 end
 
@@ -69,9 +91,19 @@ function self:AddFile (filePath)
 	self.Files:Add (filePath)
 end
 
+function self:AddClientsideFile (filePath)
+	self.ClientsideFiles:Add (filePath)
+end
+
 function self:AddFiles (enumerable)
 	for filePath in GLib.ToEnumerable (enumerable):GetEnumerator () do
 		self:AddFile (filePath)
+	end
+end
+
+function self:AddClientsideFiles (enumerable)
+	for filePath in GLib.ToEnumerable (enumerable):GetEnumerator () do
+		self:AddClientsideFile (filePath)
 	end
 end
 
@@ -111,6 +143,11 @@ function self:GenerateCode ()
 		self:AddIncludeFile (filePath)
 	end
 	
+	for filePath in self.ClientsideFiles:GetEnumerator () do
+		self:ProcessFile (filePath, filePath)
+		self:AddClientsideIncludeFile (filePath)
+	end
+	
 	-- Process resources
 	for _, resourceData in ipairs (self.Resources) do
 		self:ProcessResource (resourceData.Namespace, resourceData.Id, resourceData.SourcePath, resourceData.DestinationPath)
@@ -121,10 +158,16 @@ function self:GenerateCode ()
 	
 	-- Pre-process functions
 	self:AddFinalizedFunctions (self.Functions)
+	self:AddFinalizedClientsideFunctions (self.ClientsideFunctions)
 	
 	for functionName in self.FunctionNames:GetEnumerator () do
 		local f = GLib.Lua.GetTableValue (functionName)
 		self:AddFinalizedFunction (f)
+	end
+	
+	for functionName in self.ClientsideFunctionNames:GetEnumerator () do
+		local f = GLib.Lua.GetTableValue (functionName)
+		self:AddFinalizedClientsideFunction (f)
 	end
 	
 	-- Pre-process tables
@@ -135,6 +178,17 @@ function self:GenerateCode ()
 	for f in self.FinalizedFunctions:GetEnumerator () do
 		functionCode = functionCode .. self:ProcessCode (GLib.Lua.ToLuaString (f)) .. "\r\n\r\n"
 	end
+	functionCode = functionCode .. "\r\n"
+	
+	-- Client-only functions
+	if not self.FinalizedClientsideFunctions:IsEmpty () then
+		functionCode = "if CLIENT then\r\n"
+		for f in self.FinalizedClientsideFunctions:GetEnumerator () do
+			functionCode = functionCode .. self:ProcessCode (GLib.Lua.ToLuaString (f)) .. "\r\n\r\n"
+		end
+		functionCode = "end\r\n"
+	end
+	functionCode = functionCode .. "\r\n"
 	
 	-- Tables
 	local maximumTableNameLength = 0
@@ -152,7 +206,7 @@ function self:GenerateCode ()
 	code = code .. "\r\n"
 	
 	-- Functions
-	code = code .. functionCode .. "\r\n"
+	code = code .. functionCode
 	
 	-- Custom code
 	for _, customCode in ipairs (self.CustomCode) do
@@ -163,9 +217,19 @@ function self:GenerateCode ()
 	for fileName in self.IncludeFiles:GetEnumerator () do
 		code = code .. "include (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
 	end
+	code = code .. "\r\n"
+	
+	-- Client-only includes
+	if not self.ClientsideIncludeFiles:IsEmpty () then
+		code = code .. "if CLIENT then\r\n"
+		for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
+			code = code .. "\tinclude (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+		end
+		code = code .. "end\r\n"
+		code = code .. "\r\n"
+	end
 	
 	-- Clientside lua files
-	code = code .. "\r\n"
 	code = code .. "if SERVER then\r\n"
 	code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_import.lua\")\r\n"
 	
@@ -173,7 +237,12 @@ function self:GenerateCode ()
 		code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
 	end
 	
+	for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
+		code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+	end
+	
 	code = code .. "end\r\n"
+	code = code .. "\r\n"
 	
 	file.Write (self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_import.txt", code)
 end
@@ -327,7 +396,9 @@ end
 -- Output
 function self:ClearOutput ()
 	self.IncludeFiles:Clear ()
+	self.ClientsideIncludeFiles:Clear ()
 	self.FinalizedFunctions:Clear ()
+	self.FinalizedClientsideFunctions:Clear ()
 	self.FinalizedTableNames:Clear ()
 end
 
@@ -335,13 +406,28 @@ function self:AddIncludeFile (filePath)
 	self.IncludeFiles:Add (filePath)
 end
 
+function self:AddClientsideIncludeFile (filePath)
+	self.IncludeFiles:Add (filePath)
+end
+
 function self:AddFinalizedFunction (f)
 	self.FinalizedFunctions:Add (f)
+end
+
+function self:AddFinalizedClientsideFunction (f)
+	self.FinalizedClientsideFunctions:Add (f)
 end
 
 function self:AddFinalizedFunctions (enumerable)
 	for f in GLib.ToEnumerable (enumerable):GetEnumerator () do
 		self:AddFinalizedFunction (f)
+	end
+end
+
+
+function self:AddFinalizedClientsideFunctions (enumerable)
+	for f in GLib.ToEnumerable (enumerable):GetEnumerator () do
+		self:AddFinalizedClientsideFunction (f)
 	end
 end
 

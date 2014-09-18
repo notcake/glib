@@ -38,6 +38,10 @@ function self:GetEnumerator ()
 	return GLib.ArrayEnumerator (self.Items)
 end
 
+function self:IsEmpty ()
+	return self.Count == 0
+end
+
 function self:Remove (item)
 	if not self:Contains (item) then return end
 	
