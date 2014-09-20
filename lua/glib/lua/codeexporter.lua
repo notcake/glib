@@ -359,7 +359,7 @@ function self:ProcessResource (namespace, id, sourcePath, destinationPath)
 		file.Write (self:GetOutputPath () .. "/" .. filePath .. ".txt", code)
 		self:AddIncludeFile (filePath .. ".lua")
 		
-		print ("CodeExported:ProcessResource : Success: " .. realSourcePath .. " -> data/" .. self:GetOutputPath () .. "/" .. filePath .. ".txt")
+		print ("CodeExporter:ProcessResource : Success: " .. realSourcePath .. " -> data/" .. self:GetOutputPath () .. "/" .. filePath .. ".txt")
 	end
 	
 	-- Final file
