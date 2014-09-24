@@ -274,6 +274,7 @@ function self:ProcessCode (code, sourcePath)
 	code = string.gsub (code, self.SourceSystemName .. "%.", self.DestinationSystemName .. ".")
 	code = string.gsub (code, self.SourceSystemName .. "_",  self.DestinationSystemName .. "_")
 	code = string.gsub (code, self.SourceSystemName,         self.DestinationSystemName       )
+	code = string.gsub (code, self.SourceFolderName .. "_",  self.DestinationFolderName .. "_")
 	
 	for auxiliarySystemName in self.AuxiliarySystemNames:GetEnumerator () do
 		code = string.gsub (code, auxiliarySystemName .. "%.", self.DestinationSystemName .. ".")
