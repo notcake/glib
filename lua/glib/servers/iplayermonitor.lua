@@ -15,6 +15,14 @@ function self:ctor ()
 	GLib.EventProvider (self)
 end
 
+function self:AddPlayerExistenceListener (nameOrCallback, callback)
+	GLib.Error ("IPlayerMonitor:AddPlayerExistenceListener : Not implemented.")
+end
+
+function self:RemovePlayerExistenceListener (nameOrCallback)
+	GLib.Error ("IPlayerMonitor:RemovePlayerExistenceListener : Not implemented.")
+end
+
 -- Enumerates connected players.
 -- Returns: () -> (userId, Player player)
 function self:GetPlayerEnumerator ()

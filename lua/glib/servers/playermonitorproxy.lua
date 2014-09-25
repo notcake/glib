@@ -71,6 +71,23 @@ function self:dtor ()
 	end
 end
 
+function self:AddPlayerExistenceListener (nameOrCallback, callback)
+	callback = callback or nameOrCallback
+	
+	for userId in self:GetUserEnumerator () do
+		for _, ply in ipairs (self:GetUserEntities (userId)) do
+			local isLocalPlayer = CLIENT and ply == LocalPlayer () or false
+			callback (self, ply, userId, isLocalPlayer)
+		end
+	end
+	
+	self:AddEventListener ("PlayerConnected", nameOrCallback, callback)
+end
+
+function self:RemovePlayerExistenceListener (nameOrCallback)
+	self:RemoveEventListener ("PlayerConnected", nameOrCallback)
+end
+
 function self:GetPlayerEnumerator ()
 	return self.PlayerMonitor:GetPlayerEnumerator ()
 end
