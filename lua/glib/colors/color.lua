@@ -126,6 +126,17 @@ function GLib.Color.GetName (color)
 	return colorNames [GLib.Color.ToArgb (color)]
 end
 
+function GLib.Color.Lerp (t, color0, color1, out)
+	out = out or Color (255, 255, 255, 255)
+	
+	out.r = t * color1.r + (1 - t) * color0.r
+	out.g = t * color1.g + (1 - t) * color0.g
+	out.b = t * color1.b + (1 - t) * color0.b
+	out.a = t * color1.a + (1 - t) * color0.a
+	
+	return out
+end
+
 function GLib.Color.ToArgb (color)
 	return color.a * 0x01000000 + color.r * 0x00010000 + color.g * 0x00000100 + color.b
 end
