@@ -10,6 +10,7 @@ local string_format = string.format
 local string_gsub   = string.gsub
 local string_sub    = string.sub
 local string_upper  = string.upper
+local table_concat  = table.concat
 
 function GLib.UTF8.Byte (char, offset)
 	if char == "" then return -1 end
@@ -446,6 +447,16 @@ function GLib.UTF8.SubOffset (str, offset, startCharacter, endCharacter)
 	else
 		return string_sub (str, startOffset)
 	end
+end
+
+function GLib.UTF8.FromLatin1 (str)
+	local out = {}
+	
+	for i = 1, #str do
+		out [#out + 1] = GLib.UTF8.Char (string_byte (str, i))
+	end
+	
+	return table_concat (out)
 end
 
 function GLib.UTF8.ToLatin1 (str)
