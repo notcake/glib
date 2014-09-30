@@ -184,7 +184,7 @@ function GLib.UTF8.Length (str)
 	return length
 end
 
-local function MatchesTransliterationCharacter (character, substring, offset)
+local function MatchesTransliterationCharacter (character, substring, offset, firstCharacterMatch)
 	local substringCharacter = GLib.UTF8.NextChar (substring, offset)
 	
 	if GLib.Unicode.ToLower (character) == GLib.Unicode.ToLower (substringCharacter) then
@@ -194,9 +194,11 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	
 	-- Some types of characters should not match any ASCII characters
 	local unicodeCategory = GLib.Unicode.GetCharacterCategory (character)
-	if GLib.Unicode.IsCombiningCategory (unicodeCategory) then return 0 end
-	if GLib.Unicode.IsControlCategory   (unicodeCategory) then return 0 end
-	if GLib.Unicode.IsSeparatorCategory (unicodeCategory) then return 0 end
+	if not firstCharacterMatch then
+		if GLib.Unicode.IsCombiningCategory (unicodeCategory) then return 0 end
+		if GLib.Unicode.IsControlCategory   (unicodeCategory) then return 0 end
+		if GLib.Unicode.IsSeparatorCategory (unicodeCategory) then return 0 end
+	end
 	
 	local transliterations = GLib.Unicode.GetTransliterationTable () [character]
 	if transliterations then
@@ -230,7 +232,8 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	
 	-- Absorb unmatchable non-ASCII characters
 	if substringCharacter == " " then return 1 end
-	if #character > 1 and
+	if not firstCharacterMatch and
+	   #character > 1 and
 	   not GLib.Unicode.IsLetterCategory (unicodeCategory) then
 		return 0
 	end
@@ -250,12 +253,14 @@ function GLib.UTF8.MatchTransliteration (str, substring, strOffset)
 		local substringOffset = 1
 		
 		-- Advance through the string and substring whilst matches characters
+		local firstCharacterMatch = true
 		while substringOffset <= #substring do
 			-- Check if the end of the string has been reached
 			if not stringCharacter then break end
 			
 			-- Attempt to match the character(s)
-			local matchLength = MatchesTransliterationCharacter (stringCharacter, substring, substringOffset)
+			local matchLength = MatchesTransliterationCharacter (stringCharacter, substring, substringOffset, firstCharacterMatch)
+			firstCharacterMatch = false
 			
 			-- Check if the match failed
 			if not matchLength then break end
@@ -267,6 +272,15 @@ function GLib.UTF8.MatchTransliteration (str, substring, strOffset)
 		
 		if substringOffset > #substring then
 			-- Match succeeded
+			
+			-- Fixup offsets
+			while not strInverseMap [startOffset] do
+				startOffset = startOffset - 1
+			end
+			while not strInverseMap [stringCharacterOffset] do
+				stringCharacterOffset = stringCharacterOffset + 1
+			end
+			
 			return true, strInverseMap [startOffset], strInverseMap [stringCharacterOffset] - 1
 		end
 	end
