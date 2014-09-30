@@ -108,21 +108,24 @@ function GLib.UTF8.ContainsSequences (str, offset)
 end
 
 function GLib.UTF8.Decompose (str)
+	local map        = {}
 	local inverseMap = {}
-	local t = {}
+	local t          = {}
 	
 	local outputOffset = 1
 	for c, offset in GLib.UTF8.Iterator (str) do
 		local decomposition = GLib.Unicode.DecomposeCharacter (c)
 		t [#t + 1] = decomposition
 		
+		map [offset] = outputOffset
 		inverseMap [outputOffset] = offset
 		outputOffset = outputOffset + #decomposition
 	end
 	
+	map [#str + 1] = outputOffset
 	inverseMap [outputOffset] = #str + 1
 	
-	return table.concat (t), inverseMap
+	return table.concat (t), map, inverseMap
 end
 
 function GLib.UTF8.GetGraphemeStart (str, offset)
@@ -235,12 +238,13 @@ local function MatchesTransliterationCharacter (character, substring, offset)
 	return nil
 end
 
-function GLib.UTF8.MatchTransliteration (str, substring)
-	local str, strInverseMap = GLib.UTF8.Decompose (str)
+function GLib.UTF8.MatchTransliteration (str, substring, strOffset)
+	local str, strMap, strInverseMap = GLib.UTF8.Decompose (str)
 	local substring = GLib.UTF8.Decompose (substring)
 	
 	-- Try to start matching the substring against each character of the string
-	for _, startOffset in GLib.UTF8.Iterator (str) do
+	strOffset = strMap [strOffset]
+	for _, startOffset in GLib.UTF8.Iterator (str, strOffset) do
 		local stringIterator  = GLib.UTF8.Iterator (str, startOffset)
 		local stringCharacter, stringCharacterOffset = stringIterator ()
 		local substringOffset = 1
