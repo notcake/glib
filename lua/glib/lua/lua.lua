@@ -239,12 +239,12 @@ function ToLuaString (value, stringBuilder)
 			data = data or file.Read (sourceFile, SERVER and "LSV" or "LCL")
 			
 			if data then
+				-- Normalize line endings
+				data = string.gsub (data, "\r\n", "\n")
+				data = string.gsub (data, "\r", "\n")
+				
 				local startLine = functionInfo:GetStartLine ()
 				local endLine   = functionInfo:GetEndLine ()
-				
-				-- Normalize line endings
-				data = string.gsub ("\r\n", "\n")
-				data = string.gsub ("\r", "\n")
 				
 				local lines = string.Split (data, "\n")
 				if endLine <= #lines then

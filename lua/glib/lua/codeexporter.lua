@@ -12,6 +12,9 @@ function self:ctor (sourceSystemName, sourceFolderName, destinationSystemName, d
 	
 	self.TableNames                   = GLib.Containers.OrderedSet ()
 	
+	-- Options
+	self.IncludeSourceInformation     = true
+	
 	-- Functions
 	self.Functions                    = GLib.Containers.OrderedSet ()
 	self.FunctionNames                = GLib.Containers.OrderedSet ()
@@ -37,6 +40,7 @@ function self:ctor (sourceSystemName, sourceFolderName, destinationSystemName, d
 	self.FinalizedTableNames          = GLib.Containers.OrderedSet ()
 end
 
+-- Input
 function self:AddAuxiliarySystemName (auxiliarySystemName)
 	self.AuxiliarySystemNames:Add (auxiliarySystemName)
 end
@@ -115,6 +119,16 @@ function self:AddResource (namespace, id, sourcePath, destinationPath)
 		SourcePath      = sourcePath,
 		DestinationPath = destinationPath
 	}
+end
+
+-- Options
+function self:ShouldIncludeSourceInformation ()
+	return self.IncludeSourceInformation
+end
+
+function self:SetIncludeSourceInformation (includeSourceInformation)
+	self.IncludeSourceInformation = includeSourceInformation
+	return self
 end
 
 function self:GenerateCode ()
@@ -282,7 +296,7 @@ function self:ProcessCode (code, sourcePath)
 		code = string.gsub (code, auxiliarySystemName,         self.DestinationSystemName       )
 	end
 	
-	if sourcePath then
+	if sourcePath and self:ShouldIncludeSourceInformation () then
 		code = "-- Generated from: " .. self.SourceFolderName .. "/lua/" .. self.SourceFolderName .. "/" .. sourcePath .. "\r\n" ..
 			   "-- Original:       https://github.com/notcake/" .. self.SourceFolderName .. "/blob/master/lua/" .. self.SourceFolderName .. "/" .. sourcePath .. "\r\n" ..
 			   "-- Timestamp:      " .. os.date ("%Y-%m-%d %H:%M:%S") .. "\r\n" ..
