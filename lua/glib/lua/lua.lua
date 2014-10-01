@@ -242,6 +242,10 @@ function ToLuaString (value, stringBuilder)
 				local startLine = functionInfo:GetStartLine ()
 				local endLine   = functionInfo:GetEndLine ()
 				
+				-- Normalize line endings
+				data = string.gsub ("\r\n", "\n")
+				data = string.gsub ("\r", "\n")
+				
 				local lines = string.Split (data, "\n")
 				if endLine <= #lines then
 					local code = {}
