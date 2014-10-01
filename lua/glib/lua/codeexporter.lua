@@ -139,15 +139,25 @@ function self:GenerateCode ()
 		return
 	end
 	
+	local mainOutputFileName = self.SourceFolderName .. "import"
+	local codegenFolderName  = self.SourceFolderName .. "_codegen"
+	local importFolderName   = self.SourceFolderName .. "_imported"
+	
+	if not self:ShouldIncludeSourceInformation () then
+		mainOutputFileName = "import"
+		codegenFolderName  = "codegen"
+		importFolderName   = "imported"
+	end
+	
 	-- Batch script
 	file.CreateDir (self:GetOutputPath ())
-	file.Write (self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_import.bat.txt",
-		"for /R " .. self.SourceFolderName .. "_codegen %%x in (*.lua) do erase \"%%x\"\r\n" ..
-		"for /R " .. self.SourceFolderName .. "_codegen %%x in (*.txt) do ren \"%%x\" *.lua\r\n" ..
-		"xcopy \"" .. self.SourceFolderName .. "_codegen\\*\" \"..\\..\\addons\\" .. self.DestinationFolderName .. "\\lua\\" .. self.DestinationFolderName .. "\\" .. self.SourceFolderName .. "_imported\\\" /s /e /y\r\n" ..
-		"erase " .. self.SourceFolderName .. "_import.lua\r\n" ..
-		"ren " .. self.SourceFolderName .. "_import.txt " .. self.SourceFolderName .. "_import.lua\r\n" ..
-		"xcopy " .. self.SourceFolderName .. "_import.lua \"..\\..\\addons\\" .. self.DestinationFolderName .. "\\lua\\" .. self.DestinationFolderName .. "\\\" /Y\r\n" ..
+	file.Write (self.DestinationFolderName .. "/" .. mainOutputFileName .. ".bat.txt",
+		"for /R "  .. codegenFolderName .. " %%x in (*.lua) do erase \"%%x\"\r\n" ..
+		"for /R "  .. codegenFolderName .. " %%x in (*.txt) do ren \"%%x\" *.lua\r\n" ..
+		"xcopy \"" .. codegenFolderName .. "\\*\" \"..\\..\\addons\\" .. self.DestinationFolderName .. "\\lua\\" .. self.DestinationFolderName .. "\\" .. importFolderName .. "\\\" /s /e /y\r\n" ..
+		"erase " .. mainOutputFileName .. ".lua\r\n" ..
+		"ren "   .. mainOutputFileName .. ".txt " .. mainOutputFileName .. ".lua\r\n" ..
+		"xcopy " .. mainOutputFileName .. ".lua \"..\\..\\addons\\" .. self.DestinationFolderName .. "\\lua\\" .. self.DestinationFolderName .. "\\\" /Y\r\n" ..
 		"cmd\r\n"
 	)
 	
@@ -229,7 +239,7 @@ function self:GenerateCode ()
 	
 	-- Includes
 	for fileName in self.IncludeFiles:GetEnumerator () do
-		code = code .. "include (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+		code = code .. "include (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
 	end
 	code = code .. "\r\n"
 	
@@ -237,7 +247,7 @@ function self:GenerateCode ()
 	if not self.ClientsideIncludeFiles:IsEmpty () then
 		code = code .. "if CLIENT then\r\n"
 		for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
-			code = code .. "\tinclude (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+			code = code .. "\tinclude (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
 		end
 		code = code .. "end\r\n"
 		code = code .. "\r\n"
@@ -245,20 +255,20 @@ function self:GenerateCode ()
 	
 	-- Clientside lua files
 	code = code .. "if SERVER then\r\n"
-	code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_import.lua\")\r\n"
+	code = code .. "	AddCSLuaFile (\"" .. mainOutputFileName .. ".lua\")\r\n"
 	
 	for fileName in self.IncludeFiles:GetEnumerator () do
-		code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+		code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
 	end
 	
 	for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
-		code = code .. "	AddCSLuaFile (\"" .. self.SourceFolderName .. "_imported/" .. fileName .. "\")\r\n"
+		code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
 	end
 	
 	code = code .. "end\r\n"
 	code = code .. "\r\n"
 	
-	file.Write (self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_import.txt", code)
+	file.Write (self.DestinationFolderName .. "/" .. mainOutputFileName .. ".txt", code)
 end
 
 function self:ProcessFile (sourcePath, destinationPath)
@@ -405,7 +415,11 @@ function self:GetAddonLuaPath ()
 end
 
 function self:GetOutputPath ()
-	return self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_codegen"
+	if self:ShouldIncludeSourceInformation () then
+		return self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_codegen"
+	else
+		return self.DestinationFolderName .. "/codegen"
+	end
 end
 
 -- Output
