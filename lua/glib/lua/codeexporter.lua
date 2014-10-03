@@ -139,7 +139,7 @@ function self:GenerateCode ()
 		return
 	end
 	
-	local mainOutputFileName = self.SourceFolderName .. "import"
+	local mainOutputFileName = self.SourceFolderName .. "_import"
 	local codegenFolderName  = self.SourceFolderName .. "_codegen"
 	local importFolderName   = self.SourceFolderName .. "_imported"
 	
