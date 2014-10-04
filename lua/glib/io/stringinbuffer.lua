@@ -58,7 +58,7 @@ function self:UInt32 ()
 end
 
 function self:UInt64 ()
-	local n = string.byte (string.sub (self.Data, self.Position, self.Position))
+	local n = string.byte (string.sub (self.Data, self.Position, self.Position)) or 0
 	n = n + (string.byte (string.sub (self.Data, self.Position + 1, self.Position + 1)) or 0) * 256
 	n = n + (string.byte (string.sub (self.Data, self.Position + 2, self.Position + 2)) or 0) * 65536
 	n = n + (string.byte (string.sub (self.Data, self.Position + 3, self.Position + 3)) or 0) * 16777216
