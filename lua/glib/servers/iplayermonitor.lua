@@ -1,5 +1,5 @@
 local self = {}
-GLib.IPlayerMonitor = GLib.MakeConstructor (self, GLib.IPlayerMonitor)
+GLib.IPlayerMonitor = GLib.MakeConstructor (self)
 
 --[[
 	Events:
