@@ -24,6 +24,7 @@ function self:ctor ()
 			if not ply:IsPlayer () then return end
 			
 			self.QueuedPlayers [ply] = true
+			self:ProcessQueue ()
 		end
 	)
 	
