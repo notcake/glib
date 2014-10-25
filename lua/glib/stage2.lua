@@ -314,6 +314,13 @@ GLib.Rendering.Textures = {}
 include ("rendering/textures/pixelformat.lua")
 include ("rendering/textures/itexture2d.lua")
 
+-- Databases
+GLib.Databases = {}
+include ("databases/idatabase.lua")
+include ("databases/sqlitedatabase.lua")
+include ("databases/mysqldatabase.lua")
+include ("databases/mysqloodatabase.lua")
+
 -- Addons
 include ("addons.lua")
 

@@ -25,7 +25,7 @@ function GLib.Lua.ParameterList.FromFunction (func)
 	infoTable = infoTable or debug.getinfo (func)
 	
 	for i = 1, infoTable.nparams do
-		parameterList:AddParameter (debug.getlocal (func, i))
+		parameterList:AddParameter (debug.getlocal (func, i) or ("__param" .. tostring (i)))
 	end
 	
 	if infoTable.isvararg then
