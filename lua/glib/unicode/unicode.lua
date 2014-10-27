@@ -63,18 +63,6 @@ function GLib.Unicode.GetCharacterName (...)
 	end
 end
 
-function GLib.Unicode.GetCharacterName (...)
-	local codePoint = GLib.UTF8.Byte (...)
-	if characterNames [codePoint] then
-		return characterNames [codePoint]
-	end
-	if codePoint < 0x010000 then
-		return string.format ("CHARACTER 0x%04x", codePoint)
-	else
-		return string.format ("CHARACTER 0x%06x", codePoint)
-	end
-end
-
 function GLib.Unicode.GetCharacterNameTable ()
 	return characterNames
 end
