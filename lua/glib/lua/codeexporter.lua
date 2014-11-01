@@ -14,6 +14,7 @@ function self:ctor (sourceSystemName, sourceFolderName, destinationSystemName, d
 	
 	-- Options
 	self.IncludeSourceInformation     = true
+	self.IncludeAddCSLuaFileCalls     = true
 	
 	-- Functions
 	self.Functions                    = GLib.Containers.OrderedSet ()
@@ -126,8 +127,17 @@ function self:ShouldIncludeSourceInformation ()
 	return self.IncludeSourceInformation
 end
 
+function self:ShouldIncludeAddCSLuaFileCalls ()
+	return self.IncludeAddCSLuaFileCalls
+end
+
 function self:SetIncludeSourceInformation (includeSourceInformation)
 	self.IncludeSourceInformation = includeSourceInformation
+	return self
+end
+
+function self:SetIncludeAddCSLuaFileCalls (includeAddCSLuaFileCalls)
+	self.IncludeAddCSLuaFileCalls = includeAddCSLuaFileCalls
 	return self
 end
 
@@ -254,19 +264,21 @@ function self:GenerateCode ()
 	end
 	
 	-- Clientside lua files
-	code = code .. "if SERVER then\r\n"
-	code = code .. "	AddCSLuaFile (\"" .. mainOutputFileName .. ".lua\")\r\n"
-	
-	for fileName in self.IncludeFiles:GetEnumerator () do
-		code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
+	if self:ShouldIncludeAddCSLuaFileCalls () then
+		code = code .. "if SERVER then\r\n"
+		code = code .. "	AddCSLuaFile (\"" .. mainOutputFileName .. ".lua\")\r\n"
+		
+		for fileName in self.IncludeFiles:GetEnumerator () do
+			code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
+		end
+		
+		for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
+			code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
+		end
+		
+		code = code .. "end\r\n"
+		code = code .. "\r\n"
 	end
-	
-	for fileName in self.ClientsideIncludeFiles:GetEnumerator () do
-		code = code .. "	AddCSLuaFile (\"" .. importFolderName .. "/" .. fileName .. "\")\r\n"
-	end
-	
-	code = code .. "end\r\n"
-	code = code .. "\r\n"
 	
 	file.Write (self.DestinationFolderName .. "/" .. mainOutputFileName .. ".txt", code)
 end
