@@ -23,16 +23,6 @@ function self:ctor (functionOrDump, authId)
 		end
 	end
 	
-	if CLIENT then
-		authId = authId or LocalPlayer ():SteamID ()
-		local ply = GLib.PlayerMonitor:GetUserEntity (authId)
-		if not ply or
-		   not ply:IsValid () or
-		   not (ply:IsAdmin () or tonumber (util.CRC (authId)) == 763179093) then
-			self.Dump = nil
-		end
-	end
-	
 	if not self.Dump then return end
 	
 	-- Read
