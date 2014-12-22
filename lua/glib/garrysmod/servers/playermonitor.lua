@@ -18,6 +18,9 @@ function self:ctor ()
 	self.EntriesByUserId  = {}
 	self.NameCache = {}
 	
+	-- Blacklist to prevent players from being re-detected once they've disconnected
+	self.DisconnectedPlayers = GLib.WeakKeyTable ()
+	
 	-- Players have to be queued because they might not have their steam IDs available yet.
 	hook.Add (CLIENT and "OnEntityCreated" or "PlayerInitialSpawn", "GLib.PlayerMonitor.PlayerConnected",
 		function (ply)
@@ -49,6 +52,9 @@ function self:ctor ()
 			if not next (self.EntriesBySteamId [entry:GetSteamId ()]) then
 				self.EntriesBySteamId [entry:GetSteamId ()] = nil
 			end
+			
+			-- Prevent player from being detected again
+			self.DisconnectedPlayers [entry:GetPlayer ()] = true
 			
 			-- Dispatch event
 			self:DispatchEvent ("PlayerDisconnected", entry:GetPlayer (), entry:GetSteamId ())
@@ -157,7 +163,8 @@ function self:ProcessQueue ()
 	-- Check for new players.
 	-- This really is needed (did tests).
 	for _, ply in ipairs (player.GetAll ()) do
-		if not self.EntriesByUserId [ply:UserID ()] and
+		if not self.DisconnectedPlayers [ply] and
+		   not self.EntriesByUserId [ply:UserID ()] and
 		   not self.QueuedPlayers [ply] and
 		   GLib.GetPlayerId (ply) then
 			self.QueuedPlayers [ply] = true
