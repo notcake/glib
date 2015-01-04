@@ -38,6 +38,8 @@ include ("io/inbuffer.lua")
 include ("io/outbuffer.lua")
 include ("io/stringinbuffer.lua")
 include ("io/stringoutbuffer.lua")
+include ("garrysmod/io/fileinbuffer.lua")
+include ("garrysmod/io/fileoutbuffer.lua")
 
 -- Threading
 GLib.Threading = {}

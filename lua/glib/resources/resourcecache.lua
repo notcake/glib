@@ -45,6 +45,8 @@ function self:CacheResource (namespace, id, versionHash, data)
 	file.CreateDir ("glib/resourcecache/" .. string.lower (namespace))
 	
 	local f = file.Open (self:GetCachePath (namespace, id, versionHash), "wb", "DATA")
+	if not f then return end
+	
 	f:Write (data)
 	f:Close ()
 	
