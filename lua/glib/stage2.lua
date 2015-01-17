@@ -323,6 +323,10 @@ include ("databases/sqlitedatabase.lua")
 include ("databases/mysqldatabase.lua")
 include ("databases/mysqloodatabase.lua")
 
+-- Parsing
+include ("parsing/stringparser.lua")
+include ("parsing/durationparser.lua")
+
 -- Addons
 include ("addons.lua")
 
