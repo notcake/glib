@@ -5,11 +5,12 @@ local string_lower = string.lower
 
 function GLib.DurationParser.Parse (str)
 	local parser = GLib.DurationParser (str)
-	local duration = parser:Parse (str)
-	if parser:IsEndOfInput () then
-		return duration, true
+	local duration, success = parser:Parse (str)
+	
+	if success then
+		return duration, success
 	else
-		return duration, false, parser:GetPosition ()
+		return duration, success, parser:GetPosition ()
 	end
 end
 
@@ -20,25 +21,38 @@ function self:Parse ()
 	   self:AcceptLiteralCaseInsensitive ("permanent") or
 	   self:AcceptLiteralCaseInsensitive ("permanently") then
 		self:AcceptWhitespace ()
-		return math.huge
+		return math.huge, self:IsEndOfInput ()
 	end
 	
 	local t = self:DurationPart ()
-	if not t then return 0 end
+	if not t then return 0, false end
 	
 	while true do
-		self:AcceptWhitespace ()
-		self:AcceptLiteral (",")
-		self:AcceptWhitespace ()
-		self:AcceptLiteralCaseInsensitive ("and")
-		self:AcceptWhitespace ()
+		--  ?, ?
+		--  ?, ?and 
+		--      and 
+		local separatorFound = false
+		separatorFound = separatorFound or self:AcceptWhitespace ()
+		separatorFound = separatorFound or self:AcceptLiteral (",")
+		separatorFound = separatorFound or self:AcceptWhitespace ()
+		if self:AcceptLiteralCaseInsensitive ("and") then
+			if not self:AcceptWhitespace () then
+				return t, false
+			end
+		end
+		
+		if not separatorFound and
+		   not self:PeekPattern ("[0-9%.]") then
+			break
+		end
+		
 		local dt = self:DurationPart ()
 		if not dt then break end
 		
 		t = t + dt
 	end
 	
-	return t
+	return t, self:IsEndOfInput ()
 end
 
 function self:DurationPart ()
@@ -52,6 +66,8 @@ function self:DurationPart ()
 	-- day     <unit>
 	-- ks      <si prefix abbreviation><si unit abbreviation>
 	-- d       <unit abbreviation>
+	
+	self:SavePosition ()
 	
 	local count = nil
 	if self:AcceptLiteralCaseInsensitive ("an") or
@@ -72,6 +88,7 @@ function self:DurationPart ()
 		local duration = self:Period (count == 1)
 		if duration then
 			self:CommitPosition ()
+			self:CommitPosition ()
 			return count * prefixMultiplier * duration
 		end
 	end
@@ -84,6 +101,7 @@ function self:DurationPart ()
 		local duration = self:Period (count == 1)
 		if duration then
 			self:CommitPosition ()
+			self:CommitPosition ()
 			return count * prefixMultiplier * duration
 		end
 	end
@@ -92,6 +110,7 @@ function self:DurationPart ()
 	-- day     <unit>
 	local duration = count == 1 and self:SingularPeriod () or self:PluralPeriod ()
 	if duration then
+		self:CommitPosition ()
 		return count * duration
 	end
 	
@@ -102,6 +121,7 @@ function self:DurationPart ()
 		local duration = self:AbbreviatedSIPeriod ()
 		if duration then
 			self:CommitPosition ()
+			self:CommitPosition ()
 			return count * prefixMultiplier * duration
 		end
 	end
@@ -110,8 +130,11 @@ function self:DurationPart ()
 	-- d       <unit abbreviation>
 	local duration = self:AbbreviatedPeriod ()
 	if duration then
+		self:CommitPosition ()
 		return count * duration
 	end
+	
+	self:RestorePosition ()
 end
 
 local siPrefixes =
@@ -146,17 +169,19 @@ end
 
 local timePeriods =
 {
-	{ Singular = "second",                     Plural = "seconds",                     Duration = 1,                        Abbreviation = "s", IsSIAbbreviation = true },
-	{ Singular = "minute",                     Plural = "minutes",                     Duration = 60,                       Abbreviation = "m" },
-	{ Singular = "hour",                       Plural = "hours",                       Duration = 60 * 60,                  Abbreviation = "h" },
-	{ Singular = "day",                        Plural = "days",                        Duration = 60 * 60 * 24,             Abbreviation = "d" },
-	{ Singular = "week",                       Plural = "weeks",                       Duration = 60 * 60 * 24 * 7          },
-	{ Singular = "month",                      Plural = "months",                      Duration = 60 * 60 * 24 * 30         },
-	{ Singular = "year",                       Plural = "years",                       Duration = 60 * 60 * 24 * 365,       Abbreviation = "y" },
-	{ Singular = "decade",                     Plural = "decades",                     Duration = 60 * 60 * 24 * 365 * 10   },
-	{ Singular = "century",                    Plural = "centuries",                   Duration = 60 * 60 * 24 * 365 * 100  },
-	{ Singular = "millenium",                  Plural = "millenia",                    Duration = 60 * 60 * 24 * 365 * 1000 },
-	{ Singular = "heat death of the universe", Plural = "heat deaths of the universe", Duration = math.huge                 }
+	{ Singular = "second",                     Plural = "seconds",                     Duration = 1,                             Abbreviation = "s", IsSIAbbreviation = true },
+	{ Singular = "minute",                     Plural = "minutes",                     Duration = 60,                            Abbreviation = "m" },
+	{ Singular = "hour",                       Plural = "hours",                       Duration = 60 * 60,                       Abbreviation = "h" },
+	{ Singular = "day",                        Plural = "days",                        Duration = 60 * 60 * 24,                  Abbreviation = "d" },
+	{ Singular = "week",                       Plural = "weeks",                       Duration = 60 * 60 * 24 * 7               },
+	{ Singular = "month",                      Plural = "months",                      Duration = 60 * 60 * 24 * 30              },
+	{ Singular = "year",                       Plural = "years",                       Duration = 60 * 60 * 24 * 365,            Abbreviation = "y" },
+	{ Singular = "decade",                     Plural = "decades",                     Duration = 60 * 60 * 24 * 365 * 10        },
+	{ Singular = "century",                    Plural = "centuries",                   Duration = 60 * 60 * 24 * 365 * 100       },
+	{ Singular = "millenium",                  Plural = "millenia",                    Duration = 60 * 60 * 24 * 365 * 1000      },
+	{ Singular = "U-235 half-life",            Plural = "U-235 half-lives",            Duration = 60 * 60 * 24 * 365 * 703800000 },
+	{ Singular = "U-235 half life",            Plural = "U-235 half lives",            Duration = 60 * 60 * 24 * 365 * 703800000 },
+	{ Singular = "heat death of the universe", Plural = "heat deaths of the universe", Duration = math.huge                      }
 }
 
 function self:AbbreviatedPeriod ()
