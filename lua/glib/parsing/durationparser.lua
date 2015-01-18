@@ -1,6 +1,8 @@
 local self = {}
 GLib.DurationParser = GLib.MakeConstructor (self, GLib.StringParser)
 
+local string_lower = string.lower
+
 function GLib.DurationParser.Parse (str)
 	local parser = GLib.DurationParser (str)
 	local duration = parser:Parse (str)
