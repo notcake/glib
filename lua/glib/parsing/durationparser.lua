@@ -32,14 +32,18 @@ function self:Parse ()
 		--  ?, ?and 
 		--      and 
 		local separatorFound = false
+		local expectingPart  = false
 		separatorFound = separatorFound or self:AcceptWhitespace ()
-		separatorFound = separatorFound or self:AcceptLiteral (",")
+		expectingPart  = expectingPart  or self:AcceptLiteral (",")
 		separatorFound = separatorFound or self:AcceptWhitespace ()
 		if self:AcceptLiteralCaseInsensitive ("and") then
 			if not self:AcceptWhitespace () then
 				return t, false
 			end
+			
+			expectingPart = true
 		end
+		separatorFound = separatorFound or expectingPart
 		
 		if not separatorFound and
 		   not self:PeekPattern ("[0-9%.]") then
@@ -47,7 +51,10 @@ function self:Parse ()
 		end
 		
 		local dt = self:DurationPart ()
-		if not dt then break end
+		if not dt then
+			if expectingPart then return t, false end
+			break
+		end
 		
 		t = t + dt
 	end

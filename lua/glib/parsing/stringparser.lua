@@ -4,6 +4,7 @@ GLib.StringParser = GLib.MakeConstructor (self)
 local string_find  = string.find
 local string_lower = string.lower
 local string_match = string.match
+local string_sub   = string.sub
 
 function self:ctor (str)
 	self.Data                    = str
@@ -36,7 +37,7 @@ function self:AcceptLiteralCaseInsensitive (str)
 	
 	self.Position = endPos + 1
 	
-	return str
+	return string_sub (self.Data, startPos, endPos)
 end
 
 function self:AcceptPattern (pattern)
@@ -50,6 +51,16 @@ end
 
 function self:AcceptWhitespace ()
 	return self:AcceptPattern ("[ \t\r\n]+")
+end
+
+function self:CanAcceptLiteral (str)
+	local startPos, endPos = string_find (self.Data, self.AnchoredEscapedLiterals [str] or self:AnchorAndEscapeLiteral (str), self.Position)
+	return startPos ~= nil
+end
+
+function self:CanAcceptPattern (str)
+	local startPos, endPos = string_find (self.Data, self.AnchoredPatterns [pattern] or self:AnchorPattern (pattern), self.Position)
+	return startPos ~= nil
 end
 
 function self:PeekPattern (pattern)
