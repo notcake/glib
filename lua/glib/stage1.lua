@@ -245,7 +245,9 @@ function GLib.Initialize (systemName, systemTable)
 	GLib.EventProvider (systemTable)
 	systemTable:AddEventListener ("Unloaded", "GLib.Unloader",
 		function ()
-			hook.Remove ("ShutDown", tostring (systemName))
+			if not istable (ULib) then
+				hook.Remove ("ShutDown", tostring (systemName))
+			end
 		end
 	)
 	
