@@ -1,6 +1,13 @@
 local self = {}
 GLib.OutBuffer = GLib.MakeConstructor (self)
 
+local bit_band    = bit.band
+
+local math_floor  = math.floor
+local math_min    = math.min
+
+local string_byte = string.byte
+
 function self:Clear ()
 	GLib.Error ("OutBuffer:Clear : Not implemented.")
 end
@@ -19,17 +26,17 @@ end
 
 function self:UInt16 (n)
 	self:UInt8 (n % 0x0100)
-	self:UInt8 (math.floor (n / 0x0100))
+	self:UInt8 (math_floor (n / 0x0100))
 end
 
 function self:UInt32 (n)
 	self:UInt16 (n % 0x00010000)
-	self:UInt16 (math.floor (n / 0x00010000))
+	self:UInt16 (math_floor (n / 0x00010000))
 end
 
 function self:UInt64 (n)
 	self:UInt32 (n % 4294967296)
-	self:UInt32 (math.floor (n / 4294967296))
+	self:UInt32 (math_floor (n / 4294967296))
 end
 
 function self:ULEB128 (n)
@@ -39,10 +46,10 @@ function self:ULEB128 (n)
 	
 	while n > 0 do
 		if n >= 0x80 then
-			self:UInt8 (0x80 + bit.band (n, 0x7F))
-			n = math.floor (n / 0x80)
+			self:UInt8 (0x80 + bit_band (n, 0x7F))
+			n = math_floor (n / 0x80)
 		else
-			self:UInt8 (bit.band (n, 0x7F))
+			self:UInt8 (bit_band (n, 0x7F))
 		end
 	end
 end
@@ -53,17 +60,17 @@ end
 
 function self:Int16 (n)
 	self:UInt8 (n % 0x0100)
-	self:Int8 (math.floor (n / 0x0100))
+	self:Int8 (math_floor (n / 0x0100))
 end
 
 function self:Int32 (n)
 	self:UInt16 (n % 0x00010000)
-	self:Int16 (math.floor (n / 0x00010000))
+	self:Int16 (math_floor (n / 0x00010000))
 end
 
 function self:Int64 (n)
 	self:UInt32 (n % 4294967296)
-	self:Int32 (math.floor (n / 4294967296))
+	self:Int32 (math_floor (n / 4294967296))
 end
 
 function self:Float (f)
@@ -84,14 +91,14 @@ function self:Vector (v)
 end
 
 function self:Char (char)
-	self:UInt8 (string.byte (char))
+	self:UInt8 (string_byte (char))
 end
 
 function self:Bytes (data, length)
 	length = length or #data
-	length = math.min (length, #data)
+	length = math_min (length, #data)
 	for i = 1, length do
-		self:UInt8 (string.byte (data, i))
+		self:UInt8 (string_byte (data, i))
 	end
 end
 

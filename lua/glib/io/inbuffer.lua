@@ -1,6 +1,8 @@
 local self = {}
 GLib.InBuffer = GLib.MakeConstructor (self)
 
+local string_char = string.char
+
 function self:ctor ()
 	self.Position = 1
 end
@@ -117,13 +119,13 @@ function self:Vector ()
 end
 
 function self:Char ()
-	return string.char (self:UInt8 ())
+	return string_char (self:UInt8 ())
 end
 
 function self:Bytes (length)
 	local data = ""
 	for i = 1, length do
-		data = data .. string.char (self:UInt8 ())
+		data = data .. string_char (self:UInt8 ())
 	end
 	
 	return data
@@ -157,7 +159,7 @@ function self:StringZ ()
 			break
 		end
 		
-		data = data .. string.char (c)
+		data = data .. string_char (c)
 		c = self:UInt8 ()
 	end
 	
