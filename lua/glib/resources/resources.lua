@@ -13,9 +13,9 @@ function GLib.Resources.Get (namespace, id, versionHashOrCallback, callback)
 	namespace = namespace or ""
 	
 	local versionHash = ""
-	if type (versionHashOrCallback) == "string" then
+	if isstring (versionHashOrCallback) then
 		versionHash = versionHashOrCallback
-	elseif type (versionHashOrCallback) == "function" then
+	elseif isfunction (versionHashOrCallback) then
 		callback = versionHashOrCallback
 	end
 	callback = callback or GLib.NullCallback

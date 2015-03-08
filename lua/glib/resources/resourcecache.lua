@@ -74,7 +74,7 @@ end
 
 function self:IsResourceCached (namespace, id, versionHash)
 	return file.Exists ("data/" .. self:GetCachePath (namespace, id, versionHash), "GAME") and
-	       tostring (util.CRC (file.Read ("data/" .. self:GetCachePath (namespace, id, versionHash), "GAME"))) == versionHash
+	       string.format ("%08x", tonumber (util.CRC (file.Read ("data/" .. self:GetCachePath (namespace, id, versionHash), "GAME"))) or 0) == versionHash
 end
 
 function self:PruneCache ()
