@@ -1,10 +1,11 @@
-function GLib.String.DumpHex (str)
-	local charsPerLine = 16
+function GLib.String.DumpHex (str, bytesPerLine)
+	bytesPerLine = bytesPerLine or 16
+	
 	local lines = {}
 	local i = 1
 	
 	while i <= #str do
-		local line = string.sub (str, i, i + charsPerLine - 1)
+		local line = string.sub (str, i, i + bytesPerLine - 1)
 		local left = ""
 		local right = ""
 		
@@ -19,13 +20,13 @@ function GLib.String.DumpHex (str)
 			end
 		end
 		
-		if #left < 3 * charsPerLine then
-		    left = left .. string.rep (" ", 3 * charsPerLine - #left)
+		if #left < 3 * bytesPerLine then
+		    left = left .. string.rep (" ", 3 * bytesPerLine - #left)
 		end
 		
 		lines [#lines + 1] = left .. "| " .. right
 		
-	    i = i + charsPerLine
+	    i = i + bytesPerLine
 	end
 	
 	return table.concat (lines, "\n")
