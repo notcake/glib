@@ -105,6 +105,11 @@ function self:GetPlayerEnumerator ()
 end
 
 function self:GetUserEntity (userId)
+	if userId == "STEAM_0:0:0" and
+	   game.SinglePlayer () then
+		userId = GLib.GetPlayerId (player.GetAll () [1])
+	end
+	
 	if not self.EntriesBySteamId [userId] then
 		-- Check the queue
 		for ply, _ in pairs (self.QueuedPlayers) do
@@ -121,6 +126,11 @@ function self:GetUserEntity (userId)
 end
 
 function self:GetUserEntities (userId)
+	if userId == "STEAM_0:0:0" and
+	   game.SinglePlayer () then
+		userId = GLib.GetPlayerId (player.GetAll () [1])
+	end
+	
 	if not self.EntriesBySteamId [userId] then
 		-- Check the queue
 		for ply, _ in pairs (self.QueuedPlayers) do
@@ -155,6 +165,11 @@ function self:GetUserName (userId)
 end
 
 function self:IsUserPresent (userId)
+	if userId == "STEAM_0:0:0" and
+	   game.SinglePlayer () then
+		userId = GLib.GetPlayerId (player.GetAll () [1])
+	end
+	
 	return self.EntriesBySteamId [userId] ~= nil
 end
 
