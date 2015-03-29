@@ -8,6 +8,8 @@ function self:ctor (sourceSystemName, sourceFolderName, destinationSystemName, d
 	self.DestinationSystemName        = destinationSystemName
 	self.DestinationFolderName        = destinationFolderName
 	
+	self.OutputFolderName             = self.SourceFolderName
+	
 	self.AuxiliarySystemNames         = GLib.Containers.OrderedSet ()
 	
 	self.TableNames                   = GLib.Containers.OrderedSet ()
@@ -123,6 +125,10 @@ function self:AddResource (namespace, id, sourcePath, destinationPath)
 end
 
 -- Options
+function self:GetOutputFolderName ()
+	return self.OutputFolderName
+end
+
 function self:ShouldIncludeSourceInformation ()
 	return self.IncludeSourceInformation
 end
@@ -141,6 +147,11 @@ function self:SetIncludeAddCSLuaFileCalls (includeAddCSLuaFileCalls)
 	return self
 end
 
+function self:SetOutputFolderName (outputFolderName)
+	self.OutputFolderName = outputFolderName
+	return self
+end
+
 function self:GenerateCode ()
 	self:ClearOutput ()
 	
@@ -149,9 +160,9 @@ function self:GenerateCode ()
 		return
 	end
 	
-	local mainOutputFileName = self.SourceFolderName .. "_import"
-	local codegenFolderName  = self.SourceFolderName .. "_codegen"
-	local importFolderName   = self.SourceFolderName .. "_imported"
+	local mainOutputFileName = self.OutputFolderName .. "_import"
+	local codegenFolderName  = self.OutputFolderName .. "_codegen"
+	local importFolderName   = self.OutputFolderName .. "_imported"
 	
 	if not self:ShouldIncludeSourceInformation () then
 		mainOutputFileName = "import"
@@ -428,7 +439,7 @@ end
 
 function self:GetOutputPath ()
 	if self:ShouldIncludeSourceInformation () then
-		return self.DestinationFolderName .. "/" .. self.SourceFolderName .. "_codegen"
+		return self.DestinationFolderName .. "/" .. self.OutputFolderName .. "_codegen"
 	else
 		return self.DestinationFolderName .. "/codegen"
 	end
