@@ -59,10 +59,16 @@ function GLib.Lua.CreateShadowTable (t)
 end
 
 function GLib.Lua.GetFunctionName (func)
+	if not GLib.Lua.NameCache               then return nil end
+	if not GLib.Lua.NameCache.GetObjectName then return nil end
+	
 	return GLib.Lua.NameCache:GetFunctionName (func)
 end
 
 function GLib.Lua.GetObjectName (object)
+	if not GLib.Lua.NameCache               then return nil end
+	if not GLib.Lua.NameCache.GetObjectName then return nil end
+	
 	return GLib.Lua.NameCache:GetObjectName (object)
 end
 

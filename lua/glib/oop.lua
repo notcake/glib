@@ -6,16 +6,13 @@
 		__call                 - Invokes the ctor static method of the static table.
 		                         The ctor static method should create and return an instance of the class.
 		                         
-		GetInstanceMetatable   - Returns the instance metatable for this class.
-		                         This method should not be overridden.
-		                         
 		SetInstanceConstructor - Sets the instance constructor for this class.
 		                         This method should not be overridden or called.
 	}
 	
-	Static tables
+	Static tables (callable to construct an instance)
 	{
-		ctor                   - Creates and returns an intance of the class.
+		ctor                   - Creates and returns an instance of the class.
 		                         This static method is overrideable.
 		                         
 		__ictor                - Instance constructor static method.
@@ -24,6 +21,9 @@
 		                         
 		__static               - A boolean whose value is always true.
 		                         This field should not be overridden.
+		                         
+		GetInstanceMetatable   - Returns the instance metatable for this class.
+		                         This method should not be overridden.
 	}
 	
 	Instance metatable
@@ -120,10 +120,6 @@ local self = {}
 local StaticTableMetatable = self
 self.__index = self
 
-function self:GetInstanceMetatable ()
-	return GLib.GetMetaTable (self)
-end
-
 function self:SetInstanceConstructor (ictor)
 	if self.__ictor == ictor then return self end
 	
@@ -152,19 +148,15 @@ function GLib.CreateStaticTable (ictor, out)
 end
 
 function GLib.GetMetaTable (typeConstructor)
-	if GLib.IsStaticTable (typeConstructor) then
-		typeConstructor = typeConstructor.__ictor
+	if GLib.IsStaticTable (typeConstructor) and
+	   type (typeConstructor.GetInstanceMetatable) == "function" then
+		return typeConstructor:GetInstanceMetatable ()
 	elseif type (typeConstructor) == "table" and
-	       type (typeConstructor.__ictor) == "function" then
-		typeConstructor = typeConstructor.__ictor
+	       type (typeConstructor.__GetStaticTable) == "function" then
+		return typeConstructor:__GetStaticTable ():GetInstanceMetatable ()
 	end
 	
-	if type (typeConstructor) ~= "function" then
-		return nil
-	end
-	
-	local name, basetable = debug.getupvalue (typeConstructor, 1)
-	return basetable
+	return nil
 end
 
 function GLib.IsStaticTable (t)
@@ -187,11 +179,12 @@ function GLib.MakeConstructor (metatable, base, ...)
 	-- Inheritance
 	local statictable = GLib.CreateStaticTable ()
 	local typeinfo = {}
-	metatable.__GetStaticTable = function () return statictable end
-	metatable.__GetType        = function () return typeinfo    end
-	typeinfo.__bases           = {}
-	typeinfo.__basemethods     = {}
-	typeinfo.GetStaticTable    = function () return statictable end
+	statictable.GetInstanceMetatable = function () return metatable   end
+	metatable.__GetStaticTable       = function () return statictable end
+	metatable.__GetType              = function () return typeinfo    end
+	typeinfo.__bases                 = {}
+	typeinfo.__basemethods           = {}
+	typeinfo.GetStaticTable          = function () return statictable end
 	
 	-- Instance constructor, what this function returns
 	local ictor
@@ -307,10 +300,6 @@ function GLib.MakeConstructor (metatable, base, ...)
 		-- Invoke constructor
 		object:__ctor (...)
 		
-		-- 2000 years ago
-		-- my race created you.
-		-- We turned you loose in space,
-		-- now a polluted zoo
 		return object
 	end
 	

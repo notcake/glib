@@ -232,6 +232,7 @@ function GLib.Initialize (systemName, systemTable)
 				local ictorInvoker = metatable and metatable.__call or nil
 				
 				systemTable [k] = {}
+				if v.__static then systemTable [k].__static = true end
 				setmetatable (systemTable [k],
 					{
 						__index = v,
