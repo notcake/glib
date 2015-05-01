@@ -1,5 +1,5 @@
 local self = {}
-GLib.Containers.ICollection = GLib.MakeConstructor (self)
+GLib.Containers.ICollection = GLib.MakeConstructor (self, GLib.IEnumerable)
 
 function self:ctor ()
 end
@@ -24,10 +24,6 @@ end
 
 function self:GetCount ()
 	GLib.Error ("ICollection:GetCount : Not implemented.")
-end
-
-function self:GetEnumerator ()
-	GLib.Error ("ICollection:GetEnumerator : Not implemented.")
 end
 
 function self:IsEmpty ()

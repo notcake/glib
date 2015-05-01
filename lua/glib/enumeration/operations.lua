@@ -1,8 +1,18 @@
+local function ToFunction (f)
+	if isfunction (f) then return f end
+	
+	return function (x, ...)
+		return x [f] (x, ...)
+	end
+end
+
 function GLib.Enumerator.Concat (enumerator, separator)
 	return table.concat (GLib.Enumerator.ToArray (GLib.Enumerator.Map (enumerator, tostring)), separator)
 end
 
 function GLib.Enumerator.Filter (enumerator, filterFunction)
+	filterFunction = ToFunction (filterFunction)
+	
 	return function ()
 		local a, b, c, d, e, f = nil
 		repeat
@@ -15,6 +25,8 @@ function GLib.Enumerator.Filter (enumerator, filterFunction)
 end
 
 function GLib.Enumerator.Map (enumerator, mapFunction)
+	mapFunction = ToFunction (mapFunction)
+	
 	return function ()
 		local a, b, c, d, e, f = enumerator ()
 		if a == nil then return nil end

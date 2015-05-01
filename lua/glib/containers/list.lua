@@ -1,10 +1,32 @@
 local self = {}
 GLib.Containers.List = GLib.MakeConstructor (self, GLib.Containers.ICollection)
 
-function self:ctor ()
+function GLib.Containers.List.FromArray (array, list)
+	list = list or GLib.Containers.List ()
+	
+	for i = 1, #array do
+		list:Add (array [i])
+	end
+	
+	return list
+end
+
+function GLib.Containers.List.FromEnumerable (enumerable, list)
+	list = list or GLib.Containers.List ()
+	
+	list:AddRange (enumerable)
+	
+	return list
+end
+
+function self:ctor (array)
 	self.Count = 0
 	
 	self.Items = {}
+	
+	if array then
+		GLib.Containers.List.FromArray (array, self)
+	end
 end
 
 -- ICollection
