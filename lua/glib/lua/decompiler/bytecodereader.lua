@@ -41,7 +41,7 @@ function self:ctor (functionOrDump, authId)
 	self.Flags     = reader:UInt8 ()
 	
 	if bit.band (self.Flags, GLib.Lua.BytecodeFlags.DebugInformationStripped) == 0 then
-		self.Source = reader:Bytes (reader:UInt8 ())
+		self.Source = reader:Bytes (reader:ULEB128 ())
 	end
 	
 	-- Functions
@@ -60,6 +60,31 @@ function self:GetDump ()
 	return self.Dump
 end
 
+function self:HasDump ()
+	return self.Dump ~= nil
+end
+
+-- Header
+function self:GetSignature ()
+	return self.Signature
+end
+
+function self:GetVersion ()
+	return self.Version
+end
+
+function self:GetFlags ()
+	return self.Flags
+end
+
+function self:IsDebugInformationStripped ()
+	return bit.band (self.Flags, GLib.Lua.BytecodeFlags.DebugInformationStripped) ~= 0
+end
+
+function self:GetSource ()
+	return self.Source
+end
+
 function self:GetFunction (index)
 	return self.Functions [index]
 end
@@ -74,14 +99,6 @@ end
 
 function self:GetInputFunction ()
 	return self.Function
-end
-
-function self:GetSource ()
-	return self.Source
-end
-
-function self:HasDump ()
-	return self.Dump ~= nil
 end
 
 function self:ToString ()
