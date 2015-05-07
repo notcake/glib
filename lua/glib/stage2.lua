@@ -107,6 +107,7 @@ include ("lua/decompiler/stringconstant.lua")
 
 include ("lua/decompiler/tablekeyvaluetype.lua")
 
+include ("lua/decompiler/bytecodeflags.lua")
 include ("lua/decompiler/operandtype.lua")
 include ("lua/decompiler/opcodeinfo.lua")
 include ("lua/decompiler/opcodes.lua")

@@ -6,6 +6,13 @@ function self:ctor (functionOrDump, authId)
 	self.Function = nil
 	self.Dump = nil
 	
+	-- Header
+	self.Signature = nil
+	self.Version   = nil
+	self.Flags     = nil
+	
+	self.Source    = nil
+	
 	-- Function dumps
 	self.Functions = {}
 	
@@ -29,10 +36,13 @@ function self:ctor (functionOrDump, authId)
 	local reader = GLib.StringInBuffer (self.Dump)
 	
 	-- Header
-	self.Signature = reader:Bytes (4)
-	self.Reserved1 = reader:UInt8 ()
+	self.Signature = reader:Bytes (3)
+	self.Version   = reader:UInt8 ()
+	self.Flags     = reader:UInt8 ()
 	
-	self.Source = reader:Bytes (reader:UInt8 ())
+	if bit.band (self.Flags, GLib.Lua.BytecodeFlags.DebugInformationStripped) == 0 then
+		self.Source = reader:Bytes (reader:UInt8 ())
+	end
 	
 	-- Functions
 	local functionDataLength = reader:ULEB128 ()
