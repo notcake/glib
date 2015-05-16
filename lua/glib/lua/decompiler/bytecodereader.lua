@@ -104,8 +104,9 @@ end
 function self:ToString ()
 	if not self.String then
 		local str = GLib.StringBuilder ()
-		if self:GetSource () then
-			str:Append ("-- " .. self:GetSource ())
+		local source = self:GetSource ()
+		if source then
+			str:Append ("-- " .. GLib.String.EscapeNonprintable (source))
 			str:Append ("\n")
 		end
 		if #self.Functions > 0 then
