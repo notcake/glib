@@ -56,48 +56,52 @@ if SERVER then
 	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
 		includePath = includePath or (systemName .. "/" .. systemName .. ".lua")
 		
-		concommand.Add (systemName .. "_reload_sv", function (ply, _, arg)
-			if ply and ply:IsValid () and not ply:IsSuperAdmin () then return end
 		
-			local startTime = SysTime ()
-			GLib.UnloadSystem (systemTableName)
-			
-			if GLib then GLib.Loader.Include (includePath)
-			else include (includePath) end
-			
-			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
-		end)
-		concommand.Add (systemName .. "_reload_sh", function (ply, _, arg)
-			if ply and ply:IsValid () and not ply:IsSuperAdmin () then return end
-			
-			local startTime = SysTime ()
-			GLib.UnloadSystem (systemTableName)
-			
-			if GLib then GLib.Loader.Include (includePath)
-			else include (includePath) end
-			
-			for _, ply in ipairs (player.GetAll ()) do
-				ply:ConCommand (systemName .. "_reload")
+		return reload
+	end
+end
+
+function GLib.AddReloadCommand (includePath, systemName, systemTableName)
+	includePath = includePath or (systemName .. "/" .. systemName .. ".lua")
+	
+	local function reload ()
+		local startTime = SysTime ()
+		GLib.UnloadSystem (systemTableName)
+		
+		if GLib then GLib.Loader.Include (includePath)
+		else include (includePath) end
+		
+		GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
+	end
+	
+	if SERVER then
+		concommand.Add (systemName .. "_reload_sv",
+			function (ply, _, arg)
+				if ply and ply:IsValid () and not ply:IsSuperAdmin () then return end
+				
+				reload ()
 			end
-			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
-		end)
+		)
+		concommand.Add (systemName .. "_reload_sh",
+			function (ply, _, arg)
+				if ply and ply:IsValid () and not ply:IsSuperAdmin () then return end
+				
+				reload ()
+				
+				for _, ply in ipairs (player.GetAll ()) do
+					ply:ConCommand (systemName .. "_reload")
+				end
+			end
+		)
+	elseif CLIENT then
+		concommand.Add (systemName .. "_reload",
+			function (ply, _, arg)
+				reload ()
+			end
+		)
 	end
-elseif CLIENT then
-	function GLib.AddReloadCommand (includePath, systemName, systemTableName)
-		includePath = includePath or (systemName .. "/" .. systemName .. ".lua")
-		
-		concommand.Add (systemName .. "_reload", function (ply, _, arg)
-			local startTime = SysTime ()
-			GLib.UnloadSystem (systemTableName)
-			
-			if GLib then GLib.Loader.Include (includePath)
-			else include (includePath) end
-			
-			GLib.Debug (systemName .. "_reload took " .. tostring ((SysTime () - startTime) * 1000) .. " ms.")
-		end)
-	end
-else
-	function GLib.AddReloadCommand (includePath, systemName, systemTableName) end
+	
+	return reload
 end
 GLib.AddReloadCommand ("glib/glib.lua", "glib", "GLib")
 
