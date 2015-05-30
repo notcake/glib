@@ -110,7 +110,7 @@ function GLib.Enum (enum)
 		GLib.Error ("GLib.Enum : This enum appears to be empty!")
 	end
 	
-	GLib.InvertTable (enum)
+	GLib.InvertTable (enum, enum)
 	return enum
 end
 
@@ -303,7 +303,7 @@ function GLib.IncludeDirectory (folder, recursive)
 end
 
 function GLib.InvertTable (tbl, out)
-	out = out or tbl
+	out = out or {}
 	
 	local keys = {}
 	for key, _ in pairs (tbl) do
