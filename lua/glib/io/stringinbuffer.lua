@@ -36,7 +36,7 @@ function self:SeekRelative (relativeSeekPos)
 	self.Position = self.Position + relativeSeekPos
 end
 
-function self:SeekTo (seekPos)
+function self:SeekAbsolute (seekPos)
 	self.Position = seekPos
 end
 

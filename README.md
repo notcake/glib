@@ -49,7 +49,7 @@ uint     InBuffer:GetSize ()
 bool     InBuffer:IsEndOfStream ()
 InBuffer InBuffer:Pin ()
 void     InBuffer:SeekRelative (int relativeSeekPos)
-void     InBuffer:SeekTo (uint seekPos)
+void     InBuffer:SeekAbsolute (uint seekPos)
 
 uint8    InBuffer:UInt8 ()
 uint16   InBuffer:UInt16 ()

@@ -32,8 +32,8 @@ function self:SeekRelative (relativeSeekPos)
 	GLib.Error ("InBuffer:SeekRelative : Not implemented.")
 end
 
-function self:SeekTo (seekPos)
-	GLib.Error ("InBuffer:SeekTo : Not implemented.")
+function self:SeekAbsolute (seekPos)
+	GLib.Error ("InBuffer:SeekAbsolute : Not implemented.")
 end
 
 function self:UInt8 ()
