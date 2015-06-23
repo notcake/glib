@@ -75,7 +75,7 @@ end
 
 function GLib.BitConverter.Int32ToUInt8s (n)
 	if n < 0 then n = n + 4294967296 end
-	return GLib.BitConverter.UInt16ToUInt8s (n)
+	return GLib.BitConverter.UInt32ToUInt8s (n)
 end
 
 function GLib.BitConverter.Int64ToUInt8s (n)
