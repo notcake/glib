@@ -27,7 +27,6 @@ include ("events/event.lua")
 include ("events/eventprovider.lua")
 
 -- Utility
-include ("bitconverter.lua")
 include ("coroutine.lua")
 include ("glue.lua")
 include ("invoker.lua")

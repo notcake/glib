@@ -437,6 +437,8 @@ GLib.Initialize ("GLib", GLib)
 -- Now load the rest
 include ("userid.lua")
 include ("stringbuilder.lua")
+
+include ("bitconverter.lua")
 include ("io/inbuffer.lua")
 include ("io/outbuffer.lua")
 include ("io/stringinbuffer.lua")

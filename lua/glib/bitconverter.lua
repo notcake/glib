@@ -1,5 +1,8 @@
 GLib.BitConverter = {}
 
+local bit_band   = bit.band
+local bit_lshift = bit.lshift
+local bit_rshift = bit.rshift
 local math_floor = math.floor
 local math_frexp = math.frexp
 local math_ldexp = math.ldexp
@@ -137,8 +140,8 @@ function GLib.BitConverter.FloatToUInt32 (f)
 		end
 	end
 	
-	n = n + bit.lshift (bit.band (biasedExponent, 0xFF), 23)
-	n = n + bit.band (mantissa, 0x007FFFFF)
+	n = n + bit_lshift (bit_band (biasedExponent, 0xFF), 23)
+	n = n + bit_band (mantissa, 0x007FFFFF)
 	
 	return n
 end
@@ -176,8 +179,8 @@ function GLib.BitConverter.DoubleToUInt32s (f)
 	end
 	
 	low = mantissa % 4294967296
-	high = high + bit.lshift (bit.band (biasedExponent, 0x07FF), 20)
-	high = high + bit.band (math_floor (mantissa / 4294967296), 0x000FFFFF)
+	high = high + bit_lshift (bit_band (biasedExponent, 0x07FF), 20)
+	high = high + bit_band (math_floor (mantissa / 4294967296), 0x000FFFFF)
 	
 	return low, high
 end
@@ -194,8 +197,8 @@ function GLib.BitConverter.UInt32ToFloat (n)
 		n = n - 0x80000000
 	end
 	
-	local biasedExponent = bit.rshift (bit.band (n, 0x7F800000), 23)
-	local mantissa = bit.band (n, 0x007FFFFF) / (2 ^ 23)
+	local biasedExponent = bit_rshift (bit_band (n, 0x7F800000), 23)
+	local mantissa = bit_band (n, 0x007FFFFF) / (2 ^ 23)
 	
 	local f
 	if biasedExponent == 0x00 then
@@ -221,8 +224,8 @@ function GLib.BitConverter.UInt32sToDouble (low, high)
 		high = high - 0x80000000
 	end
 	
-	local biasedExponent = bit.rshift (bit.band (high, 0x7FF00000), 20)
-	local mantissa = (bit.band (high, 0x000FFFFF) * 4294967296 + low) / 2 ^ 52
+	local biasedExponent = bit_rshift (bit_band (high, 0x7FF00000), 20)
+	local mantissa = (bit_band (high, 0x000FFFFF) * 4294967296 + low) / 2 ^ 52
 	
 	local f
 	if biasedExponent == 0x0000 then
