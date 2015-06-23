@@ -6,6 +6,10 @@ local math_ldexp = math.ldexp
 local math_huge  = math.huge
 
 -- Integers
+function GLib.BitConverter.UInt8ToUInt8s (n)
+	return n
+end
+
 function GLib.BitConverter.UInt16ToUInt8s (n)
 	return             n        % 256,
 	       math_floor (n / 256) % 256
@@ -27,6 +31,10 @@ function GLib.BitConverter.UInt64ToUInt8s (n)
 	       math_floor (n /     1099511627776) % 256,
 	       math_floor (n /   281474976710656) % 256,
 	       math_floor (n / 72057594037927936) % 256
+end
+
+function GLib.BitConverter.UInt8sToUInt8(uint80)
+	return uint80
 end
 
 function GLib.BitConverter.UInt8sToUInt16 (uint80, uint81)
@@ -52,6 +60,11 @@ function GLib.BitConverter.UInt8sToUInt64 (uint80, uint81, uint82, uint83, uint8
 	       uint87 * 72057594037927936
 end
 
+function GLib.BitConverter.Int8ToUInt8s (n)
+	if n < 0 then n = n + 256 end
+	return GLib.BitConverter.UInt8ToUInt8s (n)
+end
+
 function GLib.BitConverter.Int16ToUInt8s (n)
 	if n < 0 then n = n + 65536 end
 	return GLib.BitConverter.UInt16ToUInt8s (n)
@@ -66,6 +79,12 @@ function GLib.BitConverter.Int64ToUInt8s (n)
 	local uint80, uint81, uint82, uint83 = GLib.BitConverter.UInt32ToUInt8s (n % 4294967296)
 	local uint84, uint85, uint86, uint87 = GLib.BitConverter.Int32ToUInt8s (math_floor (n / 4294967296))
 	return uint80, uint81, uint82, uint83, uint84, uint85, uint86, uint87
+end
+
+function GLib.BitConverter.UInt8sToInt8 (uint80)
+	local n = GLib.BitConverter.UInt8sToUInt8 (uint80)
+	if n >= 128 then n = n - 256 end
+	return n
 end
 
 function GLib.BitConverter.UInt8sToInt16 (uint80, uint81)
