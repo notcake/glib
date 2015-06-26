@@ -109,15 +109,6 @@ function GLib.Debug (message)
 	-- ErrorNoHalt (message .. "\n")
 end
 
-function GLib.Enum (enum)
-	if not next (enum) then
-		GLib.Error ("GLib.Enum : This enum appears to be empty!")
-	end
-	
-	GLib.InvertTable (enum, enum)
-	return enum
-end
-
 function GLib.EnumerateDelayed (tbl, callback, finishCallback)
 	if not callback then return end
 
@@ -429,7 +420,8 @@ function GLib.WeakValueTable ()
 end
 
 -- GLib.Initialize uses this code
-include ("oop.lua")
+include ("oop/enum.lua")
+include ("oop/oop.lua")
 include ("timers.lua")
 include ("events/eventprovider.lua")
 GLib.Initialize ("GLib", GLib)
@@ -462,7 +454,8 @@ include ("loader/commands.lua")
 -- since GLib.EnumerateFolder calls GLib.Loader.Find.
 GLib.AddCSLuaFile ("glib/glib.lua")
 GLib.AddCSLuaFile ("glib/stage1.lua")
-GLib.AddCSLuaFile ("glib/oop.lua")
+GLib.AddCSLuaFile ("glib/oop/enum.lua")
+GLib.AddCSLuaFile ("glib/oop/oop.lua")
 GLib.AddCSLuaFile ("glib/timers.lua")
 GLib.AddCSLuaFile ("glib/userid.lua")
 GLib.AddCSLuaFile ("glib/events/eventprovider.lua")

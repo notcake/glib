@@ -2,8 +2,9 @@ if GLib.Stage2 then return end
 GLib.Stage2 = true
 
 -- Core
-include ("oop.lua")
-include ("idisposable.lua")
+include ("oop/enum.lua")
+include ("oop/oop.lua")
+include ("oop/idisposable.lua")
 
 -- String
 GLib.String = {}
@@ -63,6 +64,10 @@ include ("serialization/serializationinfo.lua")
 include ("serialization/customserializationinfo.lua")
 include ("serialization/serializableregistry.lua")
 include ("serialization/serialization.lua")
+
+-- Properties
+include ("properties/properties.lua")
+include ("properties/propertyserializable.lua")
 
 -- Lua
 GLib.Lua = {}
