@@ -60,10 +60,6 @@ include ("threading/event.lua")
 -- Serialization
 GLib.Serialization = {}
 include ("serialization/iserializable.lua")
-include ("serialization/serializationinfo.lua")
-include ("serialization/customserializationinfo.lua")
-include ("serialization/serializableregistry.lua")
-include ("serialization/serialization.lua")
 
 -- Properties
 include ("properties/properties.lua")
