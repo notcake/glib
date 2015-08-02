@@ -172,14 +172,14 @@ function GLib.Color.ToVector (color, out)
 	return out, color.a / 255
 end
 
--- Build indices
-for colorName, color in pairs (GLib.Colors) do
-	colorsByName [string_lower (colorName)] = color
-	colorNames [GLib_Color_ToArgb (color)] = colorName
-end
-
 GLib_Color_Clone    = GLib.Color.Clone
 GLib_Color_Copy     = GLib.Color.Copy
 GLib_Color_FromName = GLib.Color.FromName
 GLib_Color_GetName  = GLib.Color.GetName
 GLib_Color_ToArgb   = GLib.Color.ToArgb
+
+-- Build indices
+for colorName, color in pairs (GLib.Colors) do
+	colorsByName [string_lower (colorName)] = color
+	colorNames [GLib_Color_ToArgb (color)] = colorName
+end
