@@ -31,6 +31,27 @@ function self:ctor (host, getParentEventProvider)
 	self.GetParentEventProvider = getParentEventProvider
 end
 
+function self:Clone (clone)
+	clone = clone or self.__ictor ()
+	clone = clone:GetEventProvider ()
+	
+	clone:Copy (self)
+	
+	return clone
+end
+
+function self:Copy (source)
+	source = source:GetEventProvider ()
+	
+	for eventName, eventListeners in pairs (source.EventListeners) do
+		for callbackName, callback in pairs (eventListeners) do
+			self:AddEventListener (eventName, callbackName, callback)
+		end
+	end
+	
+	return self
+end
+
 function self:AddEventListener (eventName, nameOrCallback, callback)
 	callback = callback or nameOrCallback
 	if not self.EventListeners [eventName] then
@@ -50,21 +71,6 @@ function self:ClearEventListeners (eventName)
 	end
 	
 	self.EventListeners [eventName] = nil
-end
-
-function self:Clone (eventProvider)
-	eventProvider = eventProvider or GLib.EventProvider ()
-	eventProvider = eventProvider:GetEventProvider ()
-	
-	for eventName, eventListeners in pairs (self.EventListeners) do
-		eventProvider.EventListeners [eventName] = eventProvider.EventListeners [eventName] or {}
-		
-		for callbackName, callback in pairs (eventListeners) do
-			eventProvider.EventListeners [eventName] [callbackName] = callback
-		end
-	end
-	
-	return eventProvider
 end
 
 function self:DispatchEvent (eventName, ...)

@@ -31,10 +31,7 @@ end
 function self:Clone (clone)
 	clone = clone or self.__ictor ()
 	
-	for i = 1, #self._Properties do
-		local property = self._Properties [i]
-		clone [property.SetterName] (clone, self [property.GetterName] (self))
-	end
+	clone:Copy (self)
 	
 	return clone
 end
