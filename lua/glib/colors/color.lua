@@ -16,18 +16,29 @@ local Vector___newindex = debug.getregistry ().Vector.__newindex
 local colorsByName = {}
 local colorNames   = {}
 
+local GLib_Color_Clone    = nil
+local GLib_Color_Copy     = nil
+local GLib_Color_FromName = nil
+local GLib_Color_GetName  = nil
+local GLib_Color_ToArgb   = nil
+
 function GLib.Color.Clone (color, clone)
 	clone = clone or Color (255, 255, 255, 255)
 	
-	clone.r = color.r
-	clone.g = color.g
-	clone.b = color.b
-	clone.a = color.a
+	GLib_Color_Copy (clone, color)
 	
 	return clone
 end
 
-local GLib_Color_Clone = GLib.Color.Clone
+function GLib.Color.Copy (color, source)
+	color.r = source.r
+	color.g = source.g
+	color.b = source.b
+	color.a = source.a
+	
+	return color
+end
+
 function GLib.Color.FromColor (color, aOrOut, out)
 	local a = nil
 	
@@ -57,7 +68,6 @@ function GLib.Color.FromArgb (argb, out)
 	return out
 end
 
-local GLib_Color_FromName = GLib.Color.FromName
 function GLib.Color.FromHtmlColor (htmlColor, aOrOut, out)
 	local a = nil
 	
@@ -141,8 +151,6 @@ function GLib.Color.ToArgb (color)
 	return color.a * 0x01000000 + color.r * 0x00010000 + color.g * 0x00000100 + color.b
 end
 
-local GLib_Color_GetName = GLib.Color.GetName
-local GLib_Color_ToArgb  = GLib.Color.ToArgb
 function GLib.Color.ToHtmlColor (color)
 	local colorName = GLib_Color_GetName (color)
 	if colorName then return string_lower (colorName) end
@@ -169,3 +177,9 @@ for colorName, color in pairs (GLib.Colors) do
 	colorsByName [string_lower (colorName)] = color
 	colorNames [GLib_Color_ToArgb (color)] = colorName
 end
+
+GLib_Color_Clone    = GLib.Color.Clone
+GLib_Color_Copy     = GLib.Color.Copy
+GLib_Color_FromName = GLib.Color.FromName
+GLib_Color_GetName  = GLib.Color.GetName
+GLib_Color_ToArgb   = GLib.Color.ToArgb
