@@ -1,6 +1,5 @@
 local self = {}
-GLib.Lua.ParameterList = GLib.MakeConstructor (self)
-GLib.RegisterSerializable ("GLib.Lua.ParameterList", GLib.Lua.ParameterList)
+GLib.Lua.ParameterList = GLib.MakeConstructor (self, GLib.Serialization.ISerializable)
 
 function GLib.Lua.ParameterList.ctor (func)
 	if func then
@@ -43,6 +42,14 @@ function self:ctor ()
 end
 
 -- ISerializable
+function self:Serialize (outBuffer)
+	outBuffer:UInt32 (#self.Parameters)
+	
+	for i = 1, #self.Parameters do
+		self.Parameters [i]:Serialize (outBuffer)
+	end
+end
+
 function self:Deserialize (inBuffer)
 	local parameterCount = inBuffer:UInt32 ()
 	
@@ -57,14 +64,6 @@ function self:Deserialize (inBuffer)
 		end
 		
 		self.Parameters [#self.Parameters + 1] = parameter
-	end
-end
-
-function self:Serialize (outBuffer)
-	outBuffer:UInt32 (#self.Parameters)
-	
-	for i = 1, #self.Parameters do
-		self.Parameters [i]:Serialize (outBuffer)
 	end
 end
 
