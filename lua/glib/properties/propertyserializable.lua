@@ -7,10 +7,14 @@ end
 -- ISerializable
 function self:Serialize (outBuffer)
 	self:SerializeProperties (outBuffer)
+	
+	return outBuffer
 end
 
 function self:Deserialize (inBuffer)
 	self:DeserializeProperties (inBuffer)
+	
+	return self
 end
 
 -- PropertySerializable
@@ -19,6 +23,8 @@ function self:SerializeProperties (outBuffer)
 		local property = self._Properties [i]
 		outBuffer [property.Type] (outBuffer, self [property.GetterName] (self))
 	end
+	
+	return outBuffer
 end
 
 function self:DeserializeProperties (inBuffer)
@@ -26,6 +32,8 @@ function self:DeserializeProperties (inBuffer)
 		local property = self._Properties [i]
 		self [property.SetterName] (self, inBuffer [property.Type] (inBuffer))
 	end
+	
+	return self
 end
 
 function self:Clone (clone)

@@ -40,6 +40,8 @@ function self:Serialize (outBuffer)
 	outBuffer:UInt32    (self.StartLine)
 	outBuffer:UInt32    (self.EndLine  )
 	outBuffer:Boolean   (self.Native   )
+	
+	return outBuffer
 end
 
 function self:Deserialize (inBuffer)
@@ -49,6 +51,8 @@ function self:Deserialize (inBuffer)
 	self.StartLine = inBuffer:UInt32    ()
 	self.EndLine   = inBuffer:UInt32    ()
 	self.Native    = inBuffer:Boolean   ()
+	
+	return self
 end
 
 -- Function

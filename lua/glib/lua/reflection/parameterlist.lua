@@ -48,6 +48,8 @@ function self:Serialize (outBuffer)
 	for i = 1, #self.Parameters do
 		self.Parameters [i]:Serialize (outBuffer)
 	end
+	
+	return outBuffer
 end
 
 function self:Deserialize (inBuffer)
@@ -65,6 +67,8 @@ function self:Deserialize (inBuffer)
 		
 		self.Parameters [#self.Parameters + 1] = parameter
 	end
+	
+	return self
 end
 
 -- ParameterList
