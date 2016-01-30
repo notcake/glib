@@ -155,7 +155,7 @@ function GLib.Color.ToHtmlColor (color)
 	local colorName = GLib_Color_GetName (color)
 	if colorName then return string_lower (colorName) end
 	
-	return string_format ("#%06X", GLib_Color_ToArgb (color))
+	return string_format ("#%06X", GLib_Color_ToRgb (color))
 end
 
 function GLib.Color.ToRgb (color)
@@ -177,6 +177,7 @@ GLib_Color_Copy     = GLib.Color.Copy
 GLib_Color_FromName = GLib.Color.FromName
 GLib_Color_GetName  = GLib.Color.GetName
 GLib_Color_ToArgb   = GLib.Color.ToArgb
+GLib_Color_ToRgb    = GLib.Color.ToRgb
 
 -- Build indices
 for colorName, color in pairs (GLib.Colors) do
