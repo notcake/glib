@@ -40,10 +40,6 @@ function self:Int16  (n) self.Data [#self.Data + 1] = string_char (GLib.BitConve
 function self:Int32  (n) self.Data [#self.Data + 1] = string_char (GLib.BitConverter.Int32ToUInt8s  (n)) end
 function self:Int64  (n) self.Data [#self.Data + 1] = string_char (GLib.BitConverter.Int64ToUInt8s  (n)) end
 
-function self:Char (char)
-	self.Data [#self.Data + 1] = string_sub (char, 1, 1)
-end
-
 function self:Bytes (data, length)
 	length = length or #data
 	length = math_min (length, #data)

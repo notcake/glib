@@ -89,12 +89,6 @@ function self:Int64 ()
 	return GLib.BitConverter.UInt8sToInt64 (uint80 or 0, uint81 or 0, uint82 or 0, uint83 or 0, uint84 or 0, uint85 or 0, uint86 or 0, uint87 or 0)
 end
 
-function self:Char ()
-	local char = string_sub (self.Data, self.Position, self.Position)
-	self.Position = self.Position + 1
-	return char
-end
-
 function self:Bytes (length)
 	local str = string_sub (self.Data, self.Position, self.Position + length - 1)
 	self.Position = self.Position + length

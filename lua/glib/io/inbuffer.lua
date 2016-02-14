@@ -118,10 +118,6 @@ function self:Vector ()
 	return Vector (x, y, z)
 end
 
-function self:Char ()
-	return string_char (self:UInt8 ())
-end
-
 function self:Bytes (length)
 	local data = ""
 	for i = 1, length do
