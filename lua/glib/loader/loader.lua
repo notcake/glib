@@ -150,14 +150,13 @@ function GLib.Loader.Include (path)
 		compiled = compiled or GLib.Loader.CompileString (code, "lua/" .. fullPath, false)
 		if type (compiled) == "function" then
 			pathStack [#pathStack + 1] = fullPath:sub (1, fullPath:find ("/[^/]*$"))
-			local returnCount, returns = (
-				function (...)
-					return select ("#", ...), {...}
+			return (
+				function (success, ...)
+					pathStack [#pathStack] = nil
+					if not success then return end
+					return ...
 				end
 			) (xpcall (compiled, GLib.Error))
-			pathStack [#pathStack] = nil
-			
-			return unpack (returns, 1, returnCount)
 		else
 			ErrorNoHalt ("GLib.Loader.Include : " .. fullPath .. ": File failed to compile:\n\t" .. tostring (compiled) .. "\n")
 		end
