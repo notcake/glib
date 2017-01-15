@@ -41,6 +41,9 @@ function self:ctor ()
 					
 					thread:Terminate ()
 					ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
+				elseif error ~= thread then
+					thread:SetState (GLib.Threading.ThreadState.ExternalYield)
+					self.RunnableThreads [thread] = nil
 				end
 				
 				thread:DispatchEvent ("ExecutionSliceEnded")
@@ -129,6 +132,9 @@ function self:RunThread (thread)
 	if not success then
 		ErrorNoHalt ("GLib.Threading.ThreadRunner: Thread " .. thread:GetName () .. " (terminated): " .. error .. "\n")
 		thread:Terminate ()
+	elseif error ~= thread then
+		thread:SetState (GLib.Threading.ThreadState.ExternalYield)
+		self.RunnableThreads [thread] = nil
 	end
 	
 	thread:DispatchEvent ("ExecutionSliceEnded")

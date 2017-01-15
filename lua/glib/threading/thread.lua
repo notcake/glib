@@ -421,7 +421,11 @@ function self:Yield ()
 		return
 	end
 	
-	return coroutine.yield ()
+	if self.State == GLib.Threading.ThreadState.ExternalYield then
+		self:SetState (GLib.Threading.ThreadState.Running)
+	end
+	
+	return coroutine.yield (self)
 end
 
 -- Internal, do not call
