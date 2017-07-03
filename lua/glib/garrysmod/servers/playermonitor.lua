@@ -178,7 +178,8 @@ function self:ProcessQueue ()
 	-- Check for new players.
 	-- This really is needed (did tests).
 	for _, ply in ipairs (player.GetAll ()) do
-		if not self.DisconnectedPlayers [ply] and
+		if ply:IsValid () and
+		   not self.DisconnectedPlayers [ply] and
 		   not self.EntriesByUserId [ply:UserID ()] and
 		   not self.QueuedPlayers [ply] and
 		   GLib.GetPlayerId (ply) then
