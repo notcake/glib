@@ -184,7 +184,7 @@ local TypeFormatters =
 		local name = GLib.Lua.GetTableName (value)
 		if name then return name end
 		
-		local valueType = type (value)
+		local valueType = "table"
 		local metatable = debug.getmetatable (value)
 		if metatable then
 			valueType = GLib.Lua.GetTableName (metatable) or valueType
@@ -224,8 +224,17 @@ TypeFormatters ["Weapon"] = TypeFormatters ["Entity"]
 TypeFormatters ["NPC"]    = TypeFormatters ["Entity"]
 
 function ToCompactLuaString (value, stringBuilder)
-	local typeFormatter = TypeFormatters [type (value)] or tostring
-	return typeFormatter (value)
+	local typeFormatter = TypeFormatters [type (value)]
+	if typeFormatter then
+		return typeFormatter (value)
+	end
+	
+	local str = tostring (value)
+	if str then
+		return str
+	end
+	
+	return type (value)
 end
 
 function ToLuaString (value, stringBuilder)
@@ -234,7 +243,7 @@ function ToLuaString (value, stringBuilder)
 	local name = GLib.Lua.GetObjectName (value)
 	
 	-- TODO: Handle tables and functions
-	if type (value) == "function" then
+	if valueType == "function" then
 		local functionInfo = GLib.Lua.Function (value)
 		if functionInfo:IsNative () then
 			if name then return name end
@@ -272,7 +281,7 @@ function ToLuaString (value, stringBuilder)
 	return ToCompactLuaString (value, stringBuilder)
 end
 
-function GLib.Lua.ToLuaString (value)
+function GLib.Lua.ToLuaString (value, stringBuilder)
 	local luaString = ToLuaString (value, stringBuilder)
 	
 	-- Collapse any StringBuilder objects
@@ -283,7 +292,7 @@ function GLib.Lua.ToLuaString (value)
 	return luaString
 end
 
-function GLib.Lua.ToCompactLuaString (value)
+function GLib.Lua.ToCompactLuaString (value, stringBuilder)
 	local luaString = ToCompactLuaString (value, stringBuilder)
 	
 	-- Collapse any StringBuilder objects
