@@ -11,6 +11,13 @@ if CLIENT then
 	CreateClientConVar ("glib_use_local_files", 0, true, false)
 end
 
+function GLib.Loader.CompileFile (path)
+	local _, compiled = GLib.Loader.File.Read (path, "LUA")
+	if compiled then return compiled end
+	
+	return CompileFile (path)
+end
+
 function GLib.Loader.CompileString (code, path, errorMode)
 	if string.find (code, "^\xef\xbb\xbf") then
 		code = string.sub (code, 4)
@@ -21,6 +28,7 @@ function GLib.Loader.CompileString (code, path, errorMode)
 			"local AddCSLuaFile = GLib.NullCallback ",
 			"local file         = GLib.Loader.File ",
 			"local include      = GLib.Loader.Include ",
+			"local CompileFile  = GLib.Loader.CompileFile ",
 			"return function () ",
 			code,
 			"\n end"
