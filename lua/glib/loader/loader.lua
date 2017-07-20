@@ -168,7 +168,10 @@ GLib.Loader.Environment = setmetatable (
 		CompileFile  = GLib.Loader.CompileFile
 	},
 	{
-		__index = getfenv ()
+		__index = getfenv (),
+		__newindex = function (_, k, v)
+			getfenv () [k] = v
+		end
 	}
 )
 
