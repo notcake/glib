@@ -23,20 +23,9 @@ function GLib.Loader.CompileString (code, path, errorMode)
 		code = string.sub (code, 4)
 	end
 	
-	code = table.concat (
-		{
-			"local AddCSLuaFile = GLib.NullCallback ",
-			"local file         = GLib.Loader.File ",
-			"local include      = GLib.Loader.Include ",
-			"local CompileFile  = GLib.Loader.CompileFile ",
-			"return function () ",
-			code,
-			"\n end"
-		}
-	)
 	local compiled = CompileString (code, path, errorMode)
 	if type (compiled) == "function" then
-		compiled = compiled ()
+		setfenv (compiled, GLib.Loader.Environment)
 	end
 	return compiled
 end
@@ -170,6 +159,18 @@ function GLib.Loader.Include (path)
 		end
 	end
 end
+
+GLib.Loader.Environment = setmetatable (
+	{
+		AddCSLuaFile = function () end,
+		file         = GLib.Loader.File,
+		include      = GLib.Loader.Include,
+		CompileFile  = GLib.Loader.CompileFile
+	},
+	{
+		__index = getfenv ()
+	}
+)
 
 function GLib.Loader.RunPackFile (executionTarget, packFileSystem, callback)
 	callback = callback or GLib.NullCallback
