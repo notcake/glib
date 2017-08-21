@@ -78,7 +78,7 @@ function self:AnchorAndEscapeLiteral (str)
 	if self.AnchoredEscapedLiterals [str] then return self.AnchoredEscapedLiterals [str] end
 	
 	local anchoredEscapedLiteral = str
-	anchoredEscapedLiteral = string.gsub (anchoredEscapedLiteral, "[%[%]%(%)%.%-%+%%]", "%%%1")
+	anchoredEscapedLiteral = string.gsub (anchoredEscapedLiteral, "[%[%]%(%)%.%-%+%?%%]", "%%%1")
 	anchoredEscapedLiteral = "^" .. anchoredEscapedLiteral
 	
 	self.AnchoredEscapedLiterals [str] = anchoredEscapedLiteral
