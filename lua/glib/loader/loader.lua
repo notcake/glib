@@ -30,8 +30,9 @@ function GLib.Loader.CompileString (code, path, errorMode)
 	return compiled
 end
 
+local localLuaPathId = CLIENT and "LCL" or "LSV"
 function GLib.Loader.File.Exists (path, pathId)
-	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Exists (path, pathId) end
+	if pathId ~= "LUA" and pathId ~= localLuaPathId then return file.Exists (path, pathId) end
 	
 	if file.Exists (path, pathId) then return true end
 	if GLib.Loader.PackFileManager:GetMergedPackFileSystem ():Exists (path) then return true end
@@ -39,7 +40,7 @@ function GLib.Loader.File.Exists (path, pathId)
 end
 
 function GLib.Loader.File.Find (path, pathId)
-	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Find (path, pathId) end
+	if pathId ~= "LUA" and pathId ~= localLuaPathId then return file.Find (path, pathId) end
 	
 	local files, folders = file.Find (path, pathId)
 	local fileSet = {}
@@ -59,9 +60,9 @@ function GLib.Loader.File.Find (path, pathId)
 end
 
 function GLib.Loader.File.Read (path, pathId)
-	if pathId ~= "LUA" and pathId ~= "LCL" then return file.Read (path, pathId) end
-	local otherPathId = pathId == "LUA" and "LCL" or "LUA"
-	local canRunLocal = pathId == "LCL" or GetConVar ("sv_allowcslua"):GetBool ()
+	if pathId ~= "LUA" and pathId ~= localLuaPathId then return file.Read (path, pathId) end
+	local otherPathId = pathId == "LUA" and localLuaPathId or "LUA"
+	local canRunLocal = pathId == localLuaPathId or GetConVar ("sv_allowcslua"):GetBool ()
 	
 	-- pathId is LUA or LCL, assume that we're trying to include () the file.
 	
@@ -91,8 +92,8 @@ function GLib.Loader.File.Read (path, pathId)
 		end
 	else
 		-- Check LCL path
-		if canRunLocal and file.Exists (path, "LCL") then
-			contents = file.Read (path, "LCL")
+		if canRunLocal and file.Exists (path, localLuaPathId) then
+			contents = file.Read (path, localLuaPathId)
 			compiled = function ()
 				include (path)
 			end
