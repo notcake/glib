@@ -193,6 +193,9 @@ function self:ProcessQueue ()
 		if not ply:IsValid () then
 			-- Player joined and left really quickly.
 			self.QueuedPlayers [ply] = nil
+		elseif self.EntriesByUserId [ply:UserID ()] then
+			-- Duplicate player.
+			self.QueuedPlayers [ply] = nil
 		elseif userId and
 			   userId ~= "STEAM_ID_PENDING" then
 			self.QueuedPlayers [ply] = nil
